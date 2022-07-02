@@ -14,7 +14,7 @@ let commandLine = document.getElementById('commandLine')
 commandLine.focus()
 let pushMonster = []
 let directionMoved
-let dialogueSpeed = 25
+let dialogueSpeed = 0
 //classes
 let yellow = 'yellow'
 let red = 'red'
@@ -139,6 +139,7 @@ function dialogue(gameDialogue) {
 	if (dialogueSpeed == 0 || dialogueSpeed == 'instant') {
 		let textNode = document.createTextNode(text)
 		textBox.appendChild(textNode)
+		updateScroll()
 	} else {
 		function dialogueInterval() {
 			let textNode = document.createTextNode(text[i])
@@ -362,15 +363,21 @@ const regExp = /[a-zA-Z]/g
 const warrior = 'warrior'
 
 let currentCommand = function (firstCommand, secondCommand, thirdCommand) {
+	let oneWord = firstCommand
 	let twoWords = firstCommand + ' ' + secondCommand
-	console.log(twoWords, ' TWO WORDS')
 	let threeWords = firstCommand + ' ' + secondCommand + ' ' + thirdCommand
-	if (currentArea.questKeywords != undefined && currentArea.questKeywords.find(keyword => keyword == firstCommand)) {
-		console.log(1)
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == oneWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+	}
+	if (questKeyword != undefined && questKeyword.find(keyword => keyword == firstCommand)) {
 		currentArea.questComplete(firstCommand, secondCommand, thirdCommand)
-	} else if (currentArea.questKeywords != undefined && currentArea.questKeywords.find(keyword => keyword == twoWords)) {
-		console.log(2)
+	} else if (questKeyword != undefined && currentArea.questKeywords.find(keyword => keyword == twoWords)) {
 		currentArea.questComplete(twoWords)
+	} else if (questKeyword != undefined && currentArea.questKeywords.find(keyword => keyword == threeWords)) {
+		currentArea.questComplete(threeWords)
 	}
 }
 function pushItemByRoomId(roomIdCommand) {
@@ -378,7 +385,7 @@ function pushItemByRoomId(roomIdCommand) {
 	if (roomIdItem != undefined) {
 		return roomIdItem
 	} else if (player.rightHand == empty) {
-		return player.unarmed1
+		return player.rightFist
 	} else {
 		return empty
 	}
@@ -447,11 +454,11 @@ let currentArea = {
 }
 commandLine.addEventListener('keypress', function (event) {
 	if (event.keyCode === 13 && commandLine.value.length !== 0) {
-		if (player.combat === false && player.stasis === false) {
+		if (player.combat == false && player.stasis == false) {
 			handleInputs(commandLine.value)
-		} else if (player.combat === true && player.stasis === false) {
+		} else if (player.combat == true && player.stasis == false) {
 			handleCombatInputs(commandLine.value)
-		} else if (player.stasis === true) {
+		} else if (player.stasis == true) {
 			handleStasisInputs(commandLine.value)
 		}
 		event.preventDefault()
@@ -464,9 +471,9 @@ const handleStasisInputs = function (commandLineInput) {
 	const command = inputsSplitBySpace[0]
 	const secondCommand = inputsSplitBySpace[1]
 	let thirdCommand = inputsSplitBySpace[2]
-	currentCommand = command
-	for (let i = 3; i < inputsSplitBySpace.length; i++) {
-		thirdCommand += inputsSplitBySpace[i]
+	let fourthCommand = inputsSplitBySpace[3]
+	for (let i = 4; i < inputsSplitBySpace.length; i++) {
+		fourthCommand += inputsSplitBySpace[i]
 	}
 	currentCommand(command, secondCommand, thirdCommand)
 
@@ -510,13 +517,24 @@ const handleStasisInputs = function (commandLineInput) {
 			swap()
 			break
 		case 'recall':
-			recall(secondCommand, thirdCommand)
+			recall(secondCommand, thirdCommand, fourthCommand)
 			break
 		case 'dialogue':
 			dialogueSpeedFunc(secondCommand)
 			break
-		default:
+		case 'a':
+		case 'attack':
 			quickMessage(`you are exhausted and must wait before taking another action [${swingTimer}]`)
+			break
+		case 'retreat':
+		case 're':
+			quickMessage(`you are exhausted and must wait before taking another action [${swingTimer}]`)
+			break
+		case 'repeat':
+			repeat(secondCommand)
+			break
+		default:
+		//quickMessage(`you are exhausted and must wait before taking another action [${swingTimer}]`)
 	}
 	commandLine.value = ''
 	commandLine.focus()
@@ -529,10 +547,9 @@ const handleCombatInputs = commandLineInput => {
 	const command = inputsSplitBySpace[0]
 	const secondCommand = inputsSplitBySpace[1]
 	let thirdCommand = inputsSplitBySpace[2]
-	currentCommand = command
-
-	for (let i = 3; i < inputsSplitBySpace.length; i++) {
-		thirdCommand += inputsSplitBySpace[i]
+	let fourthCommand = inputsSplitBySpace[3]
+	for (let i = 4; i < inputsSplitBySpace.length; i++) {
+		fourthCommand += inputsSplitBySpace[i]
 	}
 	currentCommand(command, secondCommand, thirdCommand)
 
@@ -623,10 +640,13 @@ const handleCombatInputs = commandLineInput => {
 			swap()
 			break
 		case 'recall':
-			recall(secondCommand, thirdCommand)
+			recall(secondCommand, thirdCommand, fourthCommand)
 			break
 		case 'dialogue':
 			dialogueSpeedFunc(secondCommand)
+			break
+		case 'repeat':
+			repeat(secondCommand)
 			break
 		default:
 			invalidCommand(commandLineInput)
@@ -642,9 +662,9 @@ const handleInputs = commandLineInput => {
 	const command = inputsSplitBySpace[0]
 	const secondCommand = inputsSplitBySpace[1]
 	let thirdCommand = inputsSplitBySpace[2]
-
-	for (let i = 3; i < inputsSplitBySpace.length; i++) {
-		thirdCommand += inputsSplitBySpace[i]
+	let fourthCommand = inputsSplitBySpace[3]
+	for (let i = 4; i < inputsSplitBySpace.length; i++) {
+		fourthCommand += inputsSplitBySpace[i]
 	}
 	currentCommand(command, secondCommand, thirdCommand)
 
@@ -789,12 +809,15 @@ const handleInputs = commandLineInput => {
 			read(secondCommand)
 			break
 		case 'recall':
-			recall(secondCommand, thirdCommand)
+			recall(secondCommand, thirdCommand, fourthCommand)
 			break
 		case 'god':
 			godMode()
 		case 'dialogue':
 			dialogueSpeedFunc(secondCommand)
+			break
+		case 'repeat':
+			repeat(secondCommand)
 			break
 		default:
 			invalidCommand(commandLineInput)
@@ -1282,16 +1305,16 @@ function read(objectThatIsRead) {
 	}
 	updateScroll()
 }
-function recall(playerX, playerY) {
+function recall(playerX, playerY, playerZ, playerS) {
+	console.log(playerX, playerY, playerZ)
 	//parameters are the x, y values of the targeted room to recall to
-	const recallRoom = allAreas.find(area => area.x == playerX && area.y == playerY)
+	const recallRoom = allAreas.find(area => area.x == playerX && area.y == playerY && area.z == playerZ)
 	if (recallRoom != undefined) {
 		currentArea.isPlayerHere = false
 		currentArea = recallRoom
 	} else {
 		quickMessage(`Room not found`)
 	}
-	console.log(recallRoom, ' recall room')
 	player.x = recallRoom.x
 	player.y = recallRoom.y
 	player.z = recallRoom.z
@@ -1418,12 +1441,12 @@ function pack(secondCommand) {
 		if (selectedItemTwoHandedBoolean() == true) {
 			console.log('packTwoHanded ran')
 			packTwoHanded(selectedItemRight)
-			weaponOrShieldAddPlayerAttribute(player.unarmed1)
-			weaponOrShieldAddPlayerAttribute(player.unarmed2)
+			weaponOrShieldAddPlayerAttribute(player.rightFist)
+			weaponOrShieldAddPlayerAttribute(player.leftFist)
 		} else {
 			console.log('packRight ran')
 			packRight(selectedItemRight)
-			weaponOrShieldAddPlayerAttribute(player.unarmed1)
+			weaponOrShieldAddPlayerAttribute(player.rightFist)
 		}
 	}
 	if (secondCommand == 'left') {
@@ -1431,12 +1454,12 @@ function pack(secondCommand) {
 			console.log('packTwoHanded ran')
 			//two handers are coded in right hand only
 			packTwoHanded(selectedItemRight)
-			weaponOrShieldAddPlayerAttribute(player.unarmed1)
-			weaponOrShieldAddPlayerAttribute(player.unarmed2)
+			weaponOrShieldAddPlayerAttribute(player.rightFist)
+			weaponOrShieldAddPlayerAttribute(player.leftFist)
 		} else {
 			console.log('packLeft ran')
 			packLeft(selectedItemLeft)
-			weaponOrShieldAddPlayerAttribute(player.unarmed2)
+			weaponOrShieldAddPlayerAttribute(player.leftFist)
 		}
 	}
 	playerStatsUpdate()
@@ -1451,8 +1474,8 @@ function unpackTwoHanded(twoHandedItem) {
 		player.rightHand = twoHandedItem.name
 		player.leftHand = twoHandedItem.name
 		weaponOrShieldAddPlayerAttribute(twoHandedItem)
-		weaponOrShieldRemovePlayerAttribute(player.unarmed1)
-		weaponOrShieldRemovePlayerAttribute(player.unarmed2)
+		weaponOrShieldRemovePlayerAttribute(player.rightFist)
+		weaponOrShieldRemovePlayerAttribute(player.leftFist)
 		quickMessage(`you wield your ${twoHandedItem.name} using both hands`)
 	} else if (player.rightHand != empty && player.leftHand != empty) {
 		quickMessage(`both hands must be free in order to wield a two handed weapon`)
@@ -1466,13 +1489,13 @@ function unpackOneHanded(oneHandedItem) {
 		oneHandedItem.roomId = slot1
 		player.rightHand = oneHandedItem.name
 		weaponOrShieldAddPlayerAttribute(oneHandedItem)
-		weaponOrShieldRemovePlayerAttribute(player.unarmed1)
+		weaponOrShieldRemovePlayerAttribute(player.rightFist)
 		quickMessage(`you wield your ${oneHandedItem.name} in your ${oneHandedItem.roomId}`)
 	} else if (player.leftHand == empty && player.rightHand !== empty) {
 		oneHandedItem.roomId = slot2
 		player.leftHand = oneHandedItem.name
 		weaponOrShieldAddPlayerAttribute(oneHandedItem)
-		weaponOrShieldRemovePlayerAttribute(player.unarmed2)
+		weaponOrShieldRemovePlayerAttribute(player.leftFist)
 		quickMessage(`you wield your ${oneHandedItem.name} in your ${oneHandedItem.roomId}`)
 	} else if (player.rightHand != empty && player.leftHand != empty) {
 		quickMessage(`you cannot unpack anything else with your hands full`)
@@ -1531,12 +1554,12 @@ function swap() {
 		leftWeapon.roomId = slot1
 		player.rightHand = holdL.name
 		player.leftHand = holdR.name
-	} else if (rightWeapon.id == 'hand1') {
+	} else if (rightWeapon.id == 'fist1') {
 		quickMessage(`you move your ${player.leftHand} to your right hand`)
 		player.rightHand = player.leftHand
 		leftWeapon.roomId = slot1
 		player.leftHand = empty
-	} else if (leftWeapon.id == 'hand2') {
+	} else if (leftWeapon.id == 'fist2') {
 		quickMessage(`you move your ${player.rightHand} to your left hand`)
 		player.leftHand = player.rightHand
 		rightWeapon.roomId = slot2
@@ -2118,7 +2141,7 @@ function getWeapon1() {
 	if (weapon1 != undefined) {
 		return weapon1
 	} else {
-		return player.unarmed1
+		return player.rightFist
 	}
 }
 
@@ -2127,7 +2150,7 @@ function getWeapon2() {
 	if (weapon2 != undefined) {
 		return weapon2
 	} else {
-		return player.unarmed2
+		return player.leftFist
 	}
 }
 //might not need to ever use this function
@@ -2351,7 +2374,7 @@ let player = {
 	id: 0,
 	x: -7,
 	y: 2,
-	z: 0,
+	z: -1,
 	special: '',
 	name: 'Zalbane',
 	mount: false,
@@ -2404,12 +2427,12 @@ let player = {
 		speed: 8.1,
 		accuracy: 4,
 	},
-	unarmed1: {
+	rightFist: {
 		//change object name to rightHand
-		id: 'hand1',
+		id: 'fist1',
 		roomId: currentArea.id,
 		name: 'right hand',
-		keywords: ['right hand'],
+		keywords: ['right fist'],
 		skillUsed: 'unarmed',
 		level: 1,
 		topDamage: 2,
@@ -2432,13 +2455,13 @@ let player = {
 			unarmedSwing(expertise(weapon), playerSwingType(), playerWeaponName(weapon), atIntoOnto(), enemyName(monster), damageNumber(damage), playerPenetrationNameFunc(playerPenetrationName), damage)
 		},
 	},
-	unarmed2: {
+	leftFist: {
 		//change object name to leftHand
-		id: 'hand2',
+		id: 'fist2',
 		roomId: currentArea.id,
 		name: 'left hand',
-		keywords: ['left hand'],
-		skillUsed: 'unarmed2',
+		keywords: ['left fist'],
+		skillUsed: 'unarmed',
 		level: 1,
 		topDamage: 2,
 		bottomDamage: 1,
@@ -2727,6 +2750,16 @@ let displayPlayerWisDiv = document.getElementById('player-wis')
 let displayPlayerWisNode = document.createTextNode(`Wis: ${player.wis}`)
 displayPlayerWisDiv.appendChild(displayPlayerWisNode)
 
+let playerUnarmedAtkpDiv = document.getElementById('player-unarmed-atkp')
+let playerUnarmedAtkpNode = document.createTextNode(`Unarmed Att: ${player.unarmed.attackPower}`)
+playerUnarmedAtkpDiv.appendChild(playerUnarmedAtkpNode)
+let playerOnehandedAtkpDiv = document.getElementById('player-onehanded-atkp')
+let playerOnehandedAtkpNode = document.createTextNode(`Onehanded Att: ${player.oneHanded.attackPower}`)
+playerOnehandedAtkpDiv.appendChild(playerOnehandedAtkpNode)
+let playerTwohandedAtkpDiv = document.getElementById('player-twohanded-atkp')
+let playerTwohandedAtkpNode = document.createTextNode(`Twohanded Att: ${player.twoHanded.attackPower}`)
+playerTwohandedAtkpDiv.appendChild(playerTwohandedAtkpNode)
+
 var playerProxy = new Proxy(player, {
 	set: function (target, key, value) {
 		target[key] = value
@@ -2859,7 +2892,7 @@ let kasia = {
 	questItem: 'bright yellow flower',
 	desc: () => quickMessage('A young woman wearing a lovely silk dress stands here smiling.', 'descriptions'),
 	speak: function () {
-		dialogue(`Kasia says, 'Ello! A fine day it is.`, 'descriptions')
+		dialogue(`Kasia says, 'Ello! A fine day it is.`)
 	},
 
 	quest: function (thisNpcName) {
@@ -4608,6 +4641,20 @@ function directionRefresher() {
 	currentArea.descriptions.zoneExits = compiledDirections
 }
 
+function repeat(targetNpc) {
+	let foundNpc = currentArea.npc.find(npc => npc.name == targetNpc)
+	console.log(foundNpc)
+	if (foundNpc != undefined && foundNpc.name == targetNpc) {
+		foundNpc.speak()
+	} else if (currentArea.roomDialogue != undefined && targetNpc == undefined) {
+		dialogue(currentArea.roomDialogue)
+	}
+}
+
+let previousRoom
+let currentRoom
+let futureRoom
+
 let AreaMaker = function (isPlayerHere, npc, hostile, id, x, y, z, gold, descriptions, interactables) {
 	this.isPlayerHere = isPlayerHere
 	this.npc = npc
@@ -4624,19 +4671,19 @@ let AreaMaker = function (isPlayerHere, npc, hostile, id, x, y, z, gold, descrip
 	allAreas.push(this)
 }
 
-let centralTrainingRoom = new AreaMaker(
+let centralBeginnersRoom = new AreaMaker(
 	true,
 	[],
 	false,
 	areaIdGenerator(),
 	-7,
 	2,
-	0,
+	-1,
 	0,
 	(descriptions = {
 		areaNameClass: castleGrey,
 		areaName: `Training Hall`,
-		desc: `This is the central training room for castle defender prospects. Around the room, you see many others practicing their stances and strikes.`,
+		desc: `This is the central training room for warrior prospects.`,
 		zoneExitsBool: {},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -4652,47 +4699,231 @@ let centralTrainingRoom = new AreaMaker(
 		},
 	})
 )
-centralTrainingRoom.questKeywords = ['l', 'northwest', 'nw']
-centralTrainingRoom.questIsComplete1 = false
-centralTrainingRoom.questIsComplete2 = false
-centralTrainingRoom.questComplete = function (questWord) {
-	if (questWord == currentArea.questKeywords.find(keyword => keyword == questWord) && centralTrainingRoom.questIsComplete1 == false) {
-		currentArea.descriptions.zoneExitsBool.northwest = true
-		currentArea.descriptions.zoneExitsFunc()
-		centralTrainingRoom.questIsComplete1 = true
-		setTimeout(() => {
-			dialogue(`Great!`)
+centralBeginnersRoom.questKeywords = {
+	quest1: ['look', 'l'],
+	quest2: ['northwest', 'nw'],
+	quest3: ['north', 'n'],
+	quest4: ['northeast', 'ne'],
+	quest5: ['east', 'e'],
+	quest6: ['southeast', 'se'],
+	quest7: ['south', 's'],
+	quest8: ['southwest', 'sw'],
+	quest9: ['west', 'w'],
+	quest10: ['up', 'u'],
+}
+centralBeginnersRoom.isQuestComplete1 = false
+centralBeginnersRoom.isQuestComplete2 = false
+centralBeginnersRoom.isQuestComplete3 = false
+centralBeginnersRoom.isQuestComplete4 = false
+centralBeginnersRoom.isQuestComplete5 = false
+centralBeginnersRoom.isQuestComplete6 = false
+centralBeginnersRoom.isQuestComplete7 = false
+centralBeginnersRoom.isQuestComplete8 = false
+centralBeginnersRoom.isQuestComplete9 = false
+centralBeginnersRoom.isQuestComplete10 = false
+
+centralBeginnersRoom.roomDialogue = `Using the LOOK command will refresh your view of the room, and you will also be able to see any changes made to the room from completing quests, slaying monsters to see if they dropped any items, or if you just want to get a clear look at the room again. You can also LOOK in a direction before moving. This can be useful in dangerous areas if you want to check if there are any monsters in the room before entering.`
+
+centralBeginnersRoom.questComplete = function (questWord) {
+	//QUEST 1
+	let questKeyword
+	let doKeywordsMatch
+
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete1 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'look' || questKeyword.find(keyword => keyword == questWord) == 'l' ? true : undefined
+
+		if (doKeywordsMatch == true) {
+			currentArea.descriptions.zoneExitsBool.northwest = true //can be unique (i.e. not "currentArea")
+			currentArea.descriptions.zoneExitsFunc() //can be unique (i.e. not "currentArea")
+			centralBeginnersRoom.isQuestComplete1 = true //can be unique (i.e. not "currentArea")
+			player.stasis = true
 			setTimeout(() => {
-				dialogue(`Using the LOOK command will refresh your view of the room, and you will also be able to see any changes made to the room from completing quests, slaying monsters and having their loot drop, or if you just want to get a clear look at the room again.`)
+				dialogue(`Great!`)
 				setTimeout(() => {
-					dialogue(`For your next task, head to the NORTHWEST (or just NW)`)
-				}, 3000)
+					dialogue(currentArea.roomDialogue)
+					setTimeout(() => {
+						dialogue(`For your next task, head to the NORTHWEST (or just NW)`)
+					}, 0)
+				}, 0)
+				player.stasis = false
 			}, 1000)
-		}, 1000)
+		}
 	}
-	if (questWord == 'northwest' || (questWord == 'nw' && centralTrainingRoom.questIsComplete2 == false && centralTrainingRoom.questIsComplete1 == true)) {
-		centralTrainingRoom.questIsComplete2 = true
-		setTimeout(() => {
-			dialogue(
-				`As you can see, navigating is very easy. The directions you can travel will always be shown beside 'Exits:'. However, there are secrets scattered around the world. When discovered, some of these secrets might open up paths to different directions you would never have seen if you didn't discover them. Most secrets that open up a new path are discovered by inspecting objects from the room description. You'll get a chance to discover one of those areas soon enough. For now, go back to the Central Training Room.`
-			)
-		}, 1000)
+	//QUEST 2 -------------------------------keywords must match---------------------------the quest2 has to not be complete------------------the first quest must be complete
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete1 == true && currentArea.isQuestComplete2 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'northwest' || questKeyword.find(keyword => keyword == questWord) == 'nw' ? true : undefined
+
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete2 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 3
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete2 == true && currentArea.isQuestComplete3 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'north' || questKeyword.find(keyword => keyword == questWord) == 'n' ? true : undefined
+
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete3 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 4
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete3 == true && currentArea.isQuestComplete4 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'northeast' || (questKeyword.find(keyword => keyword == questWord) == 'ne' ? true : undefined)
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete4 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 5
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete4 == true && currentArea.isQuestComplete5 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'east' || (questKeyword.find(keyword => keyword == questWord) == 'e' ? true : undefined)
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete5 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 6
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete5 == true && currentArea.isQuestComplete6 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'southeast' || (questKeyword.find(keyword => keyword == questWord) == 'se' ? true : undefined)
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete6 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 7
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete6 == true && currentArea.isQuestComplete7 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'south' || (questKeyword.find(keyword => keyword == questWord) == 's' ? true : undefined)
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete7 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 8
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete7 == true && currentArea.isQuestComplete8 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'southwest' || (questKeyword.find(keyword => keyword == questWord) == 'sw' ? true : undefined)
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete8 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 9
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete8 == true && currentArea.isQuestComplete9 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'west' || (questKeyword.find(keyword => keyword == questWord) == 'w' ? true : undefined)
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete9 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
+	}
+	//QUEST 10
+	if (player.stasis == false && currentArea.questKeywords != undefined && currentArea.isQuestComplete9 == true && currentArea.isQuestComplete10 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'up' || (questKeyword.find(keyword => keyword == questWord) == 'u' ? true : undefined)
+		if (doKeywordsMatch == true) {
+			centralBeginnersRoom.isQuestComplete10 = true
+			player.stasis = true
+			setTimeout(() => {
+				dialogue(currentArea.roomDialogue)
+				player.stasis = false
+			}, 1000)
+		}
 	}
 }
 
-let northwestTrainingRoom = new AreaMaker(
+let northwestBeginnersRoom = new AreaMaker(
 	true,
 	[],
 	false,
 	areaIdGenerator(),
 	-8,
 	3,
-	0,
+	-1,
 	0,
 	(descriptions = {
 		areaNameClass: castleGrey,
 		areaName: `Northwest Training Room`,
-		desc: `NORTHWEST TRAINING ROOM `,
+		desc: `Type REPEAT to hear the explaination about exits again.`,
 		zoneExitsBool: {
 			southeast: true,
 		},
@@ -4710,91 +4941,50 @@ let northwestTrainingRoom = new AreaMaker(
 		},
 	})
 )
-northwestTrainingRoom.questKeywords = ['southeast', 'se']
-northwestTrainingRoom.questIsComplete1 = false
-northwestTrainingRoom.questComplete = function (questWord, questWord2, questWord3) {
-	console.log(questWord, questWord2, questWord3, ' QUEST WORDS')
-	if (questWord == currentArea.questKeywords.find(keyword => keyword == questWord) && northwestTrainingRoom.questIsComplete1 == false) {
-		northwestTrainingRoom.questIsComplete1 = true
-		centralTrainingRoom.descriptions.zoneExitsBool.north = true
-		centralTrainingRoom.descriptions.zoneExitsFunc()
-		setTimeout(() => {
-			dialogue(`TEST`)
-		}, 1000)
+northwestBeginnersRoom.questKeywords = {
+	quest1: ['southeast', 'se'],
+}
+northwestBeginnersRoom.isQuestComplete1 = false
+northwestBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	let doKeywordsMatch
+	if (player.stasis == false && currentArea.questKeywords != undefined && northwestBeginnersRoom.isQuestComplete1 == false) {
+		for (let x in currentArea.questKeywords) {
+			if (currentArea.questKeywords[x].find(x => x == questWord)) {
+				questKeyword = currentArea.questKeywords[x]
+			}
+		}
+		doKeywordsMatch = questKeyword.find(keyword => keyword == questWord) == 'se' || questKeyword.find(keyword => keyword == questWord) == 's' ? true : undefined
+
+		if (doKeywordsMatch == true) {
+			northwestBeginnersRoom.isQuestComplete1 = true
+			player.stasis = true
+			centralBeginnersRoom.descriptions.zoneExitsBool.north = true
+			centralBeginnersRoom.descriptions.zoneExitsFunc()
+			setTimeout(() => {
+				dialogue(`Next, go north for your next task.`)
+				player.stasis = false
+			}, 1000)
+		}
 	}
 }
+northwestBeginnersRoom.roomDialogue = `As you can see, navigating is very easy. The directions you can travel will always be shown beside 'Exits:'. However, there are secrets scattered around the world. When discovered, some of these secrets might open up paths to different directions you would never have seen if you didn't discover them. Most secrets that open up a new path are discovered by inspecting objects from the room description. You'll get a chance to discover one of those areas soon enough. For now, go back to the Central Training Room.`
 
-////////////////////////////////////////////////////////OLD STARTING AREA BELOW////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////OLD STARTING AREA BELOW////////////////////////////////////////////////////////////////////////////////////////
-
-let startingAreaNorthwest = new AreaMaker(
-	false,
-	[],
-	false,
-	areaIdGenerator(allAreas), //this runs a function to generate its own ID
-	2, //x
-	1, //y
-	0, //z
-	0,
-	(descriptions = {
-		areaNameClass: galvadianGreen,
-		areaName: 'Northwest Starting Area',
-		desc: `You have entered the northwest section of the starting area! Next we will go over some simple commands. Just as you can type 'l' to look at the room you're currently in, you can also type 'l' and then any direction to look into the next room! This can be useful if you're avoiding monsters or just exploring and trying to figure out which direction you'd like to go. Typing 'stats' will give you an overview of all your primary stats, 'exp' will show all your information related to expierence points, skill points, and battle points, and skills will show a list of all your currently trained skills! Next, try going 'se' and then 'n'., `,
-		zoneExitsBool: {
-			north: false,
-			northeast: false,
-			east: false,
-			southeast: true,
-			south: false,
-			southwest: false,
-			west: false,
-			northwest: false,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true) {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	}),
-	{
-		names: ['mushrooms', 'leaves'],
-		mushrooms: {
-			name: 'mushrooms',
-			desc: function () {
-				quickMessage('You see a little spotted mushroom poking out from a patch of leaves. It appears to be looking at you.', 'descriptions')
-			},
-		},
-	}
-)
-let startingAreaNorth = new AreaMaker(
-	false,
-	[],
+let northBeginnersRoom = new AreaMaker(
 	true,
-	areaIdGenerator(allAreas), //this runs a function to generate its own ID
-	3, //x
-	1, //y
-	0, //z
+	[],
+	false,
+	areaIdGenerator(),
+	-7,
+	3,
+	-1,
 	0,
 	(descriptions = {
-		areaNameClass: galvadianGreen,
-		areaName: 'North Starting Area',
-		desc: `Now we will go over inventory and equipment. Type 'i' to take a look at your inventory. The top portion displays all your equipped weapons and armor, while the bottom portion will show you all the items in your backpack . To take something out of your backpack, type 'unpack' followed by the item name. Some item names can be shortened. For instance, if you have a 'rusted sword' in your backback, you could type 'unpack rusted', 'unpack sword', or 'unpack rusted sword'. If you have multiple items with the same name, make sure to type 'i' again to make sure you're holding the item you wish to use or equip. Type 'swap' if you want to move the item in your right hand to your left hand, and the item in your left hand to your right hand. To equip a piece of armor, make sure to hold it in your right hand and then type 'equip', 'don', or 'wear' followed by the name of the item. A sword will be automatically wielded when you're holding it in your right hand while a shield will be automatically wielded when you're holding it in your left hand. You can wield a weapon in your left and right hand once you learn the skill 'dual wielding', if your class allows. To free your hands up to be able to handle something else, type 'pack right', 'pack left', or just 'p left' or 'p right'. To remove a piece of armor, type 'remove' followed by the armor piece you wish to remove. Unequipping a sword is as easy as putting it away in your backpack. Next, you'll want to make your way to the Northeast Starting Area!`,
+		areaNameClass: castleGrey,
+		areaName: `North Training Room`,
+		desc: `Type REPEAT to hear the explaination about inspecting again.`,
 		zoneExitsBool: {
-			north: false,
-			northeast: false,
-			east: false,
-			southeast: false,
 			south: true,
-			southwest: false,
-			west: false,
-			northwest: false,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -4810,106 +5000,614 @@ let startingAreaNorth = new AreaMaker(
 		},
 	})
 )
-let startingAreaNortheast = new AreaMaker(
-	false,
-	[],
-	true,
-	areaIdGenerator(allAreas), //this runs a function to generate its own ID
-	4, //x
-	1, //y
-	0, //z
-	0,
-	(descriptions = {
-		areaNameClass: galvadianGreen,
-		areaName: 'Northeast Starting Area',
-		desc: `Next you'll be learning how to use consumable and magic items. Depending on the consumable, you'll want to use either the DRINK, EAT, or USE commands. EAT or DRINK is typically used for edibles, drinks, and potions while the USE command can be used for non-drinkables and non-edibles. USE is also more often used to interact with an area if that area has something to interact with. You will learn more about this in the next couple rooms. To use a magic item, type ACTIVATE followed by the item name. Once activated, use the TARGET command, or 't', followed by the name of the target. If you wish to attempt to target yourself, just type 't'. When in doubt, use the EXAMINE (or 'ex') command followed by the item name to find out more information about that item. You will often see if an item is edible, drinkable, activatable, or useable. To the east of the Starting Area, you will learn more about the EXAMINE command.`,
-		zoneExitsBool: {
-			north: false,
-			northeast: false,
-			east: false,
-			southeast: false,
-			south: false,
-			southwest: true,
-			west: false,
-			northwest: false,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true) {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let startingAreaEast = new AreaMaker(
-	false,
-	[],
-	true,
-	areaIdGenerator(allAreas), //this runs a function to generate its own ID
-	4, //x
-	0, //y
-	0, //z
-	0,
-	(descriptions = {
-		areaNameClass: galvadianGreen,
-		areaName: 'East of the Starting Area',
-		desc: `Using the EXAMINE command, or 'ex', is useful for a variety of reasons. You can examine enemies, weapons, armor, and even people to learn more about them, though, some things may require you to have hightened perception to be able to see all of their properties (items) or strengths, weaknesses, or abilities (enemies). Sometimes rooms will contain interactable objects that aren't as apparent as monsters, items, or people. Examinable objects will never have a long list of words for you to examine such as, 'ex fallen tree trunk'. You would just type 'ex fallen', 'ex tree', or 'ex trunk'. Be careful of which word you use in case there are multiple objects with the same name that you can examine. Go ahead and try typing 'ex tree'. You will get a chance to practice all of these exmaining methods soon. Next you will want to head to the southeaast part of the Starting Area. `,
-		zoneExitsBool: {
-			north: false,
-			northeast: false,
-			east: false,
-			southeast: false,
-			south: false,
-			southwest: false,
-			west: true,
-			northwest: false,
-			up: false,
-			down: false,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true) {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	}),
-	{
-		trees: {
-			name: 'trees',
-			desc: function () {
-				quickMessage(`You look at the surrounding trees, and one 'fallen tree' catches your eye. Perhaps you should inspect it.`, 'grey')
-			},
-		},
-		fallenTree: {
-			name: 'fallen tree',
-			desc: function () {
-				quickMessage(`After taking a closer look at the fallen tree, you discover a hole in the ground beneath the trunk.`, 'grey')
-				if (currentArea.descriptions.zoneExitsBool.down == false) {
-					quickMessage(`You discover a secret way below!`)
-				}
-				let revert = currentArea.descriptions.zoneExits
-				startingAreaEast.descriptions.zoneExitsBool.down = true
-				startingAreaEast.descriptions.zoneExits += ' down'
+northBeginnersRoom.questKeywords = {
+	quest1: ['south', 's'],
+}
+northBeginnersRoom.isQuestComplete1 = false
+northBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && northBeginnersRoom.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.northeast = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
 				setTimeout(() => {
-					startingAreaEast.descriptions.zoneExitsBool.down = false
-					startingAreaEast.descriptions.zoneExits = revert
-				}, 5000)
-			},
-		},
+					dialogue(`You can now go northeast!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
 	}
+}
+northBeginnersRoom.roomDialogue = `INVENTORY INFORMATION`
+
+let northeastBeginnersRoom = new AreaMaker(
+	true,
+	[],
+	false,
+	areaIdGenerator(),
+	-6,
+	3,
+	-1,
+	0,
+	(descriptions = {
+		areaNameClass: castleGrey,
+		areaName: `Northeast Training Room`,
+		desc: `Type REPEAT to hear the explaination about examining again.`,
+		zoneExitsBool: {
+			southwest: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
 )
+northeastBeginnersRoom.questKeywords = {
+	quest1: ['southwest', 'sw'],
+}
+northeastBeginnersRoom.isQuestComplete1 = false
+northeastBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && currentArea.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.east = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
+				setTimeout(() => {
+					dialogue(`You can now go east!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
+	}
+}
+northeastBeginnersRoom.roomDialogue = `EXAMINE INFORMATION`
+
+let eastBeginnersRoom = new AreaMaker( //change name
+	true,
+	[],
+	false,
+	areaIdGenerator(),
+	-6, //change x coord
+	2, //change y coord
+	-1,
+	0,
+	(descriptions = {
+		areaNameClass: castleGrey,
+		areaName: `East Training Room`, //change area name
+		desc: `Type REPEAT to hear the explaination about ___________ again`, //change area desc
+		zoneExitsBool: {
+			west: true, //change directions available
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+//change room name
+eastBeginnersRoom.questKeywords = {
+	//change quest keywords
+	quest1: ['west', 'w'],
+}
+//change room name
+eastBeginnersRoom.isQuestComplete1 = false
+//change room name
+eastBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && currentArea.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.southeast = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
+				setTimeout(() => {
+					dialogue(`You can now go southeast!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
+	}
+}
+eastBeginnersRoom.roomDialogue = `INSPECT INFORMATION`
+
+let southeastBeginnersRoom = new AreaMaker( //change name
+	true,
+	[],
+	false,
+	areaIdGenerator(),
+	-6, //change x coord
+	1, //change y coord
+	-1,
+	0,
+	(descriptions = {
+		areaNameClass: castleGrey,
+		areaName: `Southeast Training Room`, //change area name
+		desc: `Type REPEAT to hear the explaination about ___________ again`, //change area desc
+		zoneExitsBool: {
+			northwest: true, //change directions available
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+//change room name
+southeastBeginnersRoom.questKeywords = {
+	//change quest keywords
+	quest1: ['northwest', 'nw'],
+}
+//change room name
+southeastBeginnersRoom.isQuestComplete1 = false
+//change room name
+southeastBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && currentArea.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.south = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
+				setTimeout(() => {
+					dialogue(`You can now go south!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
+	}
+}
+southeastBeginnersRoom.roomDialogue = `_____ INFORMATION`
+
+let southBeginnersRoom = new AreaMaker( //change name
+	true,
+	[],
+	false,
+	areaIdGenerator(),
+	-7, //change x coord
+	1, //change y coord
+	-1,
+	0,
+	(descriptions = {
+		areaNameClass: castleGrey,
+		areaName: `South Training Room`, //change area name
+		desc: `Type REPEAT to hear the explaination about ___________ again`, //change area desc
+		zoneExitsBool: {
+			north: true, //change directions available
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+//change room name
+southBeginnersRoom.questKeywords = {
+	//change quest keywords
+	quest1: ['north', 'n'],
+}
+//change room name
+southBeginnersRoom.isQuestComplete1 = false
+//change room name
+southBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && currentArea.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.southwest = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
+				setTimeout(() => {
+					dialogue(`You can now go southwest!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
+	}
+}
+southBeginnersRoom.roomDialogue = `_____ INFORMATION`
+
+let southwestBeginnersRoom = new AreaMaker( //change name
+	true,
+	[],
+	false,
+	areaIdGenerator(),
+	-8, //change x coord
+	1, //change y coord
+	-1,
+	0,
+	(descriptions = {
+		areaNameClass: castleGrey,
+		areaName: `Southwest Training Room`, //change area name
+		desc: `Type REPEAT to hear the explaination about ___________ again`, //change area desc
+		zoneExitsBool: {
+			northeast: true, //change directions available
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+//change room name
+southwestBeginnersRoom.questKeywords = {
+	//change quest keywords
+	quest1: ['northeast', 'ne'],
+}
+//change room name
+southwestBeginnersRoom.isQuestComplete1 = false
+//change room name
+southwestBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && currentArea.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.west = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
+				setTimeout(() => {
+					dialogue(`You can now go west!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
+	}
+}
+southwestBeginnersRoom.roomDialogue = `_____ INFORMATION`
+
+let westBeginnersRoom = new AreaMaker( //change name
+	true,
+	[],
+	false,
+	areaIdGenerator(),
+	-8, //change x coord
+	2, //change y coord
+	-1,
+	0,
+	(descriptions = {
+		areaNameClass: castleGrey,
+		areaName: `West Training Room`, //change area name
+		desc: `Type REPEAT to hear the explaination about ___________ again`, //change area desc
+		zoneExitsBool: {
+			east: true, //change directions available
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+//change room name
+westBeginnersRoom.questKeywords = {
+	//change quest keywords
+	quest1: ['east', 'e'],
+}
+//change room name
+westBeginnersRoom.isQuestComplete1 = false
+//change room name
+westBeginnersRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && currentArea.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.up = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
+				setTimeout(() => {
+					dialogue(`Every room is open, you can now go UP!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
+	}
+}
+westBeginnersRoom.roomDialogue = `_____ INFORMATION`
+
+let centralTrainingRoom = new AreaMaker( //change name
+	true,
+	[],
+	false,
+	areaIdGenerator(),
+	-7, //change x coord
+	2, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: castleGrey,
+		areaName: `Central Training Room`, //change area name
+		desc: `CENTRAL TRAINING ROOM - new recruits practicing their stances and strikes. A burly guard stands at the western door`, //change area desc
+		zoneExitsBool: {
+			down: true, //change directions available
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+//change room name
+centralTrainingRoom.questKeywords = {
+	//change quest keywords
+	// quest1: ['east', 'e'],
+}
+//change room name
+centralTrainingRoom.isQuestComplete1 = false
+//change room name
+centralTrainingRoom.questComplete = function (questWord) {
+	let questKeyword
+	for (let x in currentArea.questKeywords) {
+		if (currentArea.questKeywords[x].find(x => x == questWord)) {
+			questKeyword = currentArea.questKeywords[x]
+		}
+		if (player.stasis == false && currentArea.questKeywords != undefined) {
+			if (questKeyword.find(keyword => keyword == questWord) == questWord && currentArea.isQuestComplete1 == false) {
+				currentArea.isQuestComplete1 = true
+				centralBeginnersRoom.descriptions.zoneExitsBool.up = true
+				centralBeginnersRoom.descriptions.zoneExitsFunc()
+				player.stasis = true
+				setTimeout(() => {
+					dialogue(`Every room is open, you can now go UP!`)
+					player.stasis = false
+				}, 1000)
+			}
+		}
+	}
+}
+centralTrainingRoom.roomDialogue = `_____ INFORMATION`
+
+// northwestBeginnersRoom.questKeywords1
+// northwestBeginnersRoom.isQuestComplete1
+// northwestBeginnersRoom.questComplete = function (questWord, questWord2, questWord3) {
+// 	// if (questWord == currentArea.questKeywords1.find(keyword => keyword == questWord) && northwestBeginnersRoom.isQuestComplete1 == false) {
+// 	// 	northwestBeginnersRoom.isQuestComplete1 = true
+// 	// 	centralBeginnersRoom.descriptions.zoneExitsBool.north = true
+// 	// 	centralBeginnersRoom.descriptions.zoneExitsFunc()
+// 	// 	// setTimeout(() => {
+// 	// 	// 	dialogue(`Next, go north for your next task.`)
+// 	// 	// }, 1000)
+// 	// }
+// }
+
+////////////////////////////////////////////////////////OLD STARTING AREA BELOW////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////OLD STARTING AREA BELOW////////////////////////////////////////////////////////////////////////////////////////
+
+// let startingAreaNorthwest = new AreaMaker(
+// 	false,
+// 	[],
+// 	false,
+// 	areaIdGenerator(allAreas), //this runs a function to generate its own ID
+// 	2, //x
+// 	1, //y
+// 	0, //z
+// 	0,
+// 	(descriptions = {
+// 		areaNameClass: galvadianGreen,
+// 		areaName: 'Northwest Starting Area',
+// 		desc: `You have entered the northwest section of the starting area! Next we will go over some simple commands. Just as you can type 'l' to look at the room you're currently in, you can also type 'l' and then any direction to look into the next room! This can be useful if you're avoiding monsters or just exploring and trying to figure out which direction you'd like to go. Typing 'stats' will give you an overview of all your primary stats, 'exp' will show all your information related to expierence points, skill points, and battle points, and skills will show a list of all your currently trained skills! Next, try going 'se' and then 'n'., `,
+// 		zoneExitsBool: {
+// 			north: false,
+// 			northeast: false,
+// 			east: false,
+// 			southeast: true,
+// 			south: false,
+// 			southwest: false,
+// 			west: false,
+// 			northwest: false,
+// 		},
+// 		zoneExits: [],
+// 		zoneExitsFunc: function () {
+// 			let directionsArray = Object.values(this.zoneExitsBool)
+// 			let compiledDirections = []
+// 			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+// 				if (directionsArray[i] == true) {
+// 					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+// 				}
+// 			}
+// 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+// 			this.zoneExits = compiledDirections
+// 		},
+// 	})
+// )
+// let startingAreaNorth = new AreaMaker(
+// 	false,
+// 	[],
+// 	true,
+// 	areaIdGenerator(allAreas), //this runs a function to generate its own ID
+// 	3, //x
+// 	1, //y
+// 	0, //z
+// 	0,
+// 	(descriptions = {
+// 		areaNameClass: galvadianGreen,
+// 		areaName: 'North Starting Area',
+// 		desc: `Now we will go over inventory and equipment. Type 'i' to take a look at your inventory. The top portion displays all your equipped weapons and armor, while the bottom portion will show you all the items in your backpack . To take something out of your backpack, type 'unpack' followed by the item name. Some item names can be shortened. For instance, if you have a 'rusted sword' in your backback, you could type 'unpack rusted', 'unpack sword', or 'unpack rusted sword'. If you have multiple items with the same name, make sure to type 'i' again to make sure you're holding the item you wish to use or equip. Type 'swap' if you want to move the item in your right hand to your left hand, and the item in your left hand to your right hand. To equip a piece of armor, make sure to hold it in your right hand and then type 'equip', 'don', or 'wear' followed by the name of the item. A sword will be automatically wielded when you're holding it in your right hand while a shield will be automatically wielded when you're holding it in your left hand. You can wield a weapon in your left and right hand once you learn the skill 'dual wielding', if your class allows. To free your hands up to be able to handle something else, type 'pack right', 'pack left', or just 'p left' or 'p right'. To remove a piece of armor, type 'remove' followed by the armor piece you wish to remove. Unequipping a sword is as easy as putting it away in your backpack. Next, you'll want to make your way to the Northeast Starting Area!`,
+// 		zoneExitsBool: {
+// 			north: false,
+// 			northeast: false,
+// 			east: false,
+// 			southeast: false,
+// 			south: true,
+// 			southwest: false,
+// 			west: false,
+// 			northwest: false,
+// 		},
+// 		zoneExits: [],
+// 		zoneExitsFunc: function () {
+// 			let directionsArray = Object.values(this.zoneExitsBool)
+// 			let compiledDirections = []
+// 			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+// 				if (directionsArray[i] == true) {
+// 					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+// 				}
+// 			}
+// 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+// 			this.zoneExits = compiledDirections
+// 		},
+// 	})
+// )
+// let startingAreaNortheast = new AreaMaker(
+// 	false,
+// 	[],
+// 	true,
+// 	areaIdGenerator(allAreas), //this runs a function to generate its own ID
+// 	4, //x
+// 	1, //y
+// 	0, //z
+// 	0,
+// 	(descriptions = {
+// 		areaNameClass: galvadianGreen,
+// 		areaName: 'Northeast Starting Area',
+// 		desc: `Next you'll be learning how to use consumable and magic items. Depending on the consumable, you'll want to use either the DRINK, EAT, or USE commands. EAT or DRINK is typically used for edibles, drinks, and potions while the USE command can be used for non-drinkables and non-edibles. USE is also more often used to interact with an area if that area has something to interact with. You will learn more about this in the next couple rooms. To use a magic item, type ACTIVATE followed by the item name. Once activated, use the TARGET command, or 't', followed by the name of the target. If you wish to attempt to target yourself, just type 't'. When in doubt, use the EXAMINE (or 'ex') command followed by the item name to find out more information about that item. You will often see if an item is edible, drinkable, activatable, or useable. To the east of the Starting Area, you will learn more about the EXAMINE command.`,
+// 		zoneExitsBool: {
+// 			north: false,
+// 			northeast: true,
+// 			east: false,
+// 			southeast: false,
+// 			south: false,
+// 			southwest: false,
+// 			west: false,
+// 			northwest: false,
+// 		},
+// 		zoneExits: [],
+// 		zoneExitsFunc: function () {
+// 			let directionsArray = Object.values(this.zoneExitsBool)
+// 			let compiledDirections = []
+// 			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+// 				if (directionsArray[i] == true) {
+// 					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+// 				}
+// 			}
+// 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+// 			this.zoneExits = compiledDirections
+// 		},
+// 	})
+// )
+// let startingAreaEast = new AreaMaker(
+// 	false,
+// 	[],
+// 	true,
+// 	areaIdGenerator(allAreas), //this runs a function to generate its own ID
+// 	4, //x
+// 	0, //y
+// 	0, //z
+// 	0,
+// 	(descriptions = {
+// 		areaNameClass: galvadianGreen,
+// 		areaName: 'East of the Starting Area',
+// 		desc: `Using the EXAMINE command, or 'ex', is useful for a variety of reasons. You can examine enemies, weapons, armor, and even people to learn more about them, though, some things may require you to have hightened perception to be able to see all of their properties (items) or strengths, weaknesses, or abilities (enemies). Sometimes rooms will contain interactable objects that aren't as apparent as monsters, items, or people. Examinable objects will never have a long list of words for you to examine such as, 'ex fallen tree trunk'. You would just type 'ex fallen', 'ex tree', or 'ex trunk'. Be careful of which word you use in case there are multiple objects with the same name that you can examine. Go ahead and try typing 'ex tree'. You will get a chance to practice all of these exmaining methods soon. Next you will want to head to the southeaast part of the Starting Area. `,
+// 		zoneExitsBool: {
+// 			north: false,
+// 			northeast: false,
+// 			east: false,
+// 			southeast: false,
+// 			south: false,
+// 			southwest: false,
+// 			west: true,
+// 			northwest: false,
+// 			up: false,
+// 			down: false,
+// 		},
+// 		zoneExits: [],
+// 		zoneExitsFunc: function () {
+// 			let directionsArray = Object.values(this.zoneExitsBool)
+// 			let compiledDirections = []
+// 			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+// 				if (directionsArray[i] == true) {
+// 					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+// 				}
+// 			}
+// 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+// 			this.zoneExits = compiledDirections
+// 		},
+// 	})
+// )
 
 let areaHandler = {
 	get: (target, key) => {
@@ -4920,8 +5618,6 @@ let areaHandler = {
 	},
 	set: (target, prop, value) => {
 		target[prop] = value
-		console.log(target, ' target')
-		console.log(prop)
 	},
 }
 let proxy = new Proxy(currentArea, areaHandler)
@@ -6484,13 +7180,17 @@ function colorText() {
     console.log(nextLevel(i))
     }
 */
-currentArea = centralTrainingRoom
+currentArea = centralBeginnersRoom
 
 monsterGen(testBlob(currentArea))
 function gameStart() {
 	areaCompiler(currentArea)
-	dialogue(
-		`Welcome! You start your adventure in the barracks of the Castle Training Halls where you will learn how to navigate through the lands of Galvadia. Before you can explore, you must complete a series of simple tasks in order to familiarize yourself with how to get around. First, take a look around the room by using the LOOK command (or just L).`
-	)
+	player.stasis = true
+	setTimeout(() => {
+		dialogue(
+			`Welcome! You start your adventure in the Castle Training Halls where you will learn how to navigate through the lands of Galvadia. Before you can explore, you must complete a series of simple tasks in order to familiarize yourself with how to get around. First, take a look around the room by using the LOOK command (or just L).`
+		)
+		player.stasis = false
+	}, 1000)
 }
 gameStart()
