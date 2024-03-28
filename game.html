@@ -1,37 +1,332 @@
-<!DOCTYPE >
+<!DOCTYPE html>
 <html>
 	<head>
 		<link rel="stylesheet" href="gamecss.css" />
 	</head>
 
 	<body>
-		<div id="main-and-stats">
-			<div id="masterArea"> </div>
-			<div id="statsWindow">
-				<span id="character">CHARACTER</span>
-				<div id="stats-health-mana">
-					<div id="health-mana">
-						<span id="player-health"></span>
-						<span id="player-mana"></span>
+		<div id="all-windows">
+			<div id='scrollable-and-commandLine'>
+			<div id="scrollable-window">
+				<div id="masterArea"></div>
+			</div>
+			<div id='commandLine-and-bottom'>
+				<input id="commandLine" type="text" />
+				<div class="bottom-master-container">
+					<div class="bottom-container-border"></div>
+					<div class="bottom-content-container">
+						<div class='buffs-container'>
+							<div class='buffs-heading'>Buffs</div>
+							<div class='buffs-text-and-duration-container' id='buffs-container'>
+							  <div class='buff-text-container-1'>
+								<div class='buff-text-1 buff'></div>
+								<div class='buff-duration-1 duration'></div>
+							  </div>
+							  <div class='buff-text-container-2'>
+								<div class='buff-text-2 buff'></div>
+								<div class='buff-duration-2 duration'></div>
+							  </div>
+							  <div class='buff-text-container-3'>
+								<div class='buff-text-3 buff'></div>
+								<div class='buff-duration-3 duration'></div>
+							  </div>
+							  <div class='buff-duration-container'>
+							  </div>
+							</div>
+						  </div>
+					<div class="stats-container">			<!--STATS-->
+						<div class='offense-heading'>Offense</div>
+						<div class='stats-text-container'>
+							<div class='attack-text-number-container'> 
+								<div class='attack-text'></div>
+								<div class='attack-number'></div>
+							</div>
+							<div class='speed-text-number-container'> 
+								<div class='speed-text'></div>
+								<div class='speed-number'></div>
+							</div>
+							<div class='accuracy-text-number-container'> 
+								<div class='accuracy-text'></div>
+								<div class='accuracy-number'></div>
+							</div>
+						</div>
+						<div class='defense-heading'>Defense</div>
+						<div class='armor-text-number-container'> 
+							<div class='armor-text'></div>
+							<div class='armor-number'></div>
+						</div>
+						<div class='dodge-text-number-container'> 
+							<div class='dodge-text'></div>
+							<div class='dodge-number'></div>
+						</div>
+						<!-- <div class="health-bar-container">
+						</div>
+						<div class="mana-bar-container">
+						</div>
+						<div class="resource-bar-container">
+						</div> -->
+						<!-- <div class="attack-power-word">Attack Power: <span class="attack-power-number">0</span><span class="current-weapon-skill"></span></div> -->
 					</div>
-					<div id="stats">
-						<span id="player-str"></span>
-						<span id="player-con"></span>
-						<span id="player-dex"></span>
-						<span id="player-agi"></span>
-						<span id="player-int"></span>
-						<span id="player-wis"></span>
+					<div class='left-hand-container'>
+						<div class='left-hand-heading'>
+						  Left Hand
+						</div>
+						<div class='image-container left-hand-image'>
+						</div>
+						<div class='current-weapon-skill-left'> </div>
+
+					</div>
+						<div class='name-heading-and-vitals-container'>
+						<div class='name-heading'>
+						<div class='name'>Zalbane:</div>
+						<div class='level'>Level</div>
+						<div class='race'>Half Minotaur</div>
+						<div class='playerClass'>Berserker</div>
+						</div>
+						<div class='vitals-container'>
+						<div class='health-bar-container'>
+							<div class='health-bar'></div>
+							<div class='health-text'></div>
+						</div>
+						<div class='mana-bar-container'>
+							<div class='mana-bar'></div>
+							<div class='mana-text'></div>
+						</div>
+						<div class='class-resource-container'>
+							<div class='class-resource-bar'></div>
+							<div class='class-resource-text'></div>
+						</div>
+						<div class='attributes-container'>
+							<div class='str-text-number-mods-container'>
+								<div class='str-text'></div>
+								<div class='str-number'></div>
+								<div class='str-mod'></div>
+							</div>
+							<div class='dex-text-number-mods-container'>
+								<div class='dex-text'></div>
+								<div class='dex-number'></div>
+								<div class='dex-mod'></div>
+							</div>
+							<div class='agi-text-number-mods-container'>
+								<div class='agi-text'></div>
+								<div class='agi-number'></div>
+								<div class='agi-mod'></div>
+							</div>
+							<div class='int-text-number-mods-container'>
+								<div class='int-text'></div>
+								<div class='int-number'></div>
+								<div class='int-mod'></div>
+							</div>
+							<div class='wis-text-number-mods-container'>
+								<div class='wis-text'></div>
+								<div class='wis-number'></div>
+								<div class='wis-mod'></div>
+							</div>
+							<div class='con-text-number-mods-container'>
+								<div class='con-text'></div>
+								<div class='con-number'></div>
+								<div class='con-mod'></div>
+							</div>
+						</div>
 					</div>
 				</div>
-				<div id="attack-power">
-					<span id="player-unarmed-atkp"></span>
-					<span id="player-onehanded-atkp"></span>
-					<span id="player-twohanded-atkp"></span>
+					<div class='right-hand-container'>
+						<div class='right-hand-heading'>
+						  Right Hand
+						</div>
+						<div class='image-container right-hand-image'>
+						</div>
+						<div class='current-weapon-skill-right'> </div>
+					</div>
+						<div class='bars-and-buffs-container'>
+							<div class='bars-container'>
+							<div class='bars-heading'>Bars</div>
+							<div class='bars-graphic'>
+
+							<div class='ability-bar-1'>
+								<div class='bar-1'></div>
+							</div>
+
+							<div class='ability-bar-2'>
+								<div class='bar-2'></div>
+							</div>
+
+							<div class='ability-bar-3'>
+								<div class='bar-3'></div>
+							</div>
+							
+						  </div>
+						  <div id="additional"> COORDINATES </div>
+
+						</div>
+					</div>
 				</div>
-				<span id="additional"> COORDINATES </span>
+				</div>
 			</div>
 		</div>
-		<input id="commandLine" type="text" />
+			<div id="main-and-stats">
+				<div class='monster-box'>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+					<div class='monster-nameplate'>
+						<div class='monster-name'></div>
+						<div class="image-container">
+							<img class="monster-picture"/>
+						</div>
+						<div class='enemy-health-bar'></div>
+						<div class='monster-status-effects-container'>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+							<div id='monster-status-effects'></div>
+						</div>
+					</div>
+
+				</div>
+				<div id='room-picture-container'>
+					<img id='room-picture'>
+					<div id='overlay-div' class="overlay-div">
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+						<img class="npc-box"></img>
+
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<script src="./game.js"></script>
 	</body>
 </html>
-<script src="game.js"></script>
