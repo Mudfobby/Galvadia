@@ -6113,9 +6113,9 @@ function abilityLearnedOnLevelUp() {
 	}
 	if (player.playerClass.name == 'Elemental Monk') {
 		if (player.level == 3) {
-			player.flamingPalmStrike.level = 1
+			player.blazingFist.level = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
-			customizeEachWord(`Flaming Palm Strike`, player.flamingPalmStrike.color, line1)
+			customizeEachWord(`Flaming Palm Strike`, player.blazingFist.color, line1)
 			customizeEachWord(`!`, 'white', line1)
 		}
 		if (player.level == 4) {
@@ -10190,10 +10190,10 @@ player.tempest = {...tempest}
 
 
 
-const flamingPalmStrike = {
+const blazingFist = {
 	level: 1,
-	name: 'Flaming Palm Strike',
-	refName: 'flamingPalmStrike',
+	name: 'Blazing Fist',
+	refName: 'blazingFist',
 	cooldown: 1000,
 	cooldownSet: 1000,
 	type: 'seal',
@@ -10206,12 +10206,12 @@ const flamingPalmStrike = {
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
 	debuff: {
-		name: 'flamingPalmStrike',
-		refName: 'flamingPalmStrike',
+		name: 'Blazing Fist',
+		refName: 'blazingFist',
 		duration: 15000,
 		stacks: 0,
 		maxStacks: function() {
-			return player.flamingPalmStrike.level
+			return player.blazingFist.level
 		},
 		type: 'seal',
 		color: 'fire',
@@ -10222,8 +10222,19 @@ const flamingPalmStrike = {
 		type: 'seal',
 		elementType: 'fire',
 		color: 'fire',
+		debuff: {
+			name: 'Hydroplosion',
+			refName: 'hydroplosion',
+			duration: 15000,
+			stacks: 0,
+			maxStacks: function() {
+				return player.blazingFist.level
+			},
+			// type: 'seal',
+			color: 'hydroplosion',
+		},
 		damage: function() {
-			return player.mysticPower * 5.0
+			return baseAttackDamageRight() + player.mysticPower
 		},
 		flavorText: function(enemy, damage) {
 			let line1 = lineFunc()
@@ -10244,8 +10255,7 @@ const flamingPalmStrike = {
 		}
 	},
 	damage: function () {
-		let currentAttackPower = player.currentWeaponSkill.attackPower + player.mysticPower
-		return currentAttackPower
+		return baseAttackDamageRight() + baseAttackDamageLeft() + player.mysticPower
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -10255,22 +10265,27 @@ const flamingPalmStrike = {
 			return true
 		}
 	},
-	flavorText: function(enemy, damage) {
+	flavorText: function(enemy, damageAfterResist, elementType, damageResisted) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You transmute the air around you into fire around your hands. Dashing forward, you deliver a Flaming Palm Strike to the `, this.color, line1)
-		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
-		customizeEachWord(`!`, this.color, line1)
-		customizeEachWord(`You hit for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
+		customizeEachWord(`You transmute the air around you into glowing orbs of fire around your hands. You dash forward, slamming them into the `, `monk-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damageAfterResist} `, 'light-blue', line2)
+		customizeEachWord(`${elementType} `, elementType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy resists `, 'white', line2)
+		customizeEachWord(`${damageResisted}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
 	flavorTextMiss: function(enemy, weapon, damage) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You dash forward, attempting a Flaming Palm Strike to the `, this.color, line1)
+		customizeEachWord(`You dash forward, attempting to land a Blazing Fist on the `, this.color, line1)
 		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
 		customizeEachWord(`, but `, this.color, line1)
 		customizeEachWord(`miss`, 'red', line1)
@@ -10284,7 +10299,7 @@ const flamingPalmStrike = {
 		return this.level + 1
 	},
 }
-player.flamingPalmStrike = { ...flamingPalmStrike }
+player.blazingFist = { ...blazingFist }
 
 const tidalFist = {
 	level: 1,
@@ -10318,19 +10333,30 @@ const tidalFist = {
 		type: 'seal combo',
 		elementType: 'water',
 		color: 'water',
+		debuff: {
+			name: 'Hydroplosion',
+			refName: 'hydroplosion',
+			duration: 15000,
+			stacks: 0,
+			maxStacks: function() {
+				return player.tidalFist.level
+			},
+			// type: 'seal',
+			color: 'hydroplosion',
+		},
 		damage: function() {
-			return player.mysticPower * 5.0
+			return baseAttackDamageRight() + player.mysticPower
 		},
 		flavorText: function(enemy, damage) {
 			let line1 = lineFunc()
 			let line2 = lineFunc()
 			blankSpace()
 			customizeEachWord(`Your `, 'white', line1)
-			customizeEachWord(`Water Seal `, this.color, line1)
+			customizeEachWord(`Tidal Fist `, this.color, line1)
 			customizeEachWord(`combines with your `, 'white', line1)
-			customizeEachWord(`Fire Seal `, 'fire', line1)
+			customizeEachWord(`Blazing Fist `, 'fire', line1)
 			customizeEachWord(`and creates `, 'white', line1)
-			customizeEachWord(`Hydroplosion`, 'water', line1)
+			customizeEachWord(`Hydroplosion`, 'hydroplosion', line1)
 			customizeEachWord(`!`, 'white', line1)
 			customizeEachWord(`You hit for `, 'green', line2)
 			customizeEachWord(`${damage} `, 'light-blue', line2)
@@ -10340,8 +10366,7 @@ const tidalFist = {
 		}
 	},
 	damage: function () {
-		let currentAttackPower = player.currentWeaponSkill.attackPower + player.mysticPower
-		return currentAttackPower
+		return baseAttackDamageRight() + baseAttackDamageLeft() + player.mysticPower
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -10351,22 +10376,27 @@ const tidalFist = {
 			return true
 		}
 	},
-	flavorText: function(enemy, damage) {
+	flavorText: function(enemy, damageAfterResist, elementType, damageResisted) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You transmute the air around you into water around your hands. Dashing forward, you deliver a Tidal Fist to the `, this.color, line1)
-		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
-		customizeEachWord(`!`, this.color, line1)
-		customizeEachWord(`You hit for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
+		customizeEachWord(`You transmute the air around you into glowing orbs of water around your hands. You dash forward, slamming them into the `, `monk-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damageAfterResist} `, 'light-blue', line2)
+		customizeEachWord(`${elementType} `, elementType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy resists `, 'white', line2)
+		customizeEachWord(`${damageResisted}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
 	flavorTextMiss: function(enemy) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You dash forward, attempting a Wave Punch to the `, this.color, line1)
+		customizeEachWord(`You dash forward, attempting to land a Tidal Fist on the `, this.color, line1)
 		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
 		customizeEachWord(`, but `, this.color, line1)
 		customizeEachWord(`miss`, 'red', line1)
@@ -11016,94 +11046,7 @@ const waveFist = {
 }
 player.waveFist = { ...waveFist }
 
-const blazingFist = {
-	level: 1,
-	name: 'Blazing Fist',
-	refName: 'blazingFist',
-	cooldown: 1000,
-	cooldownSet: 1000,
-	type: 'ability',
-	color: 'activate-skill',
-	topMultiplier: 1.5,
-	botMultiplier: 1.0,
-	resourceName: 'focus',
-	resourceCost: 0,
-	stacks: 0,
-	weaponTypesUsed: ['unarmed'],
-	rightWeaponTypes: ['unarmed'],
-	leftWeaponTypes: ['unarmed'],
-	damage: function () {
-		let currentAttackPower = player.currentWeaponSkill.attackPower + player.mysticPower
-		let currentWeaponSkillBotModifier = player.currentWeaponSkill.botMultiplier
-		let currentWeaponSkillTopModifier = player.currentWeaponSkill.topMultiplier
-		let totalBotDamage = player.currentRightHandWeapon().botDamage == undefined ? player.currentLeftHandWeapon.botDamage : player.currentRightHandWeapon().botDamage
-		let totalTopDamage = player.currentRightHandWeapon().topDamage == undefined ? player.currentRightHandWeapon.topDamage : player.currentRightHandWeapon().topDamage
-		let lowDamage = Math.floor(currentAttackPower * currentWeaponSkillBotModifier * totalBotDamage * (1 + this.level * 0.1))
-		let highDamage = Math.floor(currentAttackPower * currentWeaponSkillTopModifier * totalTopDamage * (1 + this.level * 0.1))
-		let stackBonus = player.blazingFist.stacks + 1
-		let totalDamage = Math.ceil(randomNumberRange(lowDamage, highDamage) * stackBonus)
-		quickMessage(`Stacks: ${this.stacks}`)
-		return totalDamage
-	},
-	combo: function() {
-		let topAbilityPower = player.mysticPower * player.riptideFist.topMultiplier
-		let botAbilityPower = player.mysticPower * player.riptideFist.botMultiplier
-		return Math.ceil(randomNumberRange(botAbilityPower, topAbilityPower))
-	},
-	abilityWeaponsCheck: function(weapon1, weapon2) {
-		if (weapon1 == undefined && weapon2 == undefined) {
-			let line1 = lineFunc()
-			customizeEachWord(`You cannot perform ${this.name} while wielding these weapons`, 'white', line1)
-			blankSpace()
-			return true
-		}
-	},
-	flavorText: function(enemy, weapon, damage) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		customizeEachWord(`You slide behind the `, 'gray', line1)
-		customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-		customizeEachWord(`and sink your `, 'gray', line1)
-		customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
-		customizeEachWord(`into its back!`, 'gray', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
-		blankSpace()
-	},
-	comboFlavorText: function(enemy, damage) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		customizeEachWord(`Your fist slams into the `, 'fire', line1)
-		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`and erupts in a fiery blazing INFERNO!`, 'fire', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
-		blankSpace()
-	},
-	flavorTextMiss: function(enemy, weapon) {
-		let line1 = lineFunc()
-		customizeEachWord(`You `, 'light-blue', line1)
-		customizeEachWord(`dash behind the `, 'white', line1)
-		customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-		customizeEachWord(`attempting to  `, 'white', line1)
-		customizeEachWord(`${this.name} `, this.color, line1)
-		customizeEachWord(`it with your `, 'white', line1)
-		customizeEachWord(`${weapon.name}`, `${weapon.color}`, line1)
-		customizeEachWord(`, but you narrowly `, 'white', line1)
-		customizeEachWord(`miss`, 'red', line1)
-		customizeEachWord(`!`, 'white', line1)
-		blankSpace()
-	},
-	goldToUpgrade: function () {
-		return 9 * this.level
-	},
-	pointsToUpgrade: function () {
-		return this.level + 1
-	},
-}
-player.blazingFist = { ...blazingFist }
+
 const riptideFist = {
 	level: 1,
 	name: 'Riptide Fist',
@@ -16269,10 +16212,10 @@ const fearecia = {
 			quickMessage(`You must be an Elemental Monk in order to train with Fearecia`)
 		}
 	},
-	skillsOffered: [flamingPalmStrike, tidalFist, quakeFist, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
+	skillsOffered: [blazingFist, tidalFist, quakeFist, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
 		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin],
 	skillsMaxLevel: {
-		flamingPalmStrike: 5,
+		blazingFist: 5,
 		tidalFist: 5,
 		quakeFist: 5,
 		elementalFist: 5,
@@ -35321,8 +35264,8 @@ function earthSealFunction(secondCommand, thirdCommand) {
 		resourceConsumed(ability)
 		updateScroll()	
 	}
-function flamingPalmStrikeFunction(secondCommand, thirdCommand) {
-	let ability = player.flamingPalmStrike
+function blazingFistFunction(secondCommand, thirdCommand) {
+	let ability = player.blazingFist
 	let abilityName = ability.refName
 	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
@@ -35338,14 +35281,16 @@ function flamingPalmStrikeFunction(secondCommand, thirdCommand) {
 			if (hitChance == false) {
 				ability.flavorTextMiss(targetEnemy, weaponUsed)
 			} else if (hitChance == true) {
-				let abilityDamage = player[abilityName].damage(weapon1, weapon2)
-				ability.flavorText(targetEnemy, abilityDamage)
+				let baseDamage = player[abilityName].damage()
+				let penetrationType = 'fire'
+				let damageAfterMagResist = calculateMagicDamageWithResist(baseDamage, targetEnemy.fireResist)
+				console.log(damageAfterMagResist, ' DAMAGE AFTER MAG RESIST')
+				let damageBlocked = baseDamage - damageAfterMagResist
+				ability.flavorText(targetEnemy, damageAfterMagResist, penetrationType, damageBlocked)
+				applyDamageToEnemy(targetEnemy, damageAfterMagResist)
 				applyDebuff(targetEnemy, ability.debuff)
-				let comboDamage = monkComboHandler(targetEnemy)
-				let totalDamage = abilityDamage + comboDamage
-				resourceConsumed(ability)
-				applyDamageToEnemy(targetEnemy, totalDamage)
 			}
+			resourceConsumed(ability)
 			updateScroll()
 	}
 function tidalFistFunction(secondCommand, thirdCommand) {
@@ -35365,14 +35310,15 @@ function tidalFistFunction(secondCommand, thirdCommand) {
 			if (hitChance == false) {
 				ability.flavorTextMiss(targetEnemy, weaponUsed)
 			} else if (hitChance == true) {
-				let abilityDamage = player[abilityName].damage(weapon1, weapon2)
-				ability.flavorText(targetEnemy, abilityDamage)
+				let baseDamage = player[abilityName].damage()
+				let penetrationType = 'water'
+				let damageAfterMagResist = calculateMagicDamageWithResist(baseDamage, targetEnemy.waterResist)
+				let damageBlocked = baseDamage - damageAfterMagResist
+				ability.flavorText(targetEnemy, damageAfterMagResist, penetrationType, damageBlocked)
+				applyDamageToEnemy(targetEnemy, damageAfterMagResist)
 				applyDebuff(targetEnemy, ability.debuff)
-				let comboDamage = monkComboHandler(targetEnemy)
-				let totalDamage = abilityDamage + comboDamage
-				resourceConsumed(ability)
-				applyDamageToEnemy(targetEnemy, totalDamage)
 			}
+			resourceConsumed(ability)
 			updateScroll()
 }
 function quakeFistFunction(secondCommand, thirdCommand) {
@@ -35445,22 +35391,22 @@ function monkComboHandler(enemy) {
 }
 function monkComboCombiner(enemy, sealsArray) {
 	//HYDROPLOSION
-	if (sealsArray[0].refName == 'flamingPalmStrike' &&
+	if (sealsArray[0].refName == 'blazingFist' &&
 		sealsArray[1].refName == 'tidalFist') {
 		hydroplosion(enemy, sealsArray)
 	} 
 	if (sealsArray[0].refName == 'tidalFist' &&
-		sealsArray[1].refName == 'flamingPalmStrike') {
+		sealsArray[1].refName == 'blazingFist') {
 		hydroplosion(enemy, sealsArray)
 	} 
 
 	//MOLTEN QUAKE
-	if (sealsArray[0].refName == 'flamingPalmStrike' &&
+	if (sealsArray[0].refName == 'blazingFist' &&
 		sealsArray[1].refName == 'quakeFist') {
 		moltenQuake(enemy, sealsArray)
 	} 
 	if (sealsArray[0].refName == 'quakeFist' &&
-		sealsArray[1].refName == 'flamingPalmStrike') {
+		sealsArray[1].refName == 'blazingFist') {
 		moltenQuake(enemy, sealsArray)
 	} 
 
@@ -35485,6 +35431,7 @@ function earthTide(enemy, sealsArray) {
 	// player[sealsArray[1]].sealCombo.flavorText(enemy, damage)
 	removeDebuff(enemy, enemy.debuffs[sealsArray[0].refName])
 	removeDebuff(enemy, enemy.debuffs[sealsArray[1].refName])
+	
 	delete enemy.debuffs[sealsArray[0].refName]
 	delete enemy.debuffs[sealsArray[1].refName]
 	return damage
@@ -35550,6 +35497,8 @@ function hydroplosion(enemy, sealsArray) {
 	let damage = sealsArray[1].sealCombo.damage()
 	hydroplosionFlavorText(enemy, sealsArray, damage)
 	// player[sealsArray[1]].sealCombo.flavorText(enemy, damage)
+	console.log(sealsArray[1])
+	applyDebuff(enemy, sealsArray[1].sealCombo.debuff)
 	removeDebuff(enemy, enemy.debuffs[sealsArray[0].refName])
 	removeDebuff(enemy, enemy.debuffs[sealsArray[1].refName])
 	delete enemy.debuffs[sealsArray[0].refName]
@@ -35653,46 +35602,7 @@ function waveFistFunction(secondCommand, thirdCommand) {
 			}
 	}
 
-	function blazingFistFunction(secondCommand, thirdCommand) {
-		let ability = player.blazingFist
-		let abilityName = player.blazingFist.refName
-		let weaponTypesToCheck = player[abilityName].weaponTypesUsed
-		let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
-		let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
-		let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
-		if (doesPlayerHaveAbility(player[abilityName])) {return}
-		if (abilityWeaponsCheck(ability, weapon1, weapon2)) {return}
-		if (abilityResourceCheck(player[abilityName])) {return}
-		if (abilityCooldownCheck(player[abilityName])) {return}
-		if (abilityCombatCheck()) {return}
-		let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
-		let hitChance = playerAbilityHitChance(targetEnemy)
-				if (hitChance == false) {
-					ability.flavorTextMiss(targetEnemy, weaponUsed)
-				} else if (hitChance == true) {
-					let sealAbilities = ['blazingFist', 'riptideFist']
-					for (let i = 0; i < sealAbilities.length; i++) {
-						if (player[sealAbilities[i]].stacks > 0 && player[sealAbilities[i]] != player[abilityName]) {
-							player[sealAbilities[i]].stacks = 0
-							player[abilityName].stacks = 0
-							let comboDamage = player[abilityName].combo()
-							player[abilityName].comboFlavorText(targetEnemy, comboDamage)
-							targetEnemy.health = targetEnemy.health - comboDamage
-							targetEnemy.death()
-							updateScroll()
-							return
-						}
-					}
-					let totalDamage = player[abilityName].damage(weapon1, weapon2)
-					ability.flavorText(targetEnemy, weaponUsed, totalDamage)
-					targetEnemy.health = targetEnemy.health - totalDamage
-					targetEnemy.death()
-					updateScroll()
-					if (player[abilityName].stacks < player[abilityName].level) {
-						player[abilityName].stacks++
-					}
-				}
-		}
+
 	function riptideFistFunction(secondCommand, thirdCommand) {
 		let ability = player.riptideFist
 		let abilityName = player.riptideFist.refName
@@ -54088,7 +53998,7 @@ function playerAbility1() {
 			fireSealFunction()
 			break;
 		case 'Elemental Monk':
-			flamingPalmStrikeFunction()
+			blazingFistFunction()
 			break;
 		case 'Ranger':
 			timedShotFunction()
