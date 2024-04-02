@@ -1,8 +1,4 @@
-/*	NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES 
-1. Update UI to flexbox
-2. Have energy and mana for special attacks?
-3. Make a visual inventory on the right side and allow unpacking slot numbers like "unpack 1" or "unpack 2"
-*/
+
 let NPCConversationIntervals = {
 
 }
