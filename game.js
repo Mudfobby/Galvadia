@@ -54436,8 +54436,8 @@ function gameStart() {
 	player.heal = { ...heal }
 	updateScroll()
 	updatePlayerStats()
-	// player.gold = 1000
-	recall(1, 6, -2)
+	// player.gold = 10
+	recall(0, 0, -2)
 	startBerserker()
 
 }
