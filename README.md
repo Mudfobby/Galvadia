@@ -1,6 +1,6 @@
-This project is something I started to teach myself how to code while also doing something creative. I understand that it's very messy, and not how 50k lines of code should be crammed into a single file like jamming a loaf of bread into a toaster, but it was the only way I knew how to do it.
+This project is something I started to teach myself how to code while also doing something creative. I understand that it's very messy, and not how 50k lines of code should be crammed into a single file like a loaf of bread into a toaster.
 
-The game is a fantasy based MUD (or SUD) open world RPG. 
+Galvadia is a fantasy based MUD (or SUD) open world RPG. The main feature of the game is the combat, but there are also quests, shops, npcs, and areas to explore. The world is currently small at the moment with only a few combat areas, but I will be building out the world very soon.
 
 - Does not include images because I don't know how to package a large amount of files into the repository
 - Does not include game instructions yet. Hopefully the in-game tutorial is enough to learn the basics
