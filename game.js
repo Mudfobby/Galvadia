@@ -5947,6 +5947,7 @@ function abilityLearnedOnLevelUp() {
 	let line1 = lineFunc()
 	let line2 = lineFunc()
 	let line3 = lineFunc()
+	customizeEachWord(`To use an ability, just type the name of the ability. Abilities can also be used on the numberpad using /, *, - to cast ability 1, ability 2, and ability 3 respectively.`, 'white', line2)
 	if (player.playerClass.name == 'Berserker') {
 		if (player.level == 3) {
 			player.ripslash.level = 1
