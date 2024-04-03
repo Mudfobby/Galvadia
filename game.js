@@ -51178,9 +51178,6 @@ function startBerserker(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-		pack('right')
-		pack('left')
-		unpack('twohanded')
 	}
 }
 function startFighter(event) {
@@ -51229,10 +51226,6 @@ function startFighter(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-		pack('right')
-		pack('left')
-		unpack('shortsword')
-		unpack('shortsword')
 	}
 }
 function startKnight(event) {
@@ -51282,10 +51275,6 @@ function startKnight(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-		pack('right')
-		pack('left')
-		unpack('sword')
-		unpack('shield')
 	}
 }
 
@@ -51337,10 +51326,6 @@ function startThief(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-		pack('right')
-		pack('left')
-		unpack('dagger')
-		unpack('dagger')
 	}
 }
 function startAssassin(event) {
@@ -51391,10 +51376,6 @@ function startAssassin(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-		pack('right')
-		pack('left')
-		unpack('dagger')
-		unpack('dagger')
 	}
 }
 function startShadowblade(event) {
@@ -51445,11 +51426,6 @@ function startShadowblade(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-
-		pack('right')
-		pack('left')
-		unpack('dagger')
-		unpack('dagger')
 	}
 }
 
@@ -51502,8 +51478,6 @@ function startMartialMonk(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		pack('right')
-		pack('left')
 	}
 }
 function startMysticMonk(event) {
@@ -51555,8 +51529,6 @@ function startMysticMonk(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		pack('right')
-		pack('left')
 	}
 }
 function startElementalMonk(event) {
@@ -51608,8 +51580,6 @@ function startElementalMonk(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		pack('right')
-		pack('left')
 	}
 }
 
@@ -51660,8 +51630,6 @@ function startPyromancer(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		pack('right')
-		pack('left')
 	}
 }
 function startCryoMage(event) {
@@ -51709,8 +51677,6 @@ function startCryoMage(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		// pack('right')
-		// pack('left')
 	}
 }
 function startLightningMagus(event) {
@@ -51758,8 +51724,6 @@ function startLightningMagus(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		// pack('right')
-		// pack('left')
 	}
 }
 
@@ -51810,9 +51774,6 @@ function startRanger(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		// pack('right')
-		// pack('left')
-		// unpack('bow')
 	}
 }
 
