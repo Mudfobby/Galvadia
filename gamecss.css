@@ -30,7 +30,8 @@ p {
 	color: rgb(130, 82, 0);
 }
 .monk-color {
-	color: rgb(111, 0, 255);
+	/* color: rgb(119, 15, 255); */
+	color: rgb(105, 105, 255)
 }
 .monk-color-light {
 	color: rgb(167, 99, 255);
@@ -252,7 +253,9 @@ GENERAL COLORS
 .dark-red {
 	color: #83111e;
 }
-
+.pink {
+	color: pink;
+}
 .dark-red2 {
 	color: #ab1325;
 }
@@ -1017,6 +1020,9 @@ body {
 .markOfTheBeast {
 	background: red;
 }
+.hydraArrow {
+	background: rgb(72, 129, 72);
+}
 .shadowMark {
 	background: rgb(193, 0, 193)
 }
@@ -1045,7 +1051,10 @@ body {
 }
 #monster-status-effects {
 	display: flex;
+	justify-content: space-around;
+	align-items: center;
 	border: 2px solid orange;
+	font-size: 10px;
 	height: 16px;
 	width: 16px;
 
@@ -1251,10 +1260,6 @@ body {
 	/* border: 2px solid red; */
 }
 
-/* .class-race-select {
-	background: rgb(83, 83, 83);
-} */
-
 .welcome {
 	font-size: 10em;
 	text-align: center;
@@ -1369,12 +1374,13 @@ body {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
-	width: 75px;
-	height: 75px;
+	width: 100px;
+	height: 100px;
 	border: 8px ridge grey;
 	border-radius: 5px;
-	margin: 10px;
-	padding: 10px;
+	margin: 6px;
+	font-size: 14px;
+	font-weight: bold;
 	cursor: pointer;
 }
 
@@ -1392,7 +1398,6 @@ body {
 .fighter,
 .knight {
 	/* background-image: url('images/warrior-select-icon-grey-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: brown;
@@ -1403,7 +1408,6 @@ body {
 .fighter.selected,
 .knight.selected {
 	/* background-image: url('images/warrior-select-icon-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(101, 27, 27);
@@ -1414,7 +1418,6 @@ body {
 .thief,
 .shadowblade {
 	/* background-image: url('images/warrior-select-icon-grey-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(216, 216, 0);
@@ -1425,7 +1428,6 @@ body {
 .thief.selected,
 .shadowblade.selected {
 	/* background-image: url('images/warrior-select-icon-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(143, 143, 0);
@@ -1438,7 +1440,6 @@ body {
 .mysticMonk,
 .elementalMonk {
 	/* background-image: url('images/monk-select-icon-grey-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(33, 255, 244);
@@ -1449,7 +1450,6 @@ body {
 .mysticMonk.selected,
 .elementalMonk.selected {
 	/* background-image: url('images/monk-select-icon-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(0, 171, 162);
@@ -1458,7 +1458,6 @@ body {
 }
 .pyromancer {
 	/* background-image: url('images/mage-select-icon-grey-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(215, 67, 37);
@@ -1467,7 +1466,6 @@ body {
 }
 .pyromancer.selected {
 	/* background-image: url('images/mage-select-icon-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(166, 40, 15);
@@ -1476,7 +1474,6 @@ body {
 }
 .cryoMage {
 	/* background-image: url('images/mage-select-icon-grey-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(69, 112, 255);
@@ -1485,7 +1482,6 @@ body {
 }
 .cryoMage.selected {
 	/* background-image: url('images/mage-select-icon-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(24, 61, 183);
@@ -1494,7 +1490,6 @@ body {
 }
 .lightningMagus {
 	/* background-image: url('images/mage-select-icon-grey-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(255, 209, 83);
@@ -1503,7 +1498,6 @@ body {
 }
 .lightningMagus.selected {
 	/* background-image: url('images/mage-select-icon-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(204, 157, 27);
@@ -1512,7 +1506,6 @@ body {
 }
 .ranger {
 	/* background-image: url('images/ranger-select-icon-grey-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(0, 163, 76);
@@ -1521,7 +1514,6 @@ body {
 }
 .ranger.selected {
 	/* background-image: url('images/ranger-select-icon-255.png'); */
-	font-size: 16px;
 	font-family: sylfae;
 	text-align: center;
 	background: rgb(0, 85, 40);
@@ -1530,116 +1522,128 @@ body {
 }
 
 
-/* .human {
-	background-image: url('images/mage-select-icon-grey-255.png');
+ .human {
+	background-image: url('images/race icons/human/human.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .human.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/human/human.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
+
 .dwarf {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/dwarf/dwarf.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .dwarf.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/dwarf/dwarf.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
 .elf {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/elf/elf.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .elf.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/elf/elf.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
 .halfElf {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/half elf/half elf.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .halfElf.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/half elf/half elf.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
 .halfMinotaur {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/half minotaur/half minotaur.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .halfMinotaur.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/half minotaur/half minotaur.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+	opacity: 0.5;
+}
+.tiefling {
+	background-image: url('images/race icons/tiefling/tiefling.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
-.centaur {
-	background-image: url('images/mage-select-icon-grey-255.png');
+.tiefling.selected {
+	background-image: url('images/race icons/tiefling/tiefling.png');
 	background-repeat: no-repeat;
 	background-size: cover;
-}
-.centaur.selected {
-	background-image: url('images/mage-select-icon-255.png');
-	background-repeat: no-repeat;
-	background-size: cover;
+	opacity: 0.5;
 }
 .catline {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/catline/catline.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .catline.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/catline/catline.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
 .gnome {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/gnome/gnome.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .gnome.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/gnome/gnome.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
 .halfling {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/halfling/halfling.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .halfling.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/halfling/halfling.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
 .faerie {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/faerie/faerie.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .faerie.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/faerie/faerie.png');
 	background-repeat: no-repeat;
 	background-size: cover;
+	opacity: 0.5;
 }
 .dragonKin {
-	background-image: url('images/mage-select-icon-grey-255.png');
+	background-image: url('images/race icons/dragon kin/dragon kin.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .dragonKin.selected {
-	background-image: url('images/mage-select-icon-255.png');
+	background-image: url('images/race icons/dragon kin/dragon kin.png');
 	background-repeat: no-repeat;
 	background-size: cover;
-} */
+	opacity: 0.5;
+} 
 
 
 
@@ -2133,7 +2137,7 @@ body {
 .earth {
 	color: rgb(188, 113, 0)
 }
-.air {
+.wind {
 	color: rgb(136, 255, 136)
 }
 .ice {
@@ -2150,13 +2154,14 @@ body {
 	display: flex;
 	flex-wrap: wrap;
 	border: 6px ridge white;
-	justify-content: center;
+	justify-content: flex-start;
 }
 .start-details,
 .race-details {
 	display: flex;
 	flex-direction: column;
-	width: 2300px;
+	width: 900px;
+	height: 400px;
 	border: 6px ridge white;
 	font-family: sylfaen;
 }
@@ -2164,38 +2169,35 @@ body {
 .startDetailsContainer {
 
 }
-.classDescriptionContainer {
+.raceDescriptionContainer,
+.classDescriptionContainer,
+.guildDescriptionContainer {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin-bottom: 80px;
-	height: 150px;
-}
-.raceDescriptionContainer {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	margin-bottom: 80px;
-	height: 50px;
 }
 
 .classHeading,
+.guildHeading,
 .raceDescriptionHeading {
-	font-size: 46px;
+	font-size: 28px;
+	text-transform: uppercase;
 }
 
 .classDescription,
-.raceDescription {
-	font-size: 20px;
-	text-indent: 40px;
+.raceDescription,
+.guildDescription {
+	font-size: 14px;
+	text-indent: 30px;
 	/* text-align: center; */
-	margin: 0 5px 0 5px;
+	margin: 0 10px 0 10px;
 }
+
 .startingStuffContainer {
 	display: flex;
 	align-items: stretch;
 	justify-content: space-evenly;
-	margin-bottom: 50px;
+	margin: 16px 0 16px 0;
 }
 .startingStatsContainer {
 	display: flex;
@@ -2207,7 +2209,7 @@ body {
 .raceSkillsHeading,
 .raceStatsHeading,
 .abilitiesHeading {
-	font-size: 20px;
+	font-size: 16px;
 }
 
 .statsDetails1,
@@ -2216,6 +2218,7 @@ body {
 .statsDetails4,
 .statsDetails5,
 .statsDetails6,
+.statsDetails7,
 .raceDetails1,
 .raceDetails2,
 .raceDetails3,
@@ -2238,7 +2241,7 @@ body {
 .abilitiesDetails1, 
 .abilitiesDetails2, 
 .abilitiesDetails3 {
-	font-size: 16px ;
+	font-size: 14px ;
 }
 
 
@@ -2255,22 +2258,7 @@ body {
 	align-items: center;
 }
 
-.guildDescriptionContainer {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		margin-bottom: 80px;
-}
-.guildHeading {
-	font-size: 30px;
 
-}
-.guildDescription {
-	font-size: 18px;
-	text-indent: 40px;
-	/* text-align: center; */
-	margin: 0 5px 0 5px;
-}
 
 .spellpower-number,
 .mysticpower-number,
@@ -2291,10 +2279,23 @@ body {
 .monk-ability-text-color {
 	color: white;
 }
-.mage-ability-text-color {
+.mage-spell-text-color {
 	color: white;
 }
 .range-ability-text-color {
+	color: white;
+}
+
+.pyromancer-spell-text-color {
+	/* color: rgb(212, 37, 28); */
+	color: white;
+}
+.cryo-mage-spell-text-color {
+	/* color: rgb(28, 155, 233); */
+	color: white;
+}
+.lightning-magus-spell-text-color {
+	/* color: rgb(225, 232, 22); */
 	color: white;
 }
 
@@ -2314,3 +2315,40 @@ body {
 .thunderBlaze {
 	background: #ff8c00;
 }
+
+.callOfWind {
+	background: rgb(184, 255, 179)
+}
+
+.burn {
+	background: rgb(246, 71, 23);
+}
+.frostbite {
+	background: rgb(46, 126, 255);
+}
+.shock {
+	background: rgb(255, 229, 112);
+}
+
+.shadowDaggers {
+	background: rgb(181, 181, 18);
+}
+
+.reducedDodge {
+	background: grey;
+}
+
+.fury {
+	background: orange;
+}
+
+.shred,
+.cataclysm {
+	background: rgb(195, 195, 195)
+}
+
+.valor {
+	color: rgb(46, 46, 255);
+	background: rgb(255, 255, 172)
+}
+

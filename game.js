@@ -25,13 +25,14 @@ let empowerPlayerTimeout
 let playerBuffs = []
 let catalystTimeout
 let sinisterMarksTimeout
-let timedShotTimeout
-let timedShotInterval
+let piercingArrowTimeout
+let piercingArrowInterval
 let buff1Interval
 let noMove = 'you cannot move in that direction'
 let commandLine = document.getElementById('commandLine')
 commandLine.focus()
 let pushMonster = []
+let roomEnemies = []
 let directionMoved
 let dialogueSpeed = 0
 //classes
@@ -114,7 +115,7 @@ function oneHandedSwing1(enemy, swingObject) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
 		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (enemy's armor blocks `, 'white', line2)
+		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -146,7 +147,7 @@ function bowSwing1(enemy, swingObject) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
 		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (enemy's armor blocks `, 'white', line2)
+		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -181,7 +182,7 @@ function daggerSwing1(enemy, swingObject) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
 		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (enemy's armor blocks `, 'white', line2)
+		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -216,7 +217,7 @@ function twoHandedSwing1(enemy, swingObject) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
 		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (enemy's armor blocks `, 'white', line2)
+		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -252,7 +253,7 @@ function unarmedSwing1(enemy, swingObject) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
 		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (enemy's armor blocks `, 'white', line2)
+		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		// blankSpace()
@@ -574,6 +575,7 @@ function weaponDescription(item) {
 
 	const itemNameDiv = createDivElement(item.name, ['item-description-name', item.color]);
 	const typeDiv = createDivElement(`Type: ${item.type.skillUsed}`);
+	const swingTypeDiv = createDivElement(`Swing Type: ${item.type.swingType}`) 
 	const damageDiv = createDivElement(`${damageOrDefenseDiv}:`, ['row-flex'])
 	let damageNumberDiv 
 	if (item.type.weapon) {
@@ -591,8 +593,8 @@ function weaponDescription(item) {
 	sellValueDiv.appendChild(sellWordDiv);
 	sellValueDiv.appendChild(sellNumberDiv);
 	mainDiv.appendChild(itemNameDiv);
-	mainDiv.appendChild(createDivElement(item.description, ['item-flavor-text']));
 	mainDiv.appendChild(typeDiv);
+	mainDiv.appendChild(swingTypeDiv);
 	mainDiv.appendChild(damageDiv);
 	masterArea.appendChild(mainDiv);
 	if (item.mods) {
@@ -626,14 +628,16 @@ function weaponDescription(item) {
 			let span = document.createElement('span')
 			let numberSpan = document.createElement('span')
 			let mainSpan = document.createElement('span')
-			mainSpan.appendChild(numberSpan)
 			mainSpan.appendChild(span)
+			mainSpan.appendChild(numberSpan)
 			numberSpan.classList.add(item.color)
-			numberSpan.textContent = '+' + item.number + ' '
-			span.textContent = item.word
+			span.textContent = capitalizeFirstLetter(item.word)
+			numberSpan.textContent = ' ' +  '+' + item.number 
+			
 			modsContainer.appendChild(mainSpan)
 		})
 	}
+	mainDiv.appendChild(sellValueDiv)
 	if (item.requirements) {
 		if (Object.keys(item.requirements).length != 0) {
 		const modsContainer = createDivElement()
@@ -673,9 +677,10 @@ function weaponDescription(item) {
 			modsContainer.appendChild(mainSpan)
 		})
 	}
-	mainDiv.appendChild(sellValueDiv)
-	// mainDiv.appendChild(createDivElement(`Location: ${item.roomId}`))
+
 	}
+	mainDiv.appendChild(createDivElement(item.description, ['item-flavor-text']));
+	// mainDiv.appendChild(createDivElement(`Location: ${item.roomId}`))
 }
 function armorDescription(item) {
 	quickMessage(`armor description ran`)
@@ -893,15 +898,252 @@ function armorDescription(item) {
 // 	mainDiv.appendChild(itemDescriptionDiv)
 // 	masterArea.appendChild(mainDiv)
 // }
-function consumableDescription() {}
-function questItemDescription() {}
+
+function allItemDescription(item) {
+	const mainDiv = document.createElement('div')
+	mainDiv.classList.add('item-description')
+	masterArea.appendChild(mainDiv)
+
+	const itemNameDiv = document.createElement('div')
+	const itemNameNode = document.createTextNode(`${item.name}`)
+	itemNameDiv.classList.add(item.color)
+	itemNameDiv.classList.add('item-description-name')
+	itemNameDiv.appendChild(itemNameNode)
+	mainDiv.appendChild(itemNameDiv)
+
+	//slashingarmor
+	if (item.type?.skillUsed) {
+		const itemTypeDiv = document.createElement('div')
+		const itemTypeNode = document.createTextNode(`Skill Used: ${item.type.skillUsed}`)
+		itemTypeDiv.appendChild(itemTypeNode)
+		mainDiv.appendChild(itemTypeDiv)
+	}
+	if (item.type?.armorType) {
+		const damageTypeDiv = document.createElement('div')
+		const damageTypeNode = document.createTextNode(`Armor Type: ${item.type.armorType}`)
+		damageTypeDiv.appendChild(damageTypeNode)
+		mainDiv.appendChild(damageTypeDiv)
+	}
+	if (item.mods?.slashingArmor) {
+		const slashingArmorDiv = document.createElement('div')
+		const slashingArmorWordDiv = createDivElement(`Slashing Armor: `, ['row-flex'])
+		const slashingArmorValueDiv = createDivElement((`${item.mods.slashingArmor}`), ['light-blue', 'small-left-margin'])
+		slashingArmorWordDiv.appendChild(slashingArmorValueDiv)
+		slashingArmorDiv.appendChild(slashingArmorWordDiv)
+		mainDiv.appendChild(slashingArmorDiv)
+	}
+
+	if (item.mods?.piercingArmor) {
+		const piercingArmorDiv = document.createElement('div')
+		const piercingArmorWordDiv = createDivElement(`Piercing Armor: `, ['row-flex'])
+		const piercingArmorValueDiv = createDivElement((`${item.mods.piercingArmor}`), ['light-blue', 'small-left-margin'])
+		piercingArmorWordDiv.appendChild(piercingArmorValueDiv)
+		piercingArmorDiv.appendChild(piercingArmorWordDiv)
+		mainDiv.appendChild(piercingArmorDiv)
+	}
+	if (item.mods?.bluntArmor) {
+		const bluntArmorDiv = document.createElement('div')
+		const bluntArmorWordDiv = createDivElement(`Blunt Armor: `, ['row-flex'])
+		const bluntArmorValueDiv = createDivElement((`${item.mods.bluntArmor}`), ['light-blue', 'small-left-margin'])
+		bluntArmorWordDiv.appendChild(bluntArmorValueDiv)
+		bluntArmorDiv.appendChild(bluntArmorWordDiv)
+		mainDiv.appendChild(bluntArmorDiv)
+	}
+	if (item.type?.damageType) {
+		const damageTypeDiv = document.createElement('div')
+		const damageTypeNode = document.createTextNode(`Damage Type: ${item.type.damageType}`)
+		damageTypeDiv.appendChild(damageTypeNode)
+		mainDiv.appendChild(damageTypeDiv)
+	}
+	if (item.type?.food) {
+		const foodDiv = document.createElement('div')
+		const foodNode = document.createTextNode(`Type: Food`)
+		foodDiv.appendChild(foodNode)
+		mainDiv.appendChild(foodDiv)
+		if (item.cookable) {
+			const cookableDiv = document.createElement('div')
+			const cookableNode = document.createTextNode(`Cookable: Yes`)
+			cookableDiv.appendChild(cookableNode)
+			mainDiv.appendChild(cookableDiv)
+		} else {
+			const cookableDiv = document.createElement('div')
+			const cookableNode = document.createTextNode(`Cookable: No`)
+			cookableDiv.appendChild(cookableNode)
+			mainDiv.appendChild(cookableDiv)
+		}
+	}
+	if (item.type?.quest) {
+		const foodDiv = document.createElement('div')
+		const foodNode = document.createTextNode(`Type: Quest Item/Sellable`)
+		foodDiv.appendChild(foodNode)
+		mainDiv.appendChild(foodDiv)
+	}
+	if (item.type?.crafting) {
+		const foodDiv = document.createElement('div')
+		const foodNode = document.createTextNode(`Type: Crafting Material`)
+		foodDiv.appendChild(foodNode)
+		mainDiv.appendChild(foodDiv)
+	}
+	if (item.type?.material) {
+		const damageTypeDiv = document.createElement('div')
+		const damageTypeNode = document.createTextNode(`Material: ${item.type.material}`)
+		damageTypeDiv.appendChild(damageTypeNode)
+		mainDiv.appendChild(damageTypeDiv)
+	}
+	if (item?.uses) {
+		const usesDiv = document.createElement('div')
+		const usesNode = document.createTextNode(`Uses: ${item.uses}`)
+		usesDiv.appendChild(usesNode)
+		mainDiv.appendChild(usesDiv)
+	}
+	if (item?.buff) {
+		if (item.buff?.healthBonus > 0) {
+			const healthRecoveredDiv = createDivElement(`Health: `, ['row-flex'])
+			const healthValueRecoveredNode = createDivElement(`${item.buff.healthBonus} `, ['light-blue', 'small-left-margin'])
+			const recoveredTextNode = createDivElement(`recovered per tick`, ['small-left-margin'])
+			healthRecoveredDiv.appendChild(healthValueRecoveredNode)
+			healthRecoveredDiv.appendChild(recoveredTextNode)
+			mainDiv.appendChild(healthRecoveredDiv)
+		}
+		if (item.buff?.manaBonus > 0) {
+			const manaRecoveredDiv = createDivElement(`Mana: `, ['row-flex'])
+			const manaValueRecoveredNode = createDivElement(`${item.buff.manaBonus} `, ['light-blue', 'small-left-margin'])
+			const recoveredTextNode = createDivElement(`recovered per tick`, ['small-left-margin'])
+			manaRecoveredDiv.appendChild(manaValueRecoveredNode)
+			manaRecoveredDiv.appendChild(recoveredTextNode)
+			mainDiv.appendChild(manaRecoveredDiv)
+		}
+
+	}
+	if (item?.botDamage) {
+		const damageWordDiv = createDivElement(`Damage: `, ['row-flex'])
+		const damageValuesDiv = createDivElement(`${item.botDamage} - ${item.topDamage}`, ['light-blue', 'small-left-margin'])
+		damageWordDiv.appendChild(damageValuesDiv)
+		// const damageNode = document.createTextNode(`${item.botDamage} - ${item.topDamage}`)
+		// damageDiv.appendChild(damageNode)
+		mainDiv.appendChild(damageWordDiv)
+	}
+
+	if (item?.mods) {
+		const modsContainer = createDivElement()
+		const modHeader = document.createElement('span')
+		modsContainer.appendChild(modHeader)
+		mainDiv.appendChild(modsContainer)
+		let wordsAndColors = []
+		for (let mod in item.mods) {
+			let modAbbreviation = mod
+			if (mod == 'str') {mod = 'Strength: '}
+			if (mod == 'con') {mod = 'Constitution: '}
+			if (mod == 'dex') {mod = 'Dexterity: '}
+			if (mod == 'agi') {mod = 'Agility: '}
+			if (mod == 'int') {mod = 'Intelligence: '}
+			if (mod == 'wis') {mod = 'Wisdom: '}
+			if (mod == 'slashingPen') {mod = 'Slashing Penetration: '}
+			if (mod == 'piercingPen') {mod = 'Piercing Penetration: '}
+			if (mod == 'bluntPen') {mod = 'Blunt Penetration: '}
+			if (mod == 'slashingArmor') {mod = 'Slashing Armor: '}
+			if (mod == 'piercingArmor') {mod = 'Piercing Armor: '}
+			if (mod == 'bluntArmor') {mod = 'Blunt Armor: '}
+			if (mod == 'weight') {mod = 'Weight: '}
+			if (item.mods[modAbbreviation] > 0) {
+				if (mod != 'Slashing Armor: ' && mod != 'Piercing Armor: ' && mod != 'Blunt Armor: ' && mod != 'Weight: ') {
+					wordsAndColors.push({number: item.mods[modAbbreviation], word: mod, color: 'green'})
+					modHeader.textContent = 'Bonuses'
+					modsContainer.classList.add('simple-flex-column', 'requirements')
+					modHeader.classList.add('green')
+				}
+			}
+		}
+//requirements
+		if (item?.requirements) {
+			if (Object.keys(item.requirements).length != 0) {
+			const modsContainer = createDivElement()
+			const modHeader = document.createElement('span')
+			modHeader.textContent = 'Requirements'
+			modHeader.classList.add('red')
+			modsContainer.appendChild(modHeader)
+			mainDiv.appendChild(modsContainer)
+			modsContainer.classList.add('simple-flex-column', 'requirements')
+	
+			let wordsAndColors = []
+			for (let requirement in item.requirements) {
+				let originalRequirement = requirement
+				if (requirement == 'str') {requirement = 'Strength'}
+				if (requirement == 'con') {requirement = 'Constitution'}
+				if (requirement == 'dex') {requirement = 'Dexterity'}
+				if (requirement == 'agi') {requirement = 'Agility'}
+				if (requirement == 'int') {requirement = 'Intelligence'}
+				if (requirement == 'wis') {requirement = 'Wisdom'}
+				wordsAndColors.push({number: item.requirements[originalRequirement], word: requirement, color: 'yellow'})
+			}
+			wordsAndColors.forEach(item => {
+				let wordSpan = document.createElement('span')
+				let numberSpan = document.createElement('span')
+				let openParenth = document.createElement('span')
+				let closeParenth = document.createElement('span')
+				let mainSpan = document.createElement('span')
+				mainSpan.appendChild(wordSpan)
+				mainSpan.appendChild(openParenth)
+				mainSpan.appendChild(numberSpan)
+				mainSpan.appendChild(closeParenth)
+				wordSpan.textContent = item.word
+				openParenth.textContent = ' ('
+				numberSpan.classList.add(item.color)
+				numberSpan.textContent = item.number
+				closeParenth.textContent = ')'
+				modsContainer.appendChild(mainSpan)
+			})
+		}
+	}
+		wordsAndColors.forEach(item => {
+			let span = document.createElement('span')
+			let numberSpan = document.createElement('span')
+			let mainSpan = document.createElement('span')
+			mainSpan.appendChild(span)
+			mainSpan.appendChild(numberSpan)
+			numberSpan.classList.add(item.color)
+			span.textContent = capitalizeFirstLetter(item.word)
+			numberSpan.textContent = ' ' +  '+' + item.number 
+			
+			modsContainer.appendChild(mainSpan)
+		})
+	}
+	if (item.mods?.weight) {
+		const weightDiv = document.createElement('div')
+		const weightWordDiv = createDivElement(`Weight: `, ['row-flex'])
+		const weightValueDiv = createDivElement((`${item.mods.weight}`), ['light-blue', 'small-left-margin'])
+		weightWordDiv.appendChild(weightValueDiv)
+		weightDiv.appendChild(weightWordDiv)
+		mainDiv.appendChild(weightDiv)
+	}
+	if (item?.sellValue) {
+		const sellWordDiv = document.createElement('div')
+		const sellWordNode = document.createTextNode(`Value:`)
+		const sellValueDiv = document.createElement('div')
+		const sellNumberDiv = document.createElement('div')
+		const sellNumberNode = document.createTextNode(`${item.sellValue}`)
+		sellNumberDiv.classList.add('small-left-margin')
+		sellValueDiv.classList.add('row-flex')
+		sellValueDiv.appendChild(sellWordDiv)
+		sellValueDiv.appendChild(sellNumberDiv)
+		sellWordDiv.appendChild(sellWordNode)
+		sellNumberDiv.appendChild(sellNumberNode)
+		sellNumberDiv.classList.add('yellow')
+		mainDiv.appendChild(sellValueDiv)
+	}
+	if (item.description) {
+		const itemDescriptionDiv = document.createElement('p')
+		const itemDescriptionNode = document.createTextNode(`${item.description}`)
+		itemDescriptionDiv.classList.add('grey', 'italic')
+		itemDescriptionDiv.appendChild(itemDescriptionNode)
+		mainDiv.appendChild(itemDescriptionDiv)
+	}
+updateScroll()
+}
 
 function miscItemDescription(item) {
 	const mainDiv = document.createElement('div')
 	mainDiv.classList.add('item-description')
-	// const locationDiv = document.createElement('div')
-	// const locationNode = document.createTextNode(`Location: ${item.roomId}`)
-	// locationDiv.appendChild(locationNode)
 	const itemNameDiv = document.createElement('div')
 	itemNameDiv.classList.add(item.color)
 	itemNameDiv.classList.add('item-description-name')
@@ -929,7 +1171,6 @@ function miscItemDescription(item) {
 	sellNumberDiv.classList.add('yellow')
 
 	mainDiv.appendChild(itemNameDiv)
-	mainDiv.appendChild(locationDiv)
 	mainDiv.appendChild(sellValueDiv)
 	mainDiv.appendChild(itemDescriptionDiv)
 	masterArea.appendChild(mainDiv)
@@ -961,16 +1202,17 @@ function npcDescription(npc) {
 }
 
 function itemDescription(item) {
-	console.log(item)
-	if (item.type.weapon) {
-		weaponDescription(item)
-	} else if (item.type.armor) {
-		armorDescription(item)
-	} else if (item.type.consumable) {
-		consumableDescription(item)
-	} else if (item.type.quest) {
-		miscItemDescription(item)
-	}
+	allItemDescription(item)
+	// console.log(item)
+	// if (item.type.weapon) {
+	// 	weaponDescription(item)
+	// } else if (item.type.armor) {
+	// 	armorDescription(item)
+	// } else if (item.type.consumable) {
+	// 	consumableDescription(item)
+	// } else if (item.type.quest) {
+	// 	miscItemDescription(item)
+	// }
 }
 
 function enemyDescription(enemy, description) {
@@ -1041,8 +1283,8 @@ function enemyDescription(enemy, description) {
 	const descriptionNode = document.createTextNode(description)
 	descriptionDiv.appendChild(descriptionNode)
 
-	mainDiv.appendChild(enemyLevelDiv)
 	mainDiv.appendChild(enemyNameDiv)
+	mainDiv.appendChild(enemyLevelDiv)
 	mainDiv.appendChild(healthDiv)
 	mainDiv.appendChild(attackPowerDiv)
 	mainDiv.appendChild(accuracyDiv)
@@ -1473,11 +1715,11 @@ function handleInputs (commandLineInput) {
 			case 'riptide':
 				riptideFistFunction(secondCommand, thirdCommand)
 				break
-			case 'timedshot':
-				timedShotFunction(secondCommand, thirdCommand)
+			case 'piercingarrow':
+				piercingArrowFunction(secondCommand, thirdCommand)
 				break
-			case 'multishot':
-				multiShotFunction(secondCommand, thirdCommand)
+			case 'hydraarrow':
+				hydraArrowFunction(secondCommand, thirdCommand)
 				break
 			case 'aimedshot':
 				aimedShotFunction(secondCommand, thirdCommand)
@@ -1706,6 +1948,7 @@ function handleInputs (commandLineInput) {
 				break
 			case 'god':
 				godMode(secondCommand)
+				break;
 			case 'dialogue':
 				dialogueSpeedFunc(secondCommand)
 				break
@@ -1838,11 +2081,11 @@ function handleCombatInputs (commandLineInput) {
 			case 'riptide':
 				riptideFistFunction(secondCommand, thirdCommand)
 				break
-			case 'timedshot':
-				timedShotFunction(secondCommand, thirdCommand)
+			case 'piercingarrow':
+				piercingArrowFunction(secondCommand, thirdCommand)
 				break
-			case 'multishot':
-				multiShotFunction(secondCommand, thirdCommand)
+			case 'hydraarrow':
+				hydraArrowFunction(secondCommand, thirdCommand)
 				break
 			case 'aimedshot':
 				aimedShotFunction(secondCommand, thirdCommand)
@@ -2084,11 +2327,11 @@ function handleCombatStasisInputs(commandLineInput) {
 			case 'riptide':
 				riptideFistFunction(secondCommand, thirdCommand)
 				break
-			case 'timedshot':
-				timedShotFunction(secondCommand, thirdCommand)
+			case 'piercingarrow':
+				piercingArrowFunction(secondCommand, thirdCommand)
 				break
-			case 'multishot':
-				multiShotFunction(secondCommand, thirdCommand)
+			case 'hydraarrow':
+				hydraArrowFunction(secondCommand, thirdCommand)
 				break
 			case 'aimedshot':
 				aimedShotFunction(secondCommand, thirdCommand)
@@ -2259,7 +2502,62 @@ function load(secondCommand) {
 }
 
 function godMode(secondCommand) {
-	if (secondCommand == 'five') {
+	if (secondCommand == '2') {
+		player.level = 2
+		player.experience = 15
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 2
+		player.unarmed.level = 2
+		player.bows.level = 2
+		player.oneHanded.level = 2
+		player.twoHanded.level = 2
+		player.str = player.guild == 'Warrior' ? 2 : 
+		player.dex = player.guild == 'Sinistral' ? 2 : 
+		player.dex = player.guild == 'Monk' ? 2 : 
+		player.agi = player.guild == 'Ranger' ? 2 : 
+		player.int = player.guild == 'Mage' ? 2 : 
+		player.con = 1
+	}
+	if (secondCommand == '3') {
+		player.level = 3
+		player.experience = 45
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 3
+		player.unarmed.level = 3
+		player.bows.level = 3
+		player.oneHanded.level = 3
+		player.twoHanded.level = 3
+		player.str = player.guild == 'Warrior' ? 3 : 
+		player.dex = player.guild == 'Sinistral' ? 3 : 
+		player.dex = player.guild == 'Monk' ? 3 : 
+		player.agi = player.guild == 'Ranger' ? 3 : 
+		player.int = player.guild == 'Mage' ? 3 : 
+		player.con = 1
+	}
+	if (secondCommand == '4') {
+		player.level = 4
+		player.experience = 100
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 4
+		player.unarmed.level = 4
+		player.bows.level = 4
+		player.oneHanded.level = 4
+		player.twoHanded.level = 4
+		player.str = player.guild == 'Warrior' ? 4 : 
+		player.dex = player.guild == 'Sinistral' ? 4 : 
+		player.dex = player.guild == 'Monk' ? 4 : 
+		player.agi = player.guild == 'Ranger' ? 4 : 
+		player.int = player.guild == 'Mage' ? 4 : 
+		player.con = 1
+	}
+	if (secondCommand == '5') {
+		quickMessage(`5 was hit`)
 		player.level = 5
 		player.experience = 190
 		player.gold = 1000
@@ -2270,11 +2568,103 @@ function godMode(secondCommand) {
 		player.bows.level = 5
 		player.oneHanded.level = 5
 		player.twoHanded.level = 5
-		player.str = player.guild == 'Warrior' ? 5 : 1
-		player.dex = player.guild == 'Sinitrals' ? 5 : 1
-		player.dex = player.guild == 'Monk' ? 5 : 1
-		player.agi = player.guild == 'Ranger' ? 5 : 1
-		player.int = player.guild == 'Mage' ? 5 : 1
+		player.str = player.guild == 'Warrior' ? 5 :
+		player.dex = player.guild == 'Sinistral' ? 5 :
+		player.dex = player.guild == 'Monk' ? 5 :
+		player.agi = player.guild == 'Ranger' ? 5 :
+		player.int = player.guild == 'Mage' ? 5 :
+		player.con = 1
+		quickMessage()
+	}
+	if (secondCommand == '6') {
+		player.level = 6
+		player.experience = 330
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 6
+		player.unarmed.level = 6
+		player.bows.level = 6
+		player.oneHanded.level = 6
+		player.twoHanded.level = 6
+		player.str = player.guild == 'Warrior' ? 6 : 
+		player.dex = player.guild == 'Sinistral' ? 6 : 
+		player.dex = player.guild == 'Monk' ? 6 : 
+		player.agi = player.guild == 'Ranger' ? 6 : 
+		player.int = player.guild == 'Mage' ? 6 : 
+		player.con = 1
+	}
+	if (secondCommand == '7') {
+		player.level = 7
+		player.experience = 522
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 7
+		player.unarmed.level = 7
+		player.bows.level = 7
+		player.oneHanded.level = 7
+		player.twoHanded.level = 7
+		player.str = player.guild == 'Warrior' ? 7 : 
+		player.dex = player.guild == 'Sinistral' ? 7 : 
+		player.dex = player.guild == 'Monk' ? 7 : 
+		player.agi = player.guild == 'Ranger' ? 7 : 
+		player.int = player.guild == 'Mage' ? 7 :
+		player.con = 1
+	}
+	if (secondCommand == '8') {
+		player.level = 8
+		player.experience = 797
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 8
+		player.unarmed.level = 8
+		player.bows.level = 8
+		player.oneHanded.level = 8
+		player.twoHanded.level = 8
+		player.str = player.guild == 'Warrior' ? 8 : 
+		player.dex = player.guild == 'Sinistral' ? 8 : 
+		player.dex = player.guild == 'Monk' ? 8 :
+		player.agi = player.guild == 'Ranger' ? 8 : 
+		player.int = player.guild == 'Mage' ? 8 : 
+		player.con = 1
+	}
+	if (secondCommand == '9') {
+		player.level = 9
+		player.experience = 1115
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 9
+		player.unarmed.level = 9
+		player.bows.level = 9
+		player.oneHanded.level = 9
+		player.twoHanded.level = 9
+		player.str = player.guild == 'Warrior' ? 9 : 
+		player.dex = player.guild == 'Sinistral' ? 9 : 
+		player.dex = player.guild == 'Monk' ? 9 : 
+		player.agi = player.guild == 'Ranger' ? 9 : 
+		player.int = player.guild == 'Mage' ? 9 : 
+		player.con = 1
+	}
+	if (secondCommand == '10') {
+		player.level = 10
+		player.experience = 1474
+		player.gold = 1000
+		player.attributePoints = 50
+		player.skillPoints = 100
+		player.daggers.level = 10
+		player.unarmed.level = 10
+		player.bows.level = 10
+		player.oneHanded.level = 10
+		player.twoHanded.level = 10
+		player.str = player.guild == 'Warrior' ? 10 : 
+		player.dex = player.guild == 'Sinistral' ? 10 : 
+		player.dex = player.guild == 'Monk' ? 10 : 
+		player.agi = player.guild == 'Ranger' ? 10 : 
+		player.int = player.guild == 'Mage' ? 10 :
+		player.con = 1
 	}
 	if (!secondCommand) {
 		player.level = 10
@@ -2291,11 +2681,15 @@ function godMode(secondCommand) {
 		player.con = 10
 		player.str = 10
 		player.dex = 10
-		player.dex = 10
+		player.agi = 10
+		player.int = 20
 	}
 	player.might = 1000
 	player.adrenaline = 1000
 	player.focus = 1000
+	player.health = player.maxHealth
+	player.dodging.level = 100
+	player.mods.accuracy = 1000
 	updatePlayerStats()
 	quickMessage(`God mode activated`)
 }
@@ -2363,7 +2757,7 @@ function spellConjureCount(spell) {
 			spell.chambered = true
 			let line1 = document.createElement('div')
 			customizeEachWord(`${spell.name} `, `${spell.color}`, line1)
-			customizeEachWord(`is ready to be cast`, 'white', line1)
+			customizeEachWord(`is ready to cast`, 'white', line1)
 			clearInterval(spellConjureTicker)
 		}
 	}, 100)
@@ -2408,7 +2802,7 @@ function rogueSinisterMarks() {
 //////////////////////////////////////////////////++COMBAT FUNCTIONS++//////////////////////////////////////////////////
 function advance() {
 	player.isStealthed = false
-	const targetedMonster = pushMonster.find(enemy => enemy.x == player.x && enemy.y == player.y && enemy.z == player.z)
+	const targetedMonster = roomEnemies.find(enemy => enemy.x == player.x && enemy.y == player.y && enemy.z == player.z)
 	if (targetedMonster) {
 		player.combat = true
 		targetedMonster.combat = player.combat
@@ -2521,26 +2915,26 @@ function combatCheck() {
 //////////////////////////////////////////////////++DIRECTION AND MOVEMENT FUNCTIONS++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++DIRECTION AND MOVEMENT FUNCTIONS++//////////////////////////////////////////////////
 function look(command, secondCommand) {
-	if (secondCommand == 'nw') {
-		lookNorthwest(secondCommand)
-	} else if (secondCommand == 'n') {
-		lookNorth(secondCommand)
-	} else if (secondCommand == 'ne') {
-		lookNortheast(secondCommand)
-	} else if (secondCommand == 'e') {
-		lookEast(secondCommand)
-	} else if (secondCommand == 'se') {
-		lookSoutheast(secondCommand)
-	} else if (secondCommand == 's') {
-		lookSouth(secondCommand)
-	} else if (secondCommand == 'sw') {
-		lookSouthwest(secondCommand)
-	} else if (secondCommand == 'w') {
-		lookWest(secondCommand)
+	if (secondCommand == 'nw' || secondCommand == 'northwest') {
+		lookNorthwest('northwest')
+	} else if (secondCommand == 'n' || secondCommand == 'north') {
+		lookNorth('north')
+	} else if (secondCommand == 'ne' || secondCommand == 'northeast') {
+		lookNortheast('northeast')
+	} else if (secondCommand == 'e' || secondCommand == 'east') {
+		lookEast('east')
+	} else if (secondCommand == 'se' || secondCommand == 'southeast') {
+		lookSoutheast('southeast')
+	} else if (secondCommand == 's' || secondCommand == 'south') {
+		lookSouth('south')
+	} else if (secondCommand == 'sw' || secondCommand == 'southwest') {
+		lookSouthwest('southwest')
+	} else if (secondCommand == 'w' || secondCommand == 'west') {
+		lookWest('west')
 	} else if (secondCommand == 'u' || secondCommand == 'up') {
-		lookUp(secondCommand)
+		lookUp('up')
 	} else if (secondCommand == 'd' || secondCommand == 'down') {
-		lookDown(secondCommand)
+		lookDown('down')
 	} else if (command === 'l' || command === 'look') {
 		areaCompiler(currentArea)
 		updateScroll()
@@ -2550,7 +2944,7 @@ function look(command, secondCommand) {
 
 function lookNorthwest(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.x == currentArea.x - 1 && areaToLook.y == currentArea.y + 1 && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2560,7 +2954,7 @@ function lookNorthwest(secondCommand) {
 }
 function lookNorth(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.y == currentArea.y + 1 && areaToLook.x == currentArea.x && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2570,7 +2964,7 @@ function lookNorth(secondCommand) {
 }
 function lookNortheast(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.x == currentArea.x + 1 && areaToLook.y == currentArea.y + 1 && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2580,7 +2974,7 @@ function lookNortheast(secondCommand) {
 }
 function lookEast(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.x == currentArea.x + 1 && areaToLook.y == currentArea.y && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2590,7 +2984,7 @@ function lookEast(secondCommand) {
 }
 function lookSoutheast(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.x == currentArea.x + 1 && areaToLook.y == currentArea.y - 1 && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2600,7 +2994,7 @@ function lookSoutheast(secondCommand) {
 }
 function lookSouth(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.y == currentArea.y - 1 && areaToLook.x == currentArea.x && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2610,7 +3004,7 @@ function lookSouth(secondCommand) {
 }
 function lookSouthwest(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.x == currentArea.x - 1 && areaToLook.y == currentArea.y - 1 && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2620,7 +3014,7 @@ function lookSouthwest(secondCommand) {
 }
 function lookWest(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.x == currentArea.x - 1 && areaToLook.y == currentArea.y && areaToLook.z == player.z)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2630,7 +3024,7 @@ function lookWest(secondCommand) {
 }
 function lookUp(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.z == currentArea.z + 1 && areaToLook.x == currentArea.x && areaToLook.y == currentArea.y)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2640,7 +3034,7 @@ function lookUp(secondCommand) {
 }
 function lookDown(secondCommand) {
 	const area = allAreas.find(areaToLook => areaToLook.z == currentArea.z - 1 && areaToLook.x == currentArea.x && areaToLook.y == currentArea.y)
-	if (area == undefined) {
+	if (area == undefined || !currentArea.descriptions.zoneExitsBool[secondCommand]) {
 		quickMessage(`You cannot look in that direction`)
 	} else {
 		quickMessage(`Glancing to the ${secondCommand} you see...`)
@@ -2692,6 +3086,12 @@ const roomImages = {
 	galvadia_egberts_room: "images/interiors/castle interiors/egbert's room/egbert's room.jpg",
 	galvadia_training_halls_common_room: "images/interiors/castle interiors/common room/common room.jpg",
 	galvadia_advanced_training_rooms: "images/interiors/castle interiors/advanced training rooms/advanced training rooms.jpg",
+	galvadian_glade_center: "images/exteriors/landscapes/forests/galvadian glade center/galvadian glade center.jpg",
+	galvadian_glade_entrance: "images/exteriors/landscapes/forests/galvadian glade entrance/galvadian glade entrance.jpg",
+	kobold_cave_main: "images/interiors/cave interiors/kobold cave/kobold main/kobold main.jpg",
+	kobold_cave_tunnels: "images/interiors/cave interiors/kobold cave/kobold tunnels/kobold tunnels.jpg",
+	kobold_cave_chief_room: "images/interiors/cave interiors/kobold cave/kobold chief room/kobold chief room.jpg",
+	the_shallows: "images/exteriors/landscapes/forests/the shallows/the shallows.jpg",
 }
 function changeRoomPicture(roomId) {
     let roomPictureDisplay = document.getElementById('room-picture');
@@ -2802,7 +3202,6 @@ function displayArea(area, addClass) {
 	// let roomPictureDisplay = document.getElementById('room-picture')
 	// roomPictureDisplay.src = "images/forest.jpg"
 	if (area.descriptions.actionWord) {
-		console.log(1)
 		areaActionWord.forEach(keyword => slicedWordIndexArray.push(areaDescriptionSplit.indexOf(keyword)))
 		slicedWordIndexArray = slicedWordIndexArray.sort(function (a, b) {
 			return a - b
@@ -2810,7 +3209,6 @@ function displayArea(area, addClass) {
 		for (let i = 0; i < slicedWordIndexArray.length; i++) {
 			slicedWords.push(areaDescriptionSplit[slicedWordIndexArray[i]])
 		}
-		console.log(slicedWords)
 		function compileDescription() {
 			// let splitDirections = currentArea.descriptions.zoneExits.split()
 			const areaMasterDiv = document.createElement('div')
@@ -2821,12 +3219,16 @@ function displayArea(area, addClass) {
 
 			const areaNestedExitsAndDirections = document.createElement('div')
 			const areaExitsDiv = document.createElement('div')
+			if (addClass) {areaExitsDiv.classList.add(addClass)}
 			const areaExitsNode = document.createTextNode('Obvious Exits: ')
 			const areaDirectionsDiv = document.createElement('div')
 			// const areaDirectionsNode = document.createTextNode(area.descriptions.zoneExits)
 			areaDescriptionSplit.forEach(word => {
 				if (word != slicedWords[0] && word != slicedWords[1] && word != slicedWords[2] && word != slicedWords[3]) {
 					const areaDescSpan = document.createElement('span')
+					if (addClass) {
+						areaDescSpan.classList.add(addClass)
+					}
 					const areaDescNode = document.createTextNode(word + ' ') // new code
 					areaDescSpan.appendChild(areaDescNode)
 					areaDescDiv.appendChild(areaDescSpan)
@@ -2860,21 +3262,18 @@ function displayArea(area, addClass) {
 			let test = Object.entries(area.descriptions.zoneExitsBool)
 			test.forEach(element => {
 				if (element[1] == 'locked') {
-					console.log(5)
 					let directionSpan = document.createElement('span')
 					directionSpan.classList.add('yellow')
 					let directionNode = document.createTextNode(capitalizeFirstLetter(element[0]) + ' ')
 					directionSpan.appendChild(directionNode)
 					areaDirectionsDiv.appendChild(directionSpan)
 				} else if (element[1] == 'blocked') {
-					console.log(5)
 					let directionSpan = document.createElement('span')
 					directionSpan.classList.add('red')
 					let directionNode = document.createTextNode(capitalizeFirstLetter(element[0]) + ' ')
 					directionSpan.appendChild(directionNode)
 					areaDirectionsDiv.appendChild(directionSpan)
 				} else {
-					console.log(6)
 					let directionSpan = document.createElement('span')
 					directionSpan.classList.add('area-directions')
 					let directionNode = document.createTextNode(capitalizeFirstLetter(element[0]) + ' ')
@@ -2882,14 +3281,10 @@ function displayArea(area, addClass) {
 					areaDirectionsDiv.appendChild(directionSpan)
 				}
 			})
-			console.log(3)
 		}
 		compileDescription()
 	} else {
-		console.log(4)
-
 		let splitDirections = area.descriptions.zoneExits.split(/\s|\./)
-		console.log(splitDirections)
 		const areaMasterDiv = document.createElement('div')
 		const areaNameDiv = document.createElement('div')
 		const areaNameNode = document.createTextNode(area.descriptions.areaName)
@@ -2906,21 +3301,18 @@ function displayArea(area, addClass) {
 		let test = Object.entries(area.descriptions.zoneExitsBool)
 		test.forEach(element => {
 			if (element[1] == 'locked') {
-				console.log(5)
 				let directionSpan = document.createElement('span')
 				directionSpan.classList.add('yellow')
 				let directionNode = document.createTextNode(capitalizeFirstLetter(element[0]) + ' ')
 				directionSpan.appendChild(directionNode)
 				areaDirectionsDiv.appendChild(directionSpan)
 			} else if (element[1] == 'blocked') {
-				console.log(5)
 				let directionSpan = document.createElement('span')
 				directionSpan.classList.add('red')
 				let directionNode = document.createTextNode(capitalizeFirstLetter(element[0]) + ' ')
 				directionSpan.appendChild(directionNode)
 				areaDirectionsDiv.appendChild(directionSpan)
 			} else {
-				console.log(6)
 				let directionSpan = document.createElement('span')
 				directionSpan.classList.add('area-directions')
 				let directionNode = document.createTextNode(capitalizeFirstLetter(element[0]) + ' ')
@@ -2963,7 +3355,6 @@ function displayArea(area, addClass) {
 function displayNpc(area, color) {
 	const findNpc = area.npc
 	if (findNpc[0] && findNpc[1] == undefined) {
-		console.log(1)
 		const peopleDiv = document.createElement('div')
 		const peopleSpan = document.createElement('span')
 		const peopleNode = document.createTextNode(`People:`)
@@ -2976,7 +3367,6 @@ function displayNpc(area, color) {
 		masterArea.appendChild(peopleDiv)
 		findNpc[0].displayName(peopleDiv)
 	} else if (findNpc[1]) {
-		console.log(2)
 		const peopleDiv = document.createElement('div')
 		const peopleSpan = document.createElement('span')
 		const peopleNode = document.createTextNode(`People:`)
@@ -3029,18 +3419,34 @@ function displayGold(area) {
 }
 
 function displayMonsters(area, color, enemyColor) {
-	let mappedArea = area != undefined ? area : currentArea
-	const enemyMapMe = pushMonster.filter(({ x, y, z }) => x == mappedArea.x && y == mappedArea.y && z == mappedArea.z)
-	if (enemyMapMe.length > 0) {
-		const enemyDiv = document.createElement('div')
-		const enemyNames = enemyMapMe.map(enemy => enemyToNode(enemy, enemyColor))
-		const enemysNode = document.createTextNode('Monsters: ')
-		enemyDiv.appendChild(enemysNode)
-		enemyNames.forEach(enemyNode => {
-			enemyDiv.appendChild(enemyNode)
-		})
-		enemyDiv.classList.add(color)
-		masterArea.appendChild(enemyDiv)
+	// let mappedArea = area != undefined ? area : currentArea
+	// const enemyMapMe = pushMonster.filter(({ x, y, z }) => x == mappedArea.x && y == mappedArea.y && z == mappedArea.z)
+	if (!coordinatesMatch(player, area)) {
+		const mapEnemiesInNextRoom = getAllEnemiesInNextRoom(area)
+		if (mapEnemiesInNextRoom.length > 0) {
+			const enemyDiv = document.createElement('div')
+			const enemyNames = mapEnemiesInNextRoom.map(enemy => enemyToNode(enemy, enemyColor))
+			const enemysNode = document.createTextNode('Monsters: ')
+			enemyDiv.appendChild(enemysNode)
+			enemyNames.forEach(enemyNode => {
+				enemyDiv.appendChild(enemyNode)
+			})
+			enemyDiv.classList.add(color)
+			masterArea.appendChild(enemyDiv)
+		}
+		} else {
+		const enemyMapMe = getAllEnemiesInRoom()
+		if (enemyMapMe.length > 0) {
+			const enemyDiv = document.createElement('div')
+			const enemyNames = enemyMapMe.map(enemy => enemyToNode(enemy, enemyColor))
+			const enemysNode = document.createTextNode('Monsters: ')
+			enemyDiv.appendChild(enemysNode)
+			enemyNames.forEach(enemyNode => {
+				enemyDiv.appendChild(enemyNode)
+			})
+			enemyDiv.classList.add(color)
+			masterArea.appendChild(enemyDiv)
+		}
 	}
 }
 
@@ -3264,8 +3670,8 @@ function recall(playerX, playerY, playerZ) {
 		blankSpace()
 		areaCompiler(currentArea)
 		updateScroll()
-		return
-	}
+		return	
+	} 
 	if (playerX == 'kobold') {
 		currentArea = koboldCavesRoom1
 		player.x = currentArea.x
@@ -3275,8 +3681,8 @@ function recall(playerX, playerY, playerZ) {
 		blankSpace()
 		areaCompiler(currentArea)
 		updateScroll()
-		return
-	}
+		
+	} 
 	if (playerX == 'graveyard') {
 		currentArea = graveyard1
 		player.x = currentArea.x
@@ -3287,7 +3693,7 @@ function recall(playerX, playerY, playerZ) {
 		areaCompiler(currentArea)
 		updateScroll()
 		return
-	}
+	} 
 	if (playerX == 'guild') {
 		currentArea = galvadiaGuildSquare
 		player.x = currentArea.x
@@ -3298,7 +3704,7 @@ function recall(playerX, playerY, playerZ) {
 		areaCompiler(currentArea)
 		updateScroll()
 		return
-	}
+	} 
 	if (playerX == 'glade') {
 		currentArea = centralGlade
 		player.x = currentArea.x
@@ -3309,7 +3715,7 @@ function recall(playerX, playerY, playerZ) {
 		areaCompiler(currentArea)
 		updateScroll()
 		return
-	}
+	} 
 	if (!playerX) {
 		currentArea = trainingHallsCommonRoom
 		player.x = currentArea.x
@@ -3329,6 +3735,7 @@ function recall(playerX, playerY, playerZ) {
 	} else {
 		quickMessage(`Room not found`)
 	}
+	player.combat = false
 	player.x = recallRoom.x
 	player.y = recallRoom.y
 	player.z = recallRoom.z
@@ -3631,10 +4038,8 @@ function pack(secondCommand) {
 	}
 	if (secondCommand == 'right') {
 		if (selectedItemTwoHandedBoolean() == true) {
-			console.log('packTwoHanded ran')
 			packTwoHanded(selectedItemRight)
 		} else if (selectedItemTwoHandedBoolean() == false) {
-			console.log('packRight ran')
 			packRight(selectedItemRight)
 			if (player.rightHand == empty && player.leftHand == empty) {
 			}
@@ -3644,10 +4049,8 @@ function pack(secondCommand) {
 	}
 	if (secondCommand == 'left') {
 		if (selectedItemTwoHandedBooleanLeft() == true) {
-			console.log('packTwoHanded ran')
 			packTwoHanded(selectedItemLeft)
 		} else if (selectedItemTwoHandedBooleanLeft() == false) {
-			console.log('packLeft ran')
 			packLeft(selectedItemLeft)
 			if (player.rightHand == empty && player.leftHand == empty) {
 			}
@@ -3668,7 +4071,6 @@ function testerer() {
 }
 //UNPACK components
 function unpackTwoHanded(twoHandedItem) {
-	console.log('unpackTwoHanded invoked')
 	if (twoHandedItem.type.twoHanded && player.rightHand == empty && player.leftHand == empty) {
 		let line1 = document.createElement('div')
 		twoHandedItem.roomId = slot1
@@ -3736,7 +4138,7 @@ function unpackFail(selectedItem, secondCommand) {
 	} else if (selectedItem == undefined) {
 		quickMessage(`You do not have a ${secondCommand} to unpack`)
 	} else {
-		console.log('unpackFail invoked, but nothing executed')
+		quickMessage('unpackFail invoked, but nothing executed')
 	}
 }
 //UNPACK function
@@ -3881,6 +4283,11 @@ function cookFunction(secondCommand) {
 }
 
 function mineFunction(secondCommand) {
+	let rightItem = getWeapon1()
+	let leftItem = getWeapon2()
+	if (rightItem?.keywords.find(item => item == 'pickaxe') || leftItem?.keywords.find(item => item == 'pickaxe')) {
+
+	
 	let allVeinTypes = ['copper', 'iron', 'mithril', 'gold', 'silver', 'platinum', 'titanium']
 	let areaVeinTypes = []
 	for (let veinType in currentArea.interactables) {
@@ -3916,6 +4323,9 @@ function mineFunction(secondCommand) {
 			break;
 	}
 	quickMessage(`You successfully mine some ore!`)
+} else {
+	quickMessage(`You must be wielding a pickaxe to mine ore`)
+}
 }
 
 
@@ -4860,11 +5270,13 @@ function calculateCleaveTargets(targetEnemy, allEnemies) {
 	}
 }
 
-function surpriseAttack(enemy) {
+function sneakAttack(enemy) {
+	stealthBreak()
+	resourceGained(backstab, 5, 'maxAdrenaline')
 	let line1 = lineFunc()
 	blankSpace()
 	customizeEachWord(`You jump out in a `, 'white', line1)
-	customizeEachWord(`surprise attack`, 'orange', line1)
+	customizeEachWord(`Sneak attack`, 'orange', line1)
 	customizeEachWord(`!`, 'white', line1)
 	player.isStealthed = false
 	player.combat = true
@@ -5018,8 +5430,6 @@ function attack(secondCommand, thirdCommand) {
 	if (isPlayerConjuring()) {return}
 	let playerWeaponRight = currentRightHandWeapon()
 	let playerWeaponLeft = currentLeftHandWeapon()
-	console.log(playerWeaponRight)
-	console.log(playerWeaponLeft)
 	let weaponsObject = singleOrDualSwing(playerWeaponRight, playerWeaponLeft)
 	let weaponSkillSpeed = player.currentWeaponSkill.speed
 	let cleaveTargets = calculateCleaveTargets(targetEnemy, allEnemiesInCombat)
@@ -5029,7 +5439,6 @@ function attack(secondCommand, thirdCommand) {
 	updatePlayerStats()
 	updateMonsterBox()
 	updateScroll()
-	console.log(weaponsObject)
 }
 function handleAttack(enemy, weaponsObject) {
 	handleRightAttack(enemy, weaponsObject)
@@ -5037,7 +5446,6 @@ function handleAttack(enemy, weaponsObject) {
 }
 function handleRightAttack(enemy, weaponsObject){
 	let rightObject = weaponsObject.right
-	console.log(rightObject)
 	if (rightObject.weapon) {
 		enemy.forEach(enemy => {
 		if (enemy.health <= 0) {return}
@@ -5070,19 +5478,14 @@ function handleRightAttack(enemy, weaponsObject){
 			rightObject.weaponEnchantmentHeal = calculateWeaponEnchantmentHeal(rightObject)
 			rightObject.onHitDamage = calculateOnHitDamage(enemy, rightObject) //0, 10, 15
 			rightObject.doesPlayerStun = calculateStunningBlow(enemy, rightObject)
-
-			console.log(rightObject.totalDamage)
-			console.log(rightObject.onHitDamage)
-			console.log(rightObject.buffDamage)
-			console.log(rightObject.weaponEnchantmentDamage)
-
 			rightObject.realTotalDamage = rightObject.totalDamage + rightObject.onHitDamage + rightObject.buffDamage
-			rightObject.damageToApplyToEnemy = rightObject.totalDamage + rightObject.onHitDamage + rightObject.buffDamage + rightObject.weaponEnchantmentDamage
+			rightObject.damageToApplyToEnemy = Math.ceil(rightObject.totalDamage + rightObject.onHitDamage + rightObject.buffDamage + rightObject.weaponEnchantmentDamage)
 			displaySwing(enemy, rightObject)
 			applyDamageToEnemy(enemy, rightObject.damageToApplyToEnemy)
 			calculateClassAdditionalEffects(enemy)
 			gainClassResourceOnAttack(rightObject.doesSwingHit)
 			// applyBuffForReal(rightObject)
+			applyOnHitSkillBuffs(rightObject)
 			applyStunningBlow(enemy, rightObject)
 			console.log(rightObject)
 			}
@@ -5092,8 +5495,6 @@ function handleRightAttack(enemy, weaponsObject){
 }
 function handleLeftAttack(enemy, weaponsObject) {
 	let leftObject = weaponsObject.left
-	// if (!unarmedProficiencyCheck()) {leftObject.weapon = undefined}
-	console.log(leftObject)
 	if (leftObject.weapon) {
 		enemy.forEach(enemy => {
 			if (enemy.health <= 0) {return}
@@ -5127,18 +5528,14 @@ function handleLeftAttack(enemy, weaponsObject) {
 				leftObject.onHitDamage = calculateOnHitDamage(enemy, leftObject) //0, 10, 15
 				leftObject.doesPlayerStun = calculateStunningBlow(enemy, leftObject)
 
-				console.log(leftObject.totalDamage)
-				console.log(leftObject.onHitDamage)
-				console.log(leftObject.buffDamage)
-				console.log(leftObject.weaponEnchantmentDamage)
-
 				leftObject.realTotalDamage = leftObject.totalDamage + leftObject.onHitDamage + leftObject.buffDamage
-				leftObject.damageToApplyToEnemy = leftObject.totalDamage + leftObject.onHitDamage + leftObject.buffDamage + leftObject.weaponEnchantmentDamage
+				leftObject.damageToApplyToEnemy = Math.ceil(leftObject.totalDamage + leftObject.onHitDamage + leftObject.buffDamage + leftObject.weaponEnchantmentDamage)
 				displaySwing(enemy, leftObject)
 				applyDamageToEnemy(enemy, leftObject.damageToApplyToEnemy)
 				calculateClassAdditionalEffects(enemy)
 				gainClassResourceOnAttack(leftObject.doesSwingHit)
 				// applyBuffForReal(leftObject)
+				applyOnHitSkillBuffs(leftObject)
 				applyStunningBlow(enemy, leftObject)
 				console.log(leftObject)
 			}
@@ -5244,9 +5641,11 @@ function baseAttackDamageRight() {
 	const { botDamage, topDamage } = playerWeapon;
 	const lowDamage = Math.ceil(attackPower * (botMultiplier * botDamage));
 	const highDamage = Math.ceil(attackPower * (topMultiplier * topDamage));
+	const baseDamage = Math.max(0, randomNumberRange(lowDamage, highDamage))
 	console.log(lowDamage, 'LOW DAMAGE')
 	console.log(highDamage, 'HIGH DAMAGE')
-	return Math.max(0, randomNumberRange(lowDamage, highDamage));
+	console.log(baseDamage, 'CHOSEN DAMAGE')
+	return baseDamage
 }
 
 function baseAttackDamageLeft() {
@@ -5266,14 +5665,12 @@ function baseAttackDamageLeft() {
 
 
 function calculateNumberOfStrikes(rightOrLeft) {
-	console.log(rightOrLeft, ' CALCULATE NUMBER OF STRIKES OBJET')
 	let numberOfExtraStrikes = 0
 	if (player.multipleStrikes.level > 0) {
 		let multipleStrikesNumber = player.multipleStrikes.extraStrikesNumber()
 		let multipleStrikeChance = player.multipleStrikes.extraStrikesChance()
 		if (rightOrLeft.right.weapon && rightOrLeft.left.weapon) {
 			multipleStrikeChance = multipleStrikeChance / 2
-			console.log(multipleStrikeChance, 'EXTRA STRIKE CHANCE WHILE DUAL WIELDING')
 			for (let i = 0; i < multipleStrikesNumber; i++) {
 				let roll = randomNumberRange(1, 100)
 				if (roll <= multipleStrikeChance) {
@@ -5356,7 +5753,6 @@ function calculateRawAttackDamage(rightOrLeft) {
 
 
 function calculatePenetrationVerb(rightOrLeft) {
-	console.log(rightOrLeft)
 	let penetrationTypes = []
 	if (rightOrLeft.weapon.mods.hasOwnProperty('slashingPen')) {penetrationTypes.push('slashingPen')}
 	if (rightOrLeft.weapon.mods.hasOwnProperty('piercingPen')) {penetrationTypes.push('piercingPen')}
@@ -5431,43 +5827,38 @@ function calculateDamageWithBonusesAndAfterEnemyMitigation(enemy, rightOrLeft) {
 	let damageBeforeMitigation = rightOrLeft.baseDamage + rightOrLeft.critDamage
 	rightOrLeft.damagePreMitigation = damageBeforeMitigation
 	if (enemy.armor > 0) {
-		const damageAfterMitigation = damageBeforeMitigation * (100 / (100 + enemy.armor)) <= 0 ? 0 : Math.floor(damageBeforeMitigation * (100 / (100 + enemy.armor)))
+		const damageAfterMitigation = damageBeforeMitigation * (1000 / (1000 + enemy.armor)) <= 0 ? 0 : Math.floor(damageBeforeMitigation * (1000 / (1000 + enemy.armor)))
 		return damageAfterMitigation
 	} else if (enemy.armor == 0) {
 		let slashingPiercingOrBlunt = rightOrLeft.penetrationType == 'slashing' ? 'slashingPen' : rightOrLeft.penetrationType == 'piercing' ? 'piercingPen' : 'bluntPen'
 		let enemyArmor = rightOrLeft.penetrationType == 'slashing' ? enemy.slashingArmor : rightOrLeft.penetrationType == 'piercing' ? enemy.piercingArmor : enemy.bluntArmor
 		let armorAfterPen = enemyArmor - player[slashingPiercingOrBlunt] <= 0 ? 0 : enemyArmor - player[slashingPiercingOrBlunt]
-		const damageAfterMitigation = damageBeforeMitigation * (100 / (100 + armorAfterPen)) <= 0 ? 0 : Math.floor(damageBeforeMitigation * (100 / (100 + armorAfterPen)))
-		return damageAfterMitigation
+		const damageAfterMitigation = (damageBeforeMitigation - armorAfterPen) * (1000 / (1000 + armorAfterPen)) <= 0 ? 0 : (damageBeforeMitigation - armorAfterPen) * (1000 / (1000 + armorAfterPen))
+		return Math.floor(damageAfterMitigation)
 	}
 }
 function calculateAbilityDamageAgainstEnemyArmor(enemy, damage, penetrationType) {
 	let abilityDamage = damage
 	if (enemy.armor > 0) {
-		const damageAfterMitigation = abilityDamage * (100 / (100 + enemy.armor)) <= 0 ? 0 : Math.floor(abilityDamage * (100 / (100 + enemy.armor)))
+		const damageAfterMitigation = abilityDamage * (1000 / (1000 + enemy.armor)) <= 0 ? 0 : Math.floor(abilityDamage * (1000 / (1000 + enemy.armor)))
 		return damageAfterMitigation
 	} else if (enemy.armor == 0) {
-		console.log(penetrationType, ' PENETRATION TYPE')
 		let enemyArmor = penetrationType == 'slashingPen' ? enemy.slashingArmor : penetrationType == 'piercingPen' ? enemy.piercingArmor : enemy.bluntArmor
-		console.log(enemyArmor)
 		let armorAfterPen = enemyArmor - player[penetrationType] <= 0 ? 0 : enemyArmor - player[penetrationType]
-		console.log(armorAfterPen)
-		const damageAfterMitigation = abilityDamage * (100 / (100 + armorAfterPen)) <= 0 ? 0 : Math.floor(abilityDamage * (100 / (100 + armorAfterPen)))
-		return damageAfterMitigation
+		const damageAfterMitigation = (abilityDamage - armorAfterPen) * (1000 / (1000 + armorAfterPen)) <= 0 ? 0 : (abilityDamage - armorAfterPen) * (1000 / (1000 + armorAfterPen))
+		return Math.floor(damageAfterMitigation)
 	}
 }
 function calculatePenetrationRoll() {
 	let weapon1 = getWeapon1()
 	let weapon2 = getWeapon2()
 	let weaponUsed = weapon1 && weapon2 ? weapon1 : weapon1 && !weapon2 ? weapon1 : !weapon1 && weapon2 ? weapon2 : undefined
-	console.log(weaponUsed)
 	let penetrationTypes = []
 	if (weaponUsed.mods.hasOwnProperty('slashingPen')) {penetrationTypes.push('slashingPen')}
 	if (weaponUsed.mods.hasOwnProperty('piercingPen')) {penetrationTypes.push('piercingPen')}
 	if (weaponUsed.mods.hasOwnProperty('bluntPen')) {penetrationTypes.push('bluntPen')}
 	let penetrationIndex = randomNumberRange(0, penetrationTypes.length - 1)
 	let penType = penetrationTypes[penetrationIndex]
-	console.log(penType, 'PEN TYPE')
 	return penType
 }
 
@@ -5506,7 +5897,7 @@ function atIntoOnto(rightOrLeft) {
 function applyDamageToEnemy(enemy, damage) {
 	console.log(enemy, ' ENEMY')
 	console.log(damage, ' DAMAGE')
-	if (damage) {
+	if (enemy.health > 0 && player.health > 0 && damage) {
 		enemy.health = enemy.health - damage
 		if (enemy.health <= 0) {
 			// grantBonusOnEnemyDeath(ability)
@@ -5526,15 +5917,45 @@ function calculateEnemyDodgeChance(enemy) {
 }
 
 
-//MELEE TARGETING
-
+function updateRoomEnemies(enemy) {
+	pushMonster.forEach((pushedEnemy, index) => {
+		if (coordinatesMatch(pushedEnemy, player)) {
+			if (roomEnemies.indexOf(pushedEnemy) == -1) {
+				roomEnemies.push(pushedEnemy);
+			}
+		}
+		if (!coordinatesMatch(pushedEnemy, player)) {
+			// Check if the enemy is already in the roomEnemies array
+			const index = roomEnemies.indexOf(pushedEnemy);
+			if (index !== -1) {
+				// Remove the enemy from the array if it exists
+				roomEnemies.splice(index, 1);
+			}
+		}	
+	});
+}
 
 function getAllEnemiesInCombat() {
-	return pushMonster.filter(enemy => coordinatesMatch(enemy, player) && enemy.combat)
+	return roomEnemies.filter(enemy => coordinatesMatch(enemy, player) && enemy.combat)
 }
+// function getAllEnemiesInRoom() {
+// 	let allEnemies = pushMonster.filter(enemy => coordinatesMatch(enemy, player))
+// 	allEnemies.reverse()
+// 	return allEnemies
+// }
+
 function getAllEnemiesInRoom() {
-	return pushMonster.filter(enemy => coordinatesMatch(enemy, player))
+	// Filter enemies in the room
+	let allEnemies = roomEnemies
+	return allEnemies
 }
+
+function getAllEnemiesInNextRoom(area) {
+	//this is for looking in a direction
+	let allEnemies = pushMonster.filter(enemy => enemy.x == area.x && enemy.y == area.y && enemy.z == area.z)
+	return allEnemies
+}
+
 function getAllNpcsInRoom() {
 	return currentArea.npc
 }
@@ -5594,13 +6015,13 @@ function targetFirstEnemy(secondCommand, thirdCommand) {
 	
 }
 function targetAnyEnemy(secondCommand, thirdCommand) {
-	let allEnemiesInRoom = getAllMonstersInRoom()
+	let allEnemiesInRoom = getAllEnemiesInRoom()
 	let allCombatEnemiesInRoom = getAllEnemiesInCombat()
 	let enemyByFirst = rangeCheck() ? allEnemiesInRoom[0] : allCombatEnemiesInRoom[0]
 	let enemyByName = getAnyEnemyByName(secondCommand)
 	let enemyByNumber = getAnyEnemyByNumber(secondCommand)
 	if ((secondCommand && thirdCommand) && (!isNaN(secondCommand) || !isNaN(thirdCommand)) && enemyByName != undefined) {
-		let allEnemiesWithSameName = getAllMonstersInRoom().filter(({ keywords }) => keywords.some(x => x == secondCommand))
+		let allEnemiesWithSameName = getAllEnemiesInRoom().filter(({ keywords }) => keywords.some(x => x == secondCommand))
 		let chosenNumber = !isNaN(secondCommand) ? secondCommand : !isNaN(thirdCommand) ? thirdCommand : undefined
 		let chosenEnemy = allEnemiesWithSameName[chosenNumber - 1]
 		if (chosenEnemy != undefined) {
@@ -5615,7 +6036,7 @@ function targetAnyEnemy(secondCommand, thirdCommand) {
 	if (secondCommand != undefined && enemyByName == undefined && enemyByNumber == undefined) { 
 		return enemyByFirst
 	}
-	if (!isNaN(secondCommand) && enemyByNumber != undefined) { //Finds enemy by number. Returns first enemy in the room if enemy by number is undefined
+	if (!isNaN(secondCommand) && enemyByNumber != undefined && enemyByNumber.combat == true) { //Finds enemy by number. Returns first enemy in the room if enemy by number is undefined
 		return enemyByNumber
 	}
 	if (enemyByName == undefined) {
@@ -5626,19 +6047,17 @@ function targetAnyEnemy(secondCommand, thirdCommand) {
 	return enemyByFirst
 
 }
-function getAllMonstersInRoom() {
-	return pushMonster.filter(enemy => enemy.x == player.x && enemy.y == player.y && enemy.z == player.z)
-}
+
 function getAnyEnemyByName(secondCommand) {
-	const enemyByName = getAllMonstersInRoom().find(({ keywords }) => keywords.some(x => x == secondCommand))
+	const enemyByName = getAllEnemiesInRoom().find(({ keywords }) => keywords.some(x => x == secondCommand))
 	return enemyByName
 }
 function getAnyEnemyByNumber(secondCommand) {
-	let enemyByNumber = getAllMonstersInRoom()
+	let enemyByNumber = getAllEnemiesInRoom()
 	return enemyByNumber[secondCommand - 1]
 }
 function getAnyEnemyByFirst() {
-	const allMonstersInRoom = getAllMonstersInRoom()
+	const allMonstersInRoom = getAllEnemiesInRoom()
 	const firstMonster = allMonstersInRoom[0]
 	return firstMonster
 }
@@ -5988,9 +6407,9 @@ function abilityLearnedOnLevelUp() {
 			customizeEachWord(`!`, 'white', line1)
 		}
 		if (player.level == 5) {
-			player.gore.level = 1
+			player.shred.level = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
-			customizeEachWord(`Gore`, player.gore.color, line1)
+			customizeEachWord(`Shred`, player.shred.color, line1)
 			customizeEachWord(`!`, 'white', line1)
 		}
 	}
@@ -6136,9 +6555,9 @@ function abilityLearnedOnLevelUp() {
 	}
 	if (player.playerClass.name == 'Ranger') {
 		if (player.level == 3) {
-			player.timedShot.level = 1
+			player.piercingArrow.level = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
-			customizeEachWord(`Timed Shot`, player.timedShot.color, line1)
+			customizeEachWord(`Piercing Arrow`, player.piercingArrow.color, line1)
 			customizeEachWord(`!`, 'white', line1)
 		}
 		if (player.level == 4) {
@@ -6148,9 +6567,9 @@ function abilityLearnedOnLevelUp() {
 			customizeEachWord(`!`, 'white', line1)
 		}
 		if (player.level == 5) {
-			player.multiShot.level = 1
+			player.hydraArrow.level = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
-			customizeEachWord(`Multi Shot`, player.multiShot.color, line1)
+			customizeEachWord(`Hydra Arrow`, player.hydraArrow.color, line1)
 			customizeEachWord(`!`, 'white', line1)
 		}
 	}
@@ -6240,7 +6659,7 @@ let player = {
 		water: 0,
 		earth: 0,
 		lightning: 0,
-		air: 0,
+		wind: 0,
 		ice: 0,
 	},
 	buffs: {
@@ -6250,15 +6669,15 @@ let player = {
 		fire: 0,
 		ice: 0,
 		lightning: 0,
+		wind: 0,
 		water: 0,
-		air: 0,
 	},
 	sealCounter: {
 
 	},
 	isAbilityQueued: false,
-	adrenaline: 30,
-	maxAdrenaline: 30,
+	adrenaline: 50,
+	maxAdrenaline: 50,
 	startingHealth: 0,
 	health: 0,
 	maxHealth: 0,
@@ -6324,8 +6743,8 @@ let player = {
 	//class specific properties
 	sinisterMarks: 0,
 	sinisterMarksMax: 5,
-	might: 3,
-	maxMight: 3,
+	might: 5,
+	maxMight: 5,
 	focus: 20,
 	maxFocus: 20,
 	//class specific properties
@@ -6496,10 +6915,10 @@ const rest = {
 	healthBonus: 0,
 	manaBonus: 0,
 	healthPerTick: function() {
-		return ((player.level + 3) * this.level) + this.healthBonus
+		return ((player.level + 3) * player.rest.level) + player.rest.healthBonus
 	},
 	manaPerTick: function() {
-		return ((player.level + 3) * this.level) + this.manaBonus
+		return ((player.level + 3) * player.rest.level) + player.rest.manaBonus
 
 	},
 	goldToUpgrade: function () {
@@ -6956,7 +7375,6 @@ const stealth = {
 	refName: 'stealth',
 	color: 'sinistral-color',
 	cooldown: 1,
-	description: 'Using the HIDE command will put you into stealth. While stealthed, enemies cannot see you. However, enemies will search for you and can spot you if their perception level is higher than your level of stealth. Stealth is also imperitive in using many assassination abilities, which require you to be stealthed first in order to use.',
 	stealthSwing: function(enemy, swingObject) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
@@ -6985,12 +7403,25 @@ const stealth = {
 					customizeEachWord(`${swingObject.penText} `, swingObject.penText, line2)
 				}				
 				customizeEachWord(`damage`, 'green', line2)
-				customizeEachWord(`(enemy's armor blocks `, 'white', line2)
+				customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 				customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 				customizeEachWord(`)`, 'white', line2)
 				blankSpace()
 			}
-
+	},
+	flavorTextStealthBreak: function() {
+		let line1 = lineFunc()
+		customizeEachWord(`Shadows follow you into combat, increasing your dodging capabilities.`, `grey`, line1)
+	},
+	buff: {
+		name: 'Stealth Break',
+		refName: 'stealthBreak',
+		stacks: 1,
+		dodge: 10,
+		duration: 10000,
+		maxStacks: function() {
+			return 1
+		},
 	},
 	damageBonus: function() {
 		if (!player.isStealthed) {return 0}
@@ -7015,6 +7446,12 @@ const stealth = {
 	},
 	pointsToUpgrade: function () {
 		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Stealth allows you to hide using the HIDE command. It is an essential part of the Assassin's arsenal, but is also useful for Thieves and Shadowblades. Performing a regular attack while stealthed will instantly engage you with the enemy while dealing bonus damage. When you break stealth in this way, or by using an ability, you will gain a dodge boost for a short time as well. Some abilities require being stealthed to execute, and others will grant bonus effects if performed while stealthed.  While hidden, you will not be seen by enemies unless they discover you. Enemy detection is based on your player level and your stealth skill level against the enemy's level. Higher level enemies will be able to discover you much more easily.`, 'white', line1)
+		blankSpace()
 	},
 }
 player.stealth = { ...stealth }
@@ -7079,16 +7516,17 @@ const supremeDodging = {
 	level: 0,
 	name: 'Supreme Dodging',
 	refName: 'supremeDodging',
-	rating: function() {
-		if (this.level < 5) {
-			return 1
-		} else if (this.level < 10) {
-			return 2
-		} else if (this.level < 15) {
-			return 3
-		} else {
-			return 4
-		}		
+	buff: {
+		name: 'Supreme Dodging',
+		refName: 'supremeDodging',
+		duration: 10000,
+		stacks: 1,
+		get dodge() {
+			return 	player.supremeDodging.level
+		},
+		maxStacks: function() {
+			return player.supremeDodging.level + 4
+		}
 	},
 	type: 'skill',
 	color: 'green',
@@ -7101,7 +7539,7 @@ const supremeDodging = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`Each successful attack increases your chance to dodge for a duration. Chance to dodge per stack is ${this.rating()}.`, 'white', line1)
+		customizeEachWord(`Each successful attack increases your chance to dodge for a duration. Chance to dodge per stack is ${this.buff.dodge}.`, 'white', line1)
 		blankSpace()
 	},
 }
@@ -7117,15 +7555,7 @@ const toughness = {
 		blankSpace()
 	},
 	rating: function() {
-		if (this.level < 5) {
-			return 1
-		} else if (this.level < 10) {
-			return 2
-		} else if (this.level < 15) {
-			return 3
-		} else {
-			return 4
-		}		
+		return player.toughness.level
 	},
 	type: 'skill',
 	color: 'skill',
@@ -7148,7 +7578,6 @@ const sideStep = {
 	calculate: function(enemy) {
 		let chance = (this.level * 10) - enemy.level
 		let roll = randomNumberRange(1, 100)
-		console.log(chance, ' chance to side step enemy')
 		if (chance >= roll) {
 			return true
 		} else {
@@ -7667,27 +8096,7 @@ const ridingSkill = {
 	},
 }
 player.ridingSkill = { ...ridingSkill }
-const knuckleBlitz = {
-	level: 0,
-	name: `Knuckle Blitz`,
-	refName: 'knuckleBlitz',
-	cooldown: 0,
-	type: 'skill',
-	color: 'green',
-	goldToUpgrade: function () {
-		return 9 * this.level
-	},
-	pointsToUpgrade: function () {
-		return this.level + 1
-	},
-	description: function() {
-		let line1 = lineFunc()
-		blankSpace()
-		customizeEachWord(`Not sure yet.`, 'white', line1)
-		blankSpace()
-	},
-}
-player.knuckleBlitz = { ...knuckleBlitz }
+
 const tauntingShout = {
 	level: 0,
 	name: `Taunting Shout`,
@@ -7996,6 +8405,41 @@ const tactics = {
 	},
 }
 player.tactics = { ...tactics }
+const wayOfTheFist = {
+	level: 0,
+	name: `Way Of The Fist`,
+	refName: 'wayOfTheFist',
+	cooldown: 0,
+	type: 'skill',
+	color: 'green',
+	update: function() {
+		let increaseAmount
+		if (this.level < 3) {
+			increaseAmount = .2
+		} else if (this.level < 6) {
+			increaseAmount = .4
+		} if (this.level < 9) {
+			increaseAmount = .6
+		}
+		player.rightFist.botDamage += increaseAmount
+		player.rightFist.topDamage += increaseAmount
+		player.leftFist.botDamage += increaseAmount
+		player.leftFist.topDamage += increaseAmount
+	},
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Grants a bonus after using the advance command to initiate combat.`, 'white', line1)
+		blankSpace()
+	},
+}
+player.wayOfTheFist = { ...wayOfTheFist }
 //////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
 //////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
 //////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
@@ -8010,6 +8454,7 @@ const bleed = {
 	name: 'Bleed',
 	refName: 'bleed',
 	stacks: 0,
+	duration: 15000,
 	damage: function(enemy, swingObject) {
 		let damage = swingObject.totalDamage
 		let totalDamage = Math.ceil(damage * (enemy.debuffs.bleed.stacks * 0.1))
@@ -8017,6 +8462,13 @@ const bleed = {
 		return Math.ceil(totalDamage)
 		// return 0.1 * this.stacks
 		//change to increment by 10% per stack
+	},
+	bonusModifier: function() {
+		if (this.level == 1) {return 0.20}
+		if (this.level == 2) {return 0.25}
+		if (this.level == 3) {return 0.30}
+		if (this.level == 4) {return 0.35}
+		if (this.level >= 5) {return 0.40}
 	},
 	maxStacks: function() {
 		return this.level + 2
@@ -8049,39 +8501,23 @@ player.charge = { ...charge }
 
 const ripslash = {
 	level: 1,
-	requiredPlayerLevel: function() {
-		//required player level to increase ripslash level
-		if (player.ripslash.level == 0) {
-			return 5
-		} else if (player.ripslash.level == 1) {
-			return 10
-		} else if (player.ripslash.level == 2) {
-			return 15
-		}
-		},
 	name: 'Ripslash',
 	refName: 'ripslash',
 	type: 'ability',
 	color: 'warrior-color',
-	cooldownSet: 20000,
-	cooldown: 20000,
-	windUp: 2,
+	cooldownSet: 8000,
+	cooldown: 8000,
+	windUp: 1,
 	resourceCost: 1,
 	resourceName: 'might',
 	weaponTypesUsed: ['oneHanded', 'twoHanded'],
-	damage: function () {
-		let damage = baseAttackDamageRight()
-		switch(this.level) {
-			case 1:
-			damage = damage * 1.5
-			break;
-			case 2:
-			damage = damage * 2.25
-			break;
-			case 3:
-			damage = damage * 3.0
-		}
-		return Math.ceil(damage)
+	damage: function (enemy) {
+		let baseDamage = baseAttackDamageRight()
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseDamage)
+		let totalDamage = Math.ceil(baseDamage + bleedBonusDamage)
+		console.log(bleedBonusDamage, ' RIPSLASH BONUS DAMAGE')
+		console.log(totalDamage, ' TOTAL DAMAGE')
+		return totalDamage
 	},
 	windUpText: function() {
 		let line1 = lineFunc()
@@ -8093,24 +8529,20 @@ const ripslash = {
 	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		let line3 = lineFunc()
 		blankSpace()
-		// customizeEachWord(`**`, 'white', line1)
-		// customizeEachWord(`${this.name.toUpperCase()}`, 'activate-skill', line1)
-		// customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`You step forward, arcing your `, 'white', line2)
-		customizeEachWord(`${weapon.name} `, `${weapon.color}`, line2)
-		customizeEachWord(`upward, ripping into the `, 'white', line2)
-		customizeEachWord(`${enemy.name}`, enemy.color, line2)
-		customizeEachWord(`! `, 'white', line2)
-		customizeEachWord(`${this.name} `, this.color, line3)
-		customizeEachWord(`hits for `, 'green', line3)
-		customizeEachWord(`${damage} `, 'light-blue', line3)
-		customizeEachWord(`${penetrationType} `, penetrationType, line3)
-		customizeEachWord(`damage. `, 'green', line3)
-		customizeEachWord(`(Enemy's armor blocks `, 'white', line3)
-		customizeEachWord(`${damageBlocked}`, 'light-blue', line3)
-		customizeEachWord(`)`, 'white', line3)
+		customizeEachWord(`You step forward, arcing your `, 'white', line1)
+		customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
+		customizeEachWord(`upward, ripping into the `, 'white', line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`! `, 'white', line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
 		flavorTextMiss: function(enemy, weapon) {
@@ -8147,7 +8579,7 @@ const cyclone = {
 	cooldown: 10000,
 	windUp: 2,
 	resourceName: 'might',
-	resourceCost: 1,
+	resourceCost: 2,
 	numberOfTargets: 3,
 	weaponTypesUsed: ['oneHanded', 'twoHanded'],
 	damage: function (enemy) {
@@ -8163,22 +8595,6 @@ const cyclone = {
 			damage = damage * 2.5
 		}
 		return Math.ceil(damage)
-	},
-	debuff: { ...player.bleed
-		// name: 'Bleed',
-		// refName: 'bleed',
-		// stacks: 0,
-		// damage: function(enemy, swingObject) {
-		// 	let damage = swingObject.totalDamage
-		// 	let totalDamage = damage * (enemy.debuffs.bleed.stacks * 0.1)
-		// 	quickMessage(`Bleed bonus damage = ${totalDamage}`)
-		// 	return Math.ceil(totalDamage)
-		// 	// return 0.1 * this.stacks
-		// 	//change to increment by 10% per stack
-		// },
-		// maxStacks: function() {
-		// 	return player.cyclone.level + 3
-		// },
 	},
 	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = document.createElement('div')
@@ -8252,28 +8668,46 @@ const cataclysm = {
 	cooldown: 10000,
 	windUp: 2,
 	resourceName: 'might',
-	resourceCost: 1, //player.maxMight is what this should be when not testing things
+	resourceCost: 3, //player.maxMight is what this should be when not testing things
 	weaponTypesUsed: ['oneHanded', 'twoHanded'],
 	damage: function (enemy) {
-		let damage = baseAttackDamageRight()
-		let bonusDamage = (((enemy.health / enemy.maxHealth) * -1) + 1).toFixed(2)
-		switch(this.level) {
-			case 1:
-			damage = Math.ceil((damage * bonusDamage) + (baseDamage * 2.0))
-			break;
-			case 2:
-			damage = Math.ceil((damage * bonusDamage) + (baseDamage * 2.5))
-				break;
-			case 3:
-			damage = Math.ceil((damage * bonusDamage) + (baseDamage * 3.0))
-			}
-		return Math.ceil(damage)
-	},
-	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight()
-		let bonusDamage = (((enemy.health / enemy.maxHealth) * -1) + 1).toFixed(2)
-		totalDamage = Math.ceil((baseDamage * bonusDamage) + baseDamage)
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseDamage)
+		let totalDamage = Math.ceil(baseDamage + bleedBonusDamage)
+		console.log(bleedBonusDamage, ' CATACLYSM BONUS DAMAGE')
+		console.log(totalDamage, ' TOTAL DAMAGE')
 		return totalDamage
+	},
+	debuff: {
+		name: 'Cataclysm',
+		refName: 'cataclysm',
+		modifiedStats: ['slashingArmor', 'piercingArmor', 'bluntArmor'],
+		get slashingArmor() {
+			if (player.cataclysm.level == 1) {return -10}
+			if (player.cataclysm.level == 2) {return -20}
+			if (player.cataclysm.level == 3) {return -30}
+			if (player.cataclysm.level == 4) {return -40}
+			if (player.cataclysm.level >= 5) {return -50}
+		},
+		get piercingArmor() {
+			if (player.cataclysm.level == 1) {return -10}
+			if (player.cataclysm.level == 2) {return -20}
+			if (player.cataclysm.level == 3) {return -30}
+			if (player.cataclysm.level == 4) {return -40}
+			if (player.cataclysm.level >= 5) {return -50}
+		},
+		get bluntArmor() {
+			if (player.cataclysm.level == 1) {return -10}
+			if (player.cataclysm.level == 2) {return -20}
+			if (player.cataclysm.level == 3) {return -30}
+			if (player.cataclysm.level == 4) {return -40}
+			if (player.cataclysm.level >= 5) {return -50}
+		},
+		duration: 20000,
+		stacks: 0,
+		maxStacks: function() {
+			return 1
+		},
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -8310,17 +8744,37 @@ const cataclysm = {
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
-		flavorTextMiss: function(enemy, weapon) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		//You launch yourself toward the enemy, swinging your {weapon} in a wide arc, but it moves out of the way just in time and you miss!
-		blankSpace()
-		customizeEachWord(`You leap high into the air, crashing down with your `, 'white', line1)
-		customizeEachWord(`${weapon.name}`, `${weapon.color}`, line2)
-		customizeEachWord(`, but you `, 'white', line2)
-		customizeEachWord(`miss`, 'red', line2)
-		customizeEachWord(`!`, 'white', line2)
-		blankSpace()
+	flavorTextMiss: function(enemy, weapon) {
+	let line1 = lineFunc()
+	let line2 = lineFunc()
+	//You launch yourself toward the enemy, swinging your {weapon} in a wide arc, but it moves out of the way just in time and you miss!
+	blankSpace()
+	customizeEachWord(`You leap high into the air, crashing down with your `, 'white', line1)
+	customizeEachWord(`${weapon.name}`, `${weapon.color}`, line1)
+	customizeEachWord(`, but you `, 'white', line1)
+	customizeEachWord(`miss`, 'red', line1)
+	customizeEachWord(`!`, 'white', line1)
+	blankSpace()
+	},
+	specialEffect: function(enemy, damage, penetrationType, damageBlocked) {
+	let line1 = lineFunc()
+	let line2 = lineFunc()
+	//You launch yourself toward the enemy, swinging your {weapon} in a wide arc, but it moves out of the way just in time and you miss!
+	blankSpace()
+	customizeEachWord(`The shockwave from `, `warrior-ability-text-color`, line1)
+	customizeEachWord(`${this.name} `, this.color, line1)
+	customizeEachWord(`blasts the `, `warrior-ability-text-color`, line1)
+	customizeEachWord(`${enemy.name}`, enemy.color, line1)
+	customizeEachWord(`!`, `warrior-ability-text-color`, line1)
+	customizeEachWord(`${this.name} `, this.color, line2)
+	customizeEachWord(`hits for `, `warrior-ability-text-color`, line2)
+	customizeEachWord(`${damage} `, `light-blue`, line2)
+	customizeEachWord(`${penetrationType} `, penetrationType, line2)
+	customizeEachWord(`damage! `, `white`, line2)
+	customizeEachWord(`(Enemy's armor blocks `, `white`, line2)
+	customizeEachWord(`${damageBlocked}`, `light-blue`, line2)
+	customizeEachWord(`)`, `white`, line2)
+	blankSpace()
 	},
 	queued: false,
 	onCooldown: false,
@@ -8339,24 +8793,33 @@ const dualStrike = {
 	refName: 'dualStrike',
 	type: 'ability',
 	color: 'warrior-color',
-	cooldownSet: 10000,
-	cooldown: 20000,
-	windUp: 8,
+	cooldownSet: 8000,
+	cooldown: 8000,
+	windUp: 2,
 	resourceName: 'might',
+	resourceCost: 2,
 	weaponTypesUsed: ['oneHanded', 'daggers'],
 	damage: function (enemy) {
-		let damage = baseAttackDamageRight() + baseAttackDamageLeft()
-		switch(this.level) {
-			case 1:
-			damage = damage * 1.1
-			break;
-			case 2:
-			damage = damage * 1.7
-			break;
-			case 3:
-			damage = damage * 2.5
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseDamage)
+		let totalDamage = Math.ceil(baseDamage + bleedBonusDamage)
+		console.log(baseDamage, ' DUAL STRIKE BASE DAMAGE')
+		console.log(bleedBonusDamage, ' DUALSTRIKE BONUS DAMAGE')
+		console.log(totalDamage, ' DUAL STRIKE TOTAL DAMAGE')
+		return totalDamage
+	},
+	debuff: {
+		name: 'Fury',
+		refName: 'fury',
+		duration: 30000,
+		stacks: 0,
+		maxStacks: function() {
+			return 3
+		},
+		get bonusModifier() {
+			//50% bonus damage to regular attack at all levels
+			return 0.5
 		}
-		return Math.ceil(damage)
 	},
 	windUpText: function() {
 		let line1 = lineFunc()
@@ -8365,43 +8828,38 @@ const dualStrike = {
 		customizeEachWord(`${this.name}`, this.color, line1)
 		blankSpace()
 	},
-	flavorText: function(enemy, weapon, damage) {
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		let line3 = lineFunc()
-
 		blankSpace()
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`${this.name.toUpperCase()}`, 'activate-skill', line1)
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`You lunge forward, pluging your `, this.color, line2)
-		customizeEachWord(`${weapon[0].name} `, `${weapon[0].color}`, line2)
-		customizeEachWord(`and `, this.color, line2)
-		customizeEachWord(`${weapon[1].name} `, `${weapon[1].color}`, line2)
-		customizeEachWord(`into the `, this.color, line2)
-		customizeEachWord(`${enemy.name}`, enemy.color, line2)
-		customizeEachWord(`! `, this.color, line2)
-		customizeEachWord(`You hit for `, 'green', line3)
-		customizeEachWord(`${damage} `, 'light-blue', line3)
-		customizeEachWord(`damage`, 'green', line3)
+		customizeEachWord(`You lunge forward, pluging your `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${weapon[0].name} `, `${weapon[0].color}`, line1)
+		customizeEachWord(`and `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${weapon[1].name} `, `${weapon[1].color}`, line1)
+		customizeEachWord(`into the `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`! `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
+		blankSpace()
 		blankSpace()
 	},
 		flavorTextMiss: function(enemy, weapon) {
 		let line1 = lineFunc()
-		let line2 = lineFunc()
-		//You launch yourself toward the enemy, swinging your {weapon} in a wide arc, but it moves out of the way just in time and you miss!
 		blankSpace()
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`${this.name.toUpperCase()}`, 'activate-skill', line1)
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`You lunge forward, swinging your `, this.color, line2)
-		customizeEachWord(`${weapon[0].name} `, `${weapon[0].color}`, line2)
-		customizeEachWord(`and `, this.color, line2)
-		customizeEachWord(`${weapon[1].name} `, `${weapon[1].color}`, line2)
-		customizeEachWord(`at the `, this.color, line2)
-		customizeEachWord(`${enemy.name} `, enemy.color, line2)
-		customizeEachWord(`and `, this.color, line2)
-		customizeEachWord(`miss!`, 'red', line2)
+		customizeEachWord(`You attempt a `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
+		customizeEachWord(`attack on the `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`, but your attack goes wide and you `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`miss`, 'red', line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
 		blankSpace()
 	},
 	queued: false,
@@ -8426,44 +8884,19 @@ const bladeBlitz = {
 	cooldownSet: 10000,
 	cooldown: 10000,
 	windUp: 2,
-	numberOfSwings: 4,
+	numberOfSwings: function() {
+		return Math.floor(player.might / 2) + 1
+	},
 	resourceName: 'might',
+	resourceCost: function() {
+		return	player.might == 0 ? 1 : player.might
+	},
 	weaponTypesUsed: ['daggers', 'oneHanded'],
 	damage: function (weapon) {
-		let damage = 0
-		if (weapon.roomId == 'right hand') {
-			damage = baseAttackDamageRight()
-		} else {
-			damage = baseAttackDamageLeft()
-		}
-		switch(this.level) {
-			case 1:
-			damage = damage * 1.5
-			break;
-			case 2:
-			damage = damage * 2.0
-			break;
-			case 3:
-			damage = damage * 2.5
-		}
-		return Math.ceil(damage)
-
-	},
-	debuff: {
-		name: 'Bleed',
-		refName: 'bleed',
-		stacks: 0,
-		damage: function(swingObject) {
-			let damage = swingObject.totalDamage
-			let totalDamage = damage * (enemy.debuffs.bleed.stacks * 0.1)
-			quickMessage(`${totalDamage} total damage`)
-			return Math.ceil(totalDamage)
-			// return 0.1 * this.stacks
-			//change to increment by 10% per stack
-		},
-		maxStacks: function() {
-			return player.bladeBlitz.level + 4
-		},
+		let baseDamageRight = baseAttackDamageRight()
+		let baseDamageLeft = baseAttackDamageLeft()
+		let baseDamage = Math.ceil((baseDamageRight + baseDamageLeft) * 0.5)
+		return baseDamage
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -8472,39 +8905,36 @@ const bladeBlitz = {
 			return true
 		}
 	},
-	flavorText: function(enemy, weapon, damage) {
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		let line3 = lineFunc()
-		console.log(weapon, ' WEAPON')
-		customizeEachWord(`You swing furiously with your `, 'warrior-color', line2)
-		customizeEachWord(`${weapon.name} `, weapon.color, line2)
-		customizeEachWord(`in a blur of blades, eviscerating the `, 'warrior-color', line2)
-		customizeEachWord(`${enemy.name}`, enemy.color, line2)
-		customizeEachWord(`!`, 'warrior-color', line2)
-		customizeEachWord(`You hit for `, 'green', line3)
-		customizeEachWord(`${damage} `, 'light-blue', line3)
-		customizeEachWord(`damage`, 'green', line3)
+		customizeEachWord(`You swing furiously with your `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${weapon[0].name} `, weapon[0].color, line1)
+		customizeEachWord(`and `, 'warrior-color', line1)
+		customizeEachWord(`${weapon[1].name} `, weapon[1].color, line1)
+		customizeEachWord(`in a blur of blades, eviscerating the `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},	
-	flavorText2: function(weapon) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		blankSpace()
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`${this.name.toUpperCase()}`, 'activate-skill', line1)
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`In a mad frenzy, you rush the enemy!`, 'warrior-color', line2)
-	},
 	flavorTextMiss: function(enemy, weapon, damage) {
 		let line1 = lineFunc()
-		//You swing your weapon wildly at the enemy in your blade blitz frenzy, but your swing goes wide and you miss
-		customizeEachWord(`You `, 'warrior-color', line1)
-		customizeEachWord(`swing wildly at the `, 'warrior-color', line1)
+		blankSpace()
+		customizeEachWord(`Your `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
+		customizeEachWord(`swing at the `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`, but your attack goes wide and you `, 'warrior-color', line1)
+		customizeEachWord(`goes wide and you `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`miss`, 'red', line1)
-		customizeEachWord(`!`, 'white', line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
 		blankSpace()
 	},
 	numberOfHits: function(weapon1, weapon2) {
@@ -8548,10 +8978,10 @@ const bladeBlitz = {
 }
 player.bladeBlitz = { ...bladeBlitz}
 
-const gore = {
+const shred = {
 	level: 1,
-	name: 'Gore',
-	refName: 'gore',
+	name: 'Shred',
+	refName: 'shred',
 	type: 'ability',
 	color: 'warrior-color',
 	cooldown: 10000,
@@ -8561,33 +8991,19 @@ const gore = {
 	resourceCost: 0,
 	weaponTypesUsed: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
-		let damage = baseAttackDamageRight() + baseAttackDamageLeft()
-		let bonusPercent = (enemy.health / enemy.maxHealth)
-		switch(this.level) {
-			case 1:
-			damage = (damage * 1.5) + (damage * bonusPercent)
-			break;
-			case 2:
-			damage = (damage * 2.0) + (damage * bonusPercent)
-			break;
-			case 3:
-			damage = (damage * 2.5) + (damage * bonusPercent)
-		}
-		return Math.ceil(damage)
-		
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let totalDamage = baseDamage
+		return totalDamage
 	},
 	debuff: {
-		name: 'Bleed',
-		refName: 'bleed',
-		stacks: 5,
-		damage: function(swingObject) {
-			let damage = swingObject.totalDamage
-			let totalDamage = damage * (enemy.debuffs.bleed.stacks * 0.1)
-			quickMessage(`${totalDamage} total damage`)
-			return Math.ceil(totalDamage)
-			// return 0.1 * this.stacks
-			//change to increment by 10% per stack
-		},
+		name: 'Shred',
+		refName: 'shred',
+		modifiedStats: ['slashingArmor', 'piercingArmor', 'bluntArmor'],
+		slashingArmor: -5,
+		piercingArmor: -5,
+		bluntArmor: -5,
+		stacks: 0,
+		duration: 20000,
 		maxStacks: function() {
 			return 5
 		},
@@ -8606,31 +9022,36 @@ const gore = {
 			return true
 		}
 	},
-	flavorText: function(enemy, weapon, damage) {
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		let line3 = lineFunc()
-		console.log(weapon, ' WEAPON')
-		customizeEachWord(`GORE GORE GORE!`, 'warrior-color', line1)
-		customizeEachWord(`You swing furiously with your `, 'warrior-color', line2)
-		customizeEachWord(`${weapon.name} `, weapon.color, line2)
-		customizeEachWord(`in a blur of blades, eviscerating the `, 'warrior-color', line2)
-		customizeEachWord(`${enemy.name}`, enemy.color, line2)
-		customizeEachWord(`!`, 'warrior-color', line2)
-		customizeEachWord(`You hit for `, 'green', line3)
-		customizeEachWord(`${damage} `, 'light-blue', line3)
-		customizeEachWord(`damage`, 'green', line3)
+		customizeEachWord(`You aim your `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${weapon[0].name} `, weapon[0].color, line1)
+		customizeEachWord(`and `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${weapon[1].name} `, weapon[1].color, line1)
+		customizeEachWord(`carefully, swinging at the weakest spots in the `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(` armor!`, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
-	},
+	},	
 	flavorTextMiss: function(enemy, weapon, damage) {
 		let line1 = lineFunc()
-		//You swing your weapon wildly at the enemy in your blade blitz frenzy, but your swing goes wide and you miss
-		customizeEachWord(`You `, 'warrior-color', line1)
-		customizeEachWord(`swing wildly at the `, 'warrior-color', line1)
+		blankSpace()
+		customizeEachWord(`You attempt to `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
+		customizeEachWord(`the `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`, but your attack goes wide and you `, 'warrior-color', line1)
+		customizeEachWord(`, but your attack goes wide and you `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`miss`, 'red', line1)
-		customizeEachWord(`!`, 'white', line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
 		blankSpace()
 	},
 	queued: false,
@@ -8642,7 +9063,101 @@ const gore = {
 		return this.level + 1
 	},
 }
-player.gore = { ...gore }
+player.shred = { ...shred }
+
+
+
+const valorStrike = {
+	level: 1,
+	name: 'Valor Strike',
+	refName: 'valorStrike',
+	type: 'ability',
+	cooldownSet: 10000,
+	cooldown: 10000,
+	windUp: 2,
+	resourceName: 'might',
+	resourceCost: 1,
+	weaponTypesUsed: ['shields', 'oneHanded'],
+	valorBonus: function() {
+		if (this.level == 1) {return 0.1}
+		if (this.level == 2) {return 0.15}
+		if (this.level == 3) {return 0.20}
+		if (this.level == 4) {return 0.25}
+		if (this.level >= 5) {return 0.30}
+	},
+	damage: function () {
+		let baseDamage = baseAttackDamageRight()
+		let bonusModifier = this.valorBonus()
+		let bonusDamage = baseDamage * bonusModifier
+		let totalDamage = Math.ceil(baseDamage + bonusDamage)
+		return totalDamage
+	},
+	buff: {
+		name: 'Valor',
+		refName: 'valor',
+		duration: 30000,
+		stacks: 1,
+		maxStacks: function() {
+			return player.boomingMight.level + 9
+		},
+	},
+	abilityWeaponsCheck: function(weapon1, weapon2) {
+		if (weapon1 == undefined && weapon2 == undefined) {
+			let line1 = lineFunc()
+			customizeEachWord(`You cannot perform ${this.name} while wielding these weapons`, 'white', line1)
+			return true
+		}
+	},
+	windUpText: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You begin gathering your energy for `, 'white', line1)
+		customizeEachWord(`${this.name}`, this.color, line1)
+		blankSpace()
+	},
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You manifest your Valor into your `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${weapon.name}`, weapon.color, line1)
+		customizeEachWord(`, striking the `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		customizeEachWord(`with a vengence!`, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
+		blankSpace()
+	},
+	flavorTextMiss: function(enemy, weapon) {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You swing your sword at the `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		customizeEachWord(`with your `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${weapon.name} `, weapon.color, line1)
+		customizeEachWord(`but `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`miss`, 'red', line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
+		blankSpace()
+	},
+	queued: false,
+	onCooldown: false,
+	type: 'ability',
+	color: 'warrior-color',
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+}
+player.valorStrike = { ...valorStrike}
 
 const shieldSlam = {
 	level: 1,
@@ -8651,9 +9166,12 @@ const shieldSlam = {
 	type: 'ability',
 	cooldownSet: 10000,
 	cooldown: 10000,
-	windUp: 10,
+	windUp: 2,
 	resourceName: 'might',
 	resourceCost: 1,
+	numberOfTargets: function() {
+		return this.level + 1
+	},
 	weaponTypesUsed: ['shields'],
 	debuff: {
 		name: 'Shield Slam',
@@ -8693,35 +9211,40 @@ const shieldSlam = {
 		customizeEachWord(`${this.name}`, this.color, line1)
 		blankSpace()
 	},
-	flavorText: function(enemy, damage, shield) {
+	flavorText: function(enemy, shield, damage, penetrationType, damageBlocked) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		customizeEachWord(`You swing your shield in a wide arc, slamming your `, this.color, line1)
+		customizeEachWord(`Your `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`${shield.name} `, shield.color, line1)
-		customizeEachWord(`into the `, this.color, line1)
-		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, this.color, line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`slams into the `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1 )
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
-	flavorText2: function() {
+	flavorText2: function(shield) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		blankSpace()
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`${this.name.toUpperCase()}`, 'activate-skill', line1)
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`You posture your shield, preparing to attack!`, 'warrior-color', line2)
+		customizeEachWord(`You swing your shield in a wide arc, slamming your `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${shield.name} `, shield.color, line1)
+		customizeEachWord(`into the enemy!`, `warrior-ability-text-color`, line1)
+
 	},
 	flavorTextMiss: function(enemy) {
 		let line1 = lineFunc()
-		customizeEachWord(`You swing your shield in a wide arc at the `, this.color, line1)
+		customizeEachWord(`You swing your shield in a wide arc at the `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`and `, this.color, line1)
+		customizeEachWord(`and `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`miss`, 'red', line1)
-		customizeEachWord(`!`, this.color, line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
 		blankSpace()
 	},
 	queued: false,
@@ -8742,100 +9265,6 @@ const shieldSlam = {
 	},
 }
 player.shieldSlam = { ...shieldSlam}
-
-const valorStrike = {
-	level: 1,
-	name: 'Valor Strike',
-	refName: 'valorStrike',
-	type: 'ability',
-	cooldownSet: 10000,
-	cooldown: 10000,
-	windUp: 5,
-	resourceName: 'might',
-	resourceCost: 1,
-	weaponTypesUsed: ['shields', 'oneHanded'],
-	damage: function () {
-		let bonusDamagePercent = 0
-		if (player.currentLeftHandWeapon().skillUsed == 'oneHanded') {
-			if (player.buffs.valor) {
-				bonusDamagePercent = player.buffs.valor.stacks * 0.1
-			}
-			let baseDamage = baseAttackDamageLeft() * 1.5
-			let bonusDamage = baseAttackDamageLeft() * bonusDamagePercent
-			let totalDamage = baseDamage + bonusDamage
-			return Math.ceil(totalDamage)
-		} else {
-			if (player.buffs.valor) {
-				bonusDamagePercent = player.buffs.valor.stacks * 0.1
-			}
-			let baseDamage = baseAttackDamageRight() * 1.5
-			let bonusDamage = baseAttackDamageRight() * bonusDamagePercent
-			let totalDamage = baseDamage + bonusDamage
-			return Math.ceil(totalDamage)
-		}
-	},
-	buff: {
-		name: 'Valor',
-		refName: 'valor',
-		duration: 30000,
-		stacks: 0,
-		maxStacks: function() {
-			return player.boomingMight.level + 9
-		},
-	},
-	abilityWeaponsCheck: function(weapon1, weapon2) {
-		if (weapon1 == undefined && weapon2 == undefined) {
-			let line1 = lineFunc()
-			customizeEachWord(`You cannot perform ${this.name} while wielding these weapons`, 'white', line1)
-			return true
-		}
-	},
-	windUpText: function() {
-		let line1 = lineFunc()
-		blankSpace()
-		customizeEachWord(`You begin gathering your energy for `, 'white', line1)
-		customizeEachWord(`${this.name}`, this.color, line1)
-		blankSpace()
-	},
-	flavorText: function(enemy, damage, weapon) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		blankSpace()
-		customizeEachWord(`You manifest your Valor into your `, this.color, line1)
-		customizeEachWord(`${weapon.name}`, weapon.color, line1)
-		customizeEachWord(`, striking the `, this.color, line1)
-		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`with all your might!`, this.color, line1)
-		customizeEachWord(`You hit for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
-		blankSpace()
-	},
-	flavorTextMiss: function(enemy, weapon) {
-		let line1 = lineFunc()
-		blankSpace()
-		customizeEachWord(`You attempt to Valor Strike the `, this.color, line1)
-		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`with your `, this.color, line1)
-		customizeEachWord(`${weapon.name} `, weapon.color, line1)
-		customizeEachWord(`but `, this.color, line1)
-		customizeEachWord(`miss`, 'red', line1)
-		customizeEachWord(`!`, this.color, line1)
-		blankSpace()
-	},
-	queued: false,
-	onCooldown: false,
-	type: 'ability',
-	color: 'warrior-color',
-	goldToUpgrade: function () {
-		return 9 * this.level
-	},
-	pointsToUpgrade: function () {
-		return this.level + 1
-	},
-}
-player.valorStrike = { ...valorStrike}
-
 
 const boomingMight = {
 	level: 1,
@@ -8861,7 +9290,7 @@ const boomingMight = {
 	damage: function () {
 		let baseDamage = 10 //this number is randomly made up, keep if it works
 		let abilityDamage = (player.weight + player.armor)
-		let totalDamage = baseDamage + abilityDamage
+		let totalDamage = Math.ceil(baseDamage + abilityDamage)
 		return totalDamage
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
@@ -8878,33 +9307,39 @@ const boomingMight = {
 		customizeEachWord(`${this.name}`, this.color, line1)
 		blankSpace()
 	},
-	flavorText: function(enemy, damage) {
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		customizeEachWord(`You hurl a shockwave of Might, blasting the `, this.color, line1)
+		customizeEachWord(`You hurl a shockwave of `, `warrior-ability-text-color`, line1)
+		customizeEachWord(`Might `, `warrior-color`, line1)
+		customizeEachWord(`, blasting the `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, this.color, line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
 	flavorText2: function() {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		blankSpace()
-		customizeEachWord(`**`, 'white', line1)
-		customizeEachWord(`${this.name.toUpperCase()}`, 'activate-skill', line1)
-		customizeEachWord(`**`, 'white', line1)		
-		customizeEachWord(`Throwing back your arms you unleash your Might!`, this.color, line2)
+		customizeEachWord(`Throwing back your arms with a mighty yell, you unleash a `, `warrior-ability-text-color`, line2)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line2)
 	},
 	flavorTextMiss: function(enemy) {
 		let line1 = lineFunc()
-		customizeEachWord(`The shockwave goes hurling toward the `, this.color, line1)
+		customizeEachWord(`The shockwave goes hurling toward the `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`and `, this.color, line1)
+		customizeEachWord(`and `, `warrior-ability-text-color`, line1)
 		customizeEachWord(`misses`, 'red', line1)
-		customizeEachWord(`!`, this.color, line1)
+		customizeEachWord(`!`, `warrior-ability-text-color`, line1)
 		blankSpace()
 	},
 	queued: false,
@@ -8927,7 +9362,7 @@ const ambush = {
 	cooldown: 5000,
 	cooldownSet: 5000,
 	resourceName: 'adrenaline',
-	resourceCost: 20,
+	resourceCost: 15,
 	weaponTypesUsed: ['daggers'],
 	type: 'ability',
 	color: 'sinistral-color',
@@ -8968,6 +9403,11 @@ const ambush = {
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
+	flavorTextSpecial: function() {
+		let line1 = lineFunc()
+		customizeEachWord(`The kill was so deft, you were completely unheard, and you immediately leap back into the shadows.`, 'grey', line1)
+		blankSpace()
+	},
 	flavorTextMiss: function(enemy) {
 		let line1 = lineFunc()
 		blankSpace()
@@ -8999,7 +9439,7 @@ const backstab = {
 	color: 'sinistral-color',
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
-	resourceCost: 15,
+	resourceCost: 10,
 	weaponTypesUsed: ['daggers'],
 	rightWeaponTypes: ['daggers'],
 	leftWeaponTypes: ['daggers'],
@@ -9022,11 +9462,11 @@ const backstab = {
 		refName: 'sinisterMark',
 		stacks: 0,
 		modifiedStats: ['slashingArmor', 'piercingArmor', 'bluntArmor'],
-		slashingArmor: -1,
-		piercingArmor: -1,
-		bluntArmor: -1,
+		slashingArmor: -10,
+		piercingArmor: -10,
+		bluntArmor: -10,
 		maxStacks: function() {
-			return 5
+			return this.level
 		},
 	},
 	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
@@ -9075,27 +9515,22 @@ const guillotine = {
 	level: 1,
 	name: 'Guillotine',
 	refName: 'guillotine',
-	cooldown: 1000,
-	cooldownSet: 1000,
+	cooldown: 5000,
+	cooldownSet: 5000,
 	type: 'ability',
 	color: 'sinistral-color',
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
-	resourceCost: 0,
+	resourceCost: 10,
 	weaponTypesUsed: ['daggers'],
 	rightWeaponTypes: ['daggers'],
 	leftWeaponTypes: ['daggers'],
 	damage: function (enemy) {
-		let sinisterMarksBuffPercent = 0
-		let guillotineBonus = 1.5
-		if (enemy.debuffs?.sinisterMarks) {
-			sinisterMarksBuffPercent = enemy.debuffs.sinisterMarks.stacks * 0.1
-		}
-		let totalBonus = sinisterMarksBuffPercent + guillotineBonus
-		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * totalBonus
-		let bonusPercent = ((enemy.maxHealth - enemy.health) / enemy.maxHealth) * 100
-		let totalDamage = baseDamage + (baseDamage * bonusPercent)
-		return Math.ceil(totalDamage)
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let bonusEnemyMissingHealthModifier = ((enemy.maxHealth - enemy.health) / enemy.maxHealth)
+		let bonusDamage = baseDamage * bonusEnemyMissingHealthModifier
+		let totalDamage = Math.ceil(baseDamage + bonusDamage)
+		return totalDamage
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
@@ -9126,6 +9561,12 @@ const guillotine = {
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
+	flavorTextAdrenalineGain: function() {
+		let line1 = lineFunc()
+		customizeEachWord(`Guillotine `, this.color, line1)
+		customizeEachWord(`consumes the Sinister Marks on the target before it dies granting you Adrenaline`, `sinistral-ability-text-color`, line1)
+		blankSpace()
+	},
 	flavorTextMiss: function(enemy, weapon) {
 		let line1 = lineFunc()
 		blankSpace()
@@ -9153,34 +9594,34 @@ const venomBlade = {
 	level: 1,
 	name: 'Venom Blade',
 	refName: 'venomBlade',
-	cooldown: 1000,
-	cooldownSet: 1000,
+	cooldown: 5000,
+	cooldownSet: 5000,
 	type: 'ability',
 	color: 'sinistral-color',
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
 	resourceCost: 0,
-	weaponTypesUsed: ['daggers'],
-	rightWeaponTypes: ['daggers'],
-	leftWeaponTypes: ['daggers'],
+	weaponTypesUsed: ['daggers', 'oneHanded'],
+	rightWeaponTypes: ['daggers', 'oneHanded'],
+	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
 		//5 and 5 = 10
-		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		let bonusDamage = enemy.debuffs?.poison ? baseDamage * (enemy.debuffs?.poison.stacks * 0.33) : 0
+		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
+		let bonusDamage = enemy.debuffs?.poison ? baseDamage * (enemy.debuffs?.poison.stacks * 0.2) : 0
 		let totalDamage = baseDamage + bonusDamage
 		return Math.ceil(totalDamage)
 	},
-	debuff: {
-		name: 'Poison',
-		refName: 'poison',
-		stacks: 0,
-		damage: function(swingObject) {
-			return 0
-		},
-		maxStacks: function() {
-			return 5
-		},
-	},
+	// debuff: {
+	// 	name: 'Poison',
+	// 	refName: 'poison',
+	// 	stacks: 0,
+	// 	damage: function(swingObject) {
+	// 		return 0
+	// 	},
+	// 	maxStacks: function() {
+	// 		return 5
+	// 	},
+	// },
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'unarmed') {return false}
@@ -9237,34 +9678,87 @@ const contagion = {
 	level: 1,
 	name: 'Contagion',
 	refName: 'contagion',
-	cooldown: 1000,
-	cooldownSet: 1000,
+	cooldown: 2500,
+	cooldownSet: 2500,
 	type: 'ability',
 	color: 'sinistral-color',
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
 	resourceCost: 5,
-	weaponTypesUsed: ['daggers'],
-	rightWeaponTypes: ['daggers'],
-	leftWeaponTypes: ['daggers'],
+	weaponTypesUsed: ['daggers', 'oneHanded'],
+	rightWeaponTypes: ['daggers', 'oneHanded'],
+	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
-		let poisonStacks = enemy?.debuffs?.poison?.stacks ? enemy?.debuffs?.poison?.stacks : 0//1, 2, 3, etc
-		let percentBonusDamage = poisonStacks * 0.1 //0.1, 0.4, 0.6, 1.0, etc
-		let baseDamage = baseAttackDamageRight()
-		let bonusDamage = baseDamage * percentBonusDamage //
-		let totalDamage = baseDamage + bonusDamage
+		let baseDamage = baseAttackDamageLeft()
+		let totalDamage = baseDamage
 		return Math.ceil(totalDamage)
 	},
 	debuff: {
 		name: 'Poison',
 		refName: 'poison',
 		stacks: 0,
+		get duration() {
+			return Math.trunc(60000 * player.contagion.level)
+		} ,
+		color: 'dark-green',
 		damage: function(swingObject) {
-			return 0
+			let baseDamage = player.currentWeaponSkill.attackPower
+			let bonusDamage = this.stacks * player.contagion.level
+			let totalDamage = baseDamage + bonusDamage
+			return Math.ceil(totalDamage)
 		},
 		maxStacks: function() {
-			return 5
+			return 10
 		},
+		flavorText: function(enemy, damage, elementType, damageResisted) {
+			let line1 = lineFunc()
+			customizeEachWord(`You hit for `, 'green', line1)
+			customizeEachWord(`${damage} `, 'light-blue', line1)
+			customizeEachWord(`additional `, 'green', line1)
+			customizeEachWord(`poison `, `dark-green`, line1)
+			customizeEachWord(`damage. `, `green`, line1)
+			customizeEachWord(`(Enemy resists `, `white`, line1)
+			customizeEachWord(`${damageResisted}`, `light-blue`, line1)
+			customizeEachWord(`)`, `white`, line1)
+		},
+		flavorTextWearsOff: function() {
+			let line1 = lineFunc()
+			customizeEachWord(`${this.name} `, 'dark-green', line1)
+			customizeEachWord(`has faded from your weapon`, 'white', line1)
+		},
+		flavorTextApplyBuff: function() {
+			let line1 = lineFunc()
+			customizeEachWord(`Your weapon glows green with `, 'white', line1)
+			customizeEachWord(`${this.name}`, 'dark-green', line1)
+		}
+	},
+	buff: {
+		name: 'Poison',
+		refName: 'poison',
+		duration: 30000,
+		stacks: 0,
+		damage: function(enemy) {
+			let totalDamage = baseAttackDamageRight()
+			if (enemy.debuffs) {
+				if (enemy.debuffs.shadowMark) {
+					let stacks = enemy.debuffs.shadowMark.stacks
+					totalDamage = totalDamage * stacks
+				}
+			}
+			return totalDamage
+		},
+		maxStacks: function() {
+			return 20
+		},
+		flavorText: function(enemy, damage) {
+			let line1 = lineFunc()
+			customizeEachWord(`You hit for `, 'green', line1)
+			customizeEachWord(`${damage} `, 'light-blue', line1)
+			customizeEachWord(`additional `, 'green', line1)
+			customizeEachWord(`shadow damage`, 'shadow', line1)
+		},
+		type: 'mark',
+		color: 'shadow',
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
@@ -9280,9 +9774,11 @@ const contagion = {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You throw a volley of poison daggers at the `, 'sinistral-ability-text-color', line1)
+		customizeEachWord(`You stab the `, 'sinistral-ability-text-color', line1)
 		customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-		customizeEachWord(`that inflicts it with `, 'sinistral-ability-text-color', line1)
+		customizeEachWord(`with your off-hand `, 'sinistral-ability-text-color', line1)
+		customizeEachWord(`${weapon.name} `, weapon.color, line1)
+		customizeEachWord(`injecting it with `, 'sinistral-ability-text-color', line1)
 		customizeEachWord(`${this.name}`, this.color, line1)
 		customizeEachWord(`!`, 'sinistral-ability-text-color', line1)
 		customizeEachWord(`${this.name} `, this.color, line2)
@@ -9298,11 +9794,11 @@ const contagion = {
 	flavorTextMiss: function(enemy, ) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You throw a volley of poison daggers coated with `, 'sinistral-ability-text-color', line1)
-		customizeEachWord(`${this.name} `, this.color, line1)
-		customizeEachWord(`at the `, 'sinistral-ability-text-color', line1)
-		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
-		customizeEachWord(`, but you narrowly `, 'sinistral-ability-text-color', line1)
+		customizeEachWord(`You stab at the `, 'sinistral-ability-text-color', line1)
+		customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
+		customizeEachWord(`attempting to infect it with `, 'sinistral-ability-text-color', line1)
+		customizeEachWord(`${this.name}`, this.color, line1)
+		customizeEachWord(`, but you `, 'sinistral-ability-text-color', line1)
 		customizeEachWord(`miss`, 'red', line1)
 		customizeEachWord(`!`, 'sinistral-ability-text-color', line1)
 		blankSpace()
@@ -9320,16 +9816,16 @@ const bane = {
 	level: 1,
 	name: 'Bane',
 	refName: 'bane',
-	cooldown: 1000,
-	cooldownSet: 1000,
+	cooldown: 5000,
+	cooldownSet: 5000,
 	type: 'ability',
 	color: 'sinistral-color',
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
 	resourceCost: 0,
-	weaponTypesUsed: ['daggers'],
-	rightWeaponTypes: ['daggers'],
-	leftWeaponTypes: ['daggers'],
+	weaponTypesUsed: ['daggers', 'oneHanded'],
+	rightWeaponTypes: ['daggers', 'oneHanded'],
+	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
 		let poisonStacks = 0
 		let bonusDamage = 0
@@ -9403,19 +9899,22 @@ const shadowDaggers = {
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
 	resourceCost: 0,
-	weaponTypesUsed: ['daggers'],
-	rightWeaponTypes: ['daggers'],
-	leftWeaponTypes: ['daggers'],
+	weaponTypesUsed: ['daggers', 'oneHanded'],
+	rightWeaponTypes: ['daggers', 'oneHanded'],
+	leftWeaponTypes: ['daggers', 'oneHanded'],
+	numberOfHits: function() {
+		return 2 + this.level
+	},
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
 		return Math.ceil(baseDamage)
 	},
 	debuff: [
 		{
-			name: 'Reduced Dodge',
-			refName: 'reducedDodge',
-			modifiedStats: ['dodge'],
-			dodge: -10,
+			name: 'Reduced Accuracy',
+			refName: 'reducedAccuracy',
+			modifiedStats: ['accuracy'],
+			accuracy: -7,
 			duration: 20000,
 			stacks: 0,
 			maxStacks: function() {
@@ -9434,10 +9933,10 @@ const shadowDaggers = {
 			},
 		},
 		{
-			name: 'Reduced Accuracy',
-			refName: 'reducedAccuracy',
-			modifiedStats: ['accuracy'],
-			accuracy: -10,
+			name: 'Reduced Dodge',
+			refName: 'reducedDodge',
+			modifiedStats: ['dodge'],
+			dodge: -10,
 			duration: 20000,
 			stacks: 0,
 			maxStacks: function() {
@@ -9458,7 +9957,7 @@ const shadowDaggers = {
 	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked, index) {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		let tellPlayerWhatDebuffGotApplied = ['dodge', 'accuracy', 'armor']
+		let tellPlayerWhatDebuffGotApplied = ['accuracy', 'dodge', 'armor']
 		blankSpace()
 		customizeEachWord(`You throw a dagger at the `, `sinistral-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
@@ -9505,9 +10004,9 @@ const shadowsurge = {
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
 	resourceCost: 0,
-	weaponTypesUsed: ['daggers'],
-	rightWeaponTypes: ['daggers'],
-	leftWeaponTypes: ['daggers'],
+	weaponTypesUsed: ['daggers', 'oneHanded'],
+	rightWeaponTypes: ['daggers', 'oneHanded'],
+	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy, doesPlayerShadowStep) {
 		let baseDamage = baseAttackDamageRight()
 		let totalDamage = 0
@@ -9539,10 +10038,10 @@ const shadowsurge = {
 		name: 'Shadowbane',
 		refName: 'shadowbane',
 		duration: 30000,
-		stacks: 0,
+		stacks: 1,
 		dodge: 10,
 		maxStacks: function() {
-			return 1
+			return 10
 		},
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
@@ -9640,6 +10139,106 @@ const shadowsurge = {
 	},
 }
 player.shadowsurge = { ...shadowsurge }
+const shadowNova = {
+	level: 1,
+	name: 'Shadow Nova',
+	refName: 'shadowNova',
+	cooldown: 1000,
+	cooldownSet: 1000,
+	type: 'ability',
+	color: 'sinistral-color',
+	multiplier: 1.5,
+	resourceName: 'adrenaline',
+	resourceCost: 0,
+	weaponTypesUsed: ['daggers', 'oneHanded'],
+	rightWeaponTypes: ['daggers', 'oneHanded'],
+	leftWeaponTypes: ['daggers', 'oneHanded'],
+	damage: function () {
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let bonusDamageModifier = 1
+		let totalDamage = baseDamage * bonusDamageModifier
+		if (player?.buffs?.shadowbane) {
+			if (player.buffs.shadowbane.stacks == 1) {bonusDamageModifier = 1.0}
+			if (player.buffs.shadowbane.stacks == 2) {bonusDamageModifier = 1.1}
+			if (player.buffs.shadowbane.stacks == 3) {bonusDamageModifier = 1.25}
+			if (player.buffs.shadowbane.stacks == 4) {bonusDamageModifier = 1.45}
+			if (player.buffs.shadowbane.stacks == 5) {bonusDamageModifier = 1.70}
+			if (player.buffs.shadowbane.stacks == 6) {bonusDamageModifier = 2.0}
+			if (player.buffs.shadowbane.stacks == 7) {bonusDamageModifier = 2.35}
+			if (player.buffs.shadowbane.stacks == 8) {bonusDamageModifier = 2.75}
+			if (player.buffs.shadowbane.stacks == 9) {bonusDamageModifier = 3.25}
+			if (player.buffs.shadowbane.stacks == 10) {bonusDamageModifier = 4.0}
+		}
+		return Math.ceil(totalDamage)
+	},
+	regularDamage: function(enemy) {
+		//base regular damage is combined weapon damage
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let totalDamage = 0
+		//Calculate damage for shadowsurge
+		let bonusDamageMod = enemy.debuffs?.shadowMark?.stacks ? enemy.debuffs.shadowMark.stacks : 0
+		let bonusDamageTotal = (baseDamage * 1.20) * bonusDamageMod
+		totalDamage = baseDamage + bonusDamageTotal
+		return Math.ceil(totalDamage)
+	}, 
+	buff: {
+		name: 'Shadowbane',
+		refName: 'shadowbane',
+		duration: 30000,
+		stacks: 0,
+		dodge: 10,
+		maxStacks: function() {
+			return 1
+		},
+	},
+	abilityWeaponsCheck: function(weapon1, weapon2) {
+		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
+		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'unarmed') {return false}
+		if (weapon1.skillUsed == 'unarmed' && weapon2.skillUsed == 'daggers') {return false}
+		else {
+			let line1 = lineFunc()
+			customizeEachWord(`You cannot perform Venom Blade while wielding any weapon other than a dagger`, 'white', line1)
+			return true
+		}
+	},
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+			blankSpace()
+			customizeEachWord(`You strike the `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
+			customizeEachWord(`with both daggers, releasing its stored energy and blasting it with `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${this.name}`, this.color, line1)
+			customizeEachWord(`!`, `sinistral-ability-text-color` , line1)
+			customizeEachWord(`${this.name} `, this.color, line2)
+			customizeEachWord(`hits for `, 'green', line2)
+			customizeEachWord(`${damage} `, 'light-blue', line2)
+			customizeEachWord(`shadow `, 'shadow', line2)
+			customizeEachWord(`damage.`, `green`, line2)
+			customizeEachWord(` (Enemy resists `, `white`, line2)
+			customizeEachWord(`${damageBlocked}`, `light-blue`, line2)
+			customizeEachWord(`)`, `white`, line2)
+			blankSpace()
+	},
+	flavorTextMiss: function(enemy, weapon, doesPlayerShadowStep) {
+		let line1 = lineFunc()
+			blankSpace()
+			customizeEachWord(`You dive at the `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
+			customizeEachWord(`with your daggers `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`but `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`miss`, 'red', line1)
+			customizeEachWord(`!`, `sinistral-ability-text-color`, line1)
+			blankSpace()
+	},
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+}
+player.shadowNova = { ...shadowNova }
 
 // const empoweringStrike = {
 // 	level: 1,
@@ -9800,7 +10399,7 @@ const catalyst = {
 			blankSpace()
 			applyDamageToEnemy(enemy, quickJabDamageAfterMitigation)
 			debuff = {
-				name: 'Quick Jab: Accuracy and Dodge Debuff',
+				name: `Quick Jab's Blind and Hinderance`,
 				refName: 'quickJab',
 				modifiedStats: ['dodge', 'accuracy'],
 				duration: 15000,
@@ -9974,6 +10573,15 @@ const tempest = {
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
 	duration: 2000,
+	comboCollector:  {
+		name: 'Combo Collector',
+		refName: 'comboCollector',
+		duration: 30000,
+		stacks: 1,
+		maxStacks: function() {
+			return 5
+		},
+	},
 	damage: function (enemy) {
 		baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
 		penetrationType = calculatePenetrationRoll()
@@ -10048,7 +10656,7 @@ const tempest = {
 			customizeEachWord(`Focusing your energy to your legs, you deliver a Behemoth Blitz to the `, `monk-ability-text-color`, line1)
 			customizeEachWord(`${enemy.name}`, enemy.color, line1)
 			customizeEachWord(`! `, `monk-ability-text-color`, line1)
-			customizeEachWord(`You feel invigorated as you increase your STR DEX and AGI!`, `monk-ability-text-color`, line1)
+			customizeEachWord(`You feel invigorated as you gain empowerment!`, `monk-ability-text-color`, line1)
 			customizeEachWord(`Behemoth `, this.color, line2)
 			customizeEachWord(`hits for `, 'green', line2)
 			customizeEachWord(`${behemothBashDamageAfterMitigation} `, 'light-blue', line2)
@@ -10059,6 +10667,7 @@ const tempest = {
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
 			applyDamageToEnemy(enemy, behemothBashDamageAfterMitigation)
+			applyBuff(player.tempest.comboCollector)
 			break
 			case 2: //strength buff
 			buff = {
@@ -10084,6 +10693,7 @@ const tempest = {
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
 			applyDamageToEnemy(enemy, flyingKneeDamageAfterMitigation)
+			applyBuff(player.tempest.comboCollector)
 			break
 			case 3: //agility buff
 				totalDamage = Math.ceil(baseDamage)
@@ -10111,6 +10721,7 @@ const tempest = {
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
 			applyDamageToEnemy(enemy, hurricaneKickDamageAfterMitigation)
+			applyBuff(player.tempest.comboCollector)
 			break
 			case 4: //Armor Reduction on enemies
 				totalDamage = Math.ceil(baseDamage)
@@ -10146,6 +10757,7 @@ const tempest = {
 					customizeEachWord(`damage`, 'green', line2)
 					blankSpace()
 					applyDamageToEnemy(enemy, totalDamage)
+					applyBuff(player.tempest.comboCollector)
 				})
 				break
 		}
@@ -10274,7 +10886,7 @@ const blazingFist = {
 		customizeEachWord(`You transmute the air around you into glowing orbs of fire around your hands. You dash forward, slamming them into the `, `monk-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
 		customizeEachWord(`!`, `monk-ability-text-color`, line1)
-		customizeEachWord(`${this.name} `, `fire`, line2)
+		customizeEachWord(`${this.name} `, this.color, line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damageAfterResist} `, 'light-blue', line2)
 		customizeEachWord(`${elementType} `, elementType, line2)
@@ -10368,7 +10980,7 @@ const tidalFist = {
 		customizeEachWord(`You transmute the air around you into glowing orbs of water around your hands. You dash forward, slamming them into the `, `monk-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
 		customizeEachWord(`!`, `monk-ability-text-color`, line1)
-		customizeEachWord(`${this.name} `, `water`, line2)
+		customizeEachWord(`${this.name} `, this.color, line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damageAfterResist} `, 'light-blue', line2)
 		customizeEachWord(`${elementType} `, elementType, line2)
@@ -10473,7 +11085,7 @@ const quakeFist = {
 		customizeEachWord(`You transmute the earth, pulling particals from the ground to form around your hands. Dashing forward, you deliver a Quake Fist to the `, `monk-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
 		customizeEachWord(`!`, `monk-ability-text-color`, line1)
-		customizeEachWord(`${this.name} `, `earth`, line2)
+		customizeEachWord(`${this.name} `, this.color, line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damageAfterResist} `, 'light-blue', line2)
 		customizeEachWord(`${elementType} `, elementType, line2)
@@ -10567,7 +11179,7 @@ const lightningFist = {
 		customizeEachWord(`You transmute the air around you into lightning around your hands. Dashing forward, you deliver a Lightning Fist to the `, `monk-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
 		customizeEachWord(`!`, `monk-ability-text-color`, line1)
-		customizeEachWord(`${this.name} `, `lightning`, line2)
+		customizeEachWord(`${this.name} `, this.color, line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damageAfterResist} `, 'light-blue', line2)
 		customizeEachWord(`${elementType} `, elementType, line2)
@@ -10657,12 +11269,12 @@ const elementalTempest = {
 		customizeEachWord(`You shape your hands, thrusting a double palm strike into the `, `monk-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
 		customizeEachWord(`!`, `monk-ability-text-color`, line1)
-		customizeEachWord(`${this.name} `, `monk-ability-text-color`, line2)
+		customizeEachWord(`${this.name} `, `monk-color`, line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`${penetrationType} `, penetrationType, line2)
 		customizeEachWord(`damage. `, 'green', line2)
-		customizeEachWord(`(Enemy blocks `, 'white', line2)
+		customizeEachWord(`(Enemy resists `, 'white', line2)
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
@@ -10681,7 +11293,7 @@ const elementalTempest = {
 		customizeEachWord(`${damage} `, 'light-blue', line3)
 		customizeEachWord(`${penetrationType} `, penetrationType, line3)
 		customizeEachWord(`damage. `, 'green', line3)
-		customizeEachWord(`(Enemy blocks `, 'white', line3)
+		customizeEachWord(`(Enemy resists `, 'white', line3)
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line3)
 		customizeEachWord(`)`, 'white', line3)
 		blankSpace()
@@ -10697,7 +11309,7 @@ const elementalTempest = {
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`${penetrationType} `, penetrationType, line2)
 		customizeEachWord(`damage. `, 'green', line2)
-		customizeEachWord(`(Enemy blocks `, 'white', line2)
+		customizeEachWord(`(Enemy resists `, 'white', line2)
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
@@ -11019,6 +11631,174 @@ const transcendence = {
 }
 player.transcendence = { ...transcendence }
 
+const callOfWind = {
+	level: 1,
+	name: 'Call Of Wind',
+	refName: 'callOfWind',
+	cooldown: 1000,
+	cooldownSet: 1000,
+	type: 'ability',
+	color: 'monk-color',
+	multiplier: 1.5,
+	resourceName: 'focus',
+	resourceCost: 5,
+	weaponTypesUsed: ['unarmed'],
+	rightWeaponTypes: ['unarmed'],
+	leftWeaponTypes: ['unarmed'],
+	damageRanged: function (enemy) {
+		let baseDamage = baseAttackDamageRight()
+		let mysticPowerMultiplier = player.mysticPower * 2
+		let bonusDamage = 0
+		let totalDamage = baseDamage + mysticPowerMultiplier
+		return Math.ceil(totalDamage)
+	},
+	damageCombat: function (enemy) {
+		let baseDamage = baseAttackDamageRight()
+		let bonusDamage = 0
+		let totalDamage = baseDamage + bonusDamage
+		return Math.ceil(totalDamage)
+	},
+	debuff: {
+		name: 'Call Of Wind',
+		refName: 'callOfWind',
+		stacks: 0,
+		damage: function(swingObject) {
+			return 0
+		},
+		maxStacks: function() {
+			return 1
+		},
+	},
+	abilityWeaponsCheck: function(weapon1, weapon2) {
+		if (weapon1 == undefined && weapon2 == undefined) {
+			let line1 = lineFunc()
+			customizeEachWord(`You cannot perform ${this.name} while wielding these weapons`, 'white', line1)
+			blankSpace()
+			return true
+		}
+	},
+	flavorTextRanged: function(enemy, damageAfterResist, elementType, damageResisted) {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You fire an energy charged ball of `, 'monk-ability-text-color', line1)
+		customizeEachWord(`wind `, 'wind', line1)
+		customizeEachWord(`at the `, 'monk-ability-text-color', line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`! `, 'monk-ability-text-color', line1)
+		customizeEachWord(`After the impact, a swirling orb of `, 'monk-ability-text-color', line1)
+		customizeEachWord(`wind `, 'wind', line1)
+		customizeEachWord(`surrounds the enemy.`, 'monk-ability-text-color', line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damageAfterResist} `, 'light-blue', line2)
+		customizeEachWord(`${elementType} `, elementType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy resists `, 'white', line2)
+		customizeEachWord(`${damageResisted}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
+		blankSpace()
+	},
+	flavorTextCombat: function(enemy, weapon, damage, penetrationType, damageBlocked) {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You command the wind surrounding the enemy to pull you in. You speed through the air at the `, 'monk-ability-text-color', line1)
+		customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		customizeEachWord(`delivering a flying side-kick to its mid-section!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)		
+		blankSpace()
+	},
+	flavorTextMissRanged: function(enemy, ) {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You throw a ball of wind at the enemy but miss `, 'monk-ability-text-color', line1)
+		blankSpace()
+	},
+	flavorTextMissCombat: function(enemy, ) {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You fly toward the enemy, but miss with your attack!`, 'monk-ability-text-color', line1)
+		blankSpace()
+	},
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+}
+player.callOfWind = { ...callOfWind }
+const knuckleBlitz = {
+	level: 1,
+	name: 'Knuckle Blitz',
+	refName: 'knuckleBlitz',
+	cooldown: 1000,
+	cooldownSet: 1000,
+	type: 'ability',
+	color: 'monk-ability-text-color',
+	multiplier: 1.5,
+	resourceName: 'focus',
+	resourceCost: 5,
+	weaponTypesUsed: ['unarmed'],
+	rightWeaponTypes: ['unarmed'],
+	leftWeaponTypes: ['unarmed'],
+	damage: function (enemy) {
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageRight()
+		let bonusModifier = 2.5
+		let totalDamage = baseDamage * bonusModifier
+		return Math.ceil(totalDamage)
+	},
+	abilityWeaponsCheck: function(weapon1, weapon2) {
+		if (weapon1 == undefined && weapon2 == undefined) {
+			let line1 = lineFunc()
+			customizeEachWord(`You cannot perform ${this.name} while wielding these weapons`, 'white', line1)
+			blankSpace()
+			return true
+		}
+	},
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You launch a barrage of fists at the `, 'monk-ability-text-color', line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, 'monk-color', line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)		
+		blankSpace()
+	},
+	flavorTextMiss: function(enemy) {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Your `, 'monk-ability-text-color', line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
+		customizeEachWord(`flies just past the `, 'monk-ability-text-color', line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, 'monk-ability-text-color', line1)
+		blankSpace()
+	},
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+}
+player.knuckleBlitz = { ...knuckleBlitz }
 ////////////////////////////////// ELEMENTAL MONK 2ND COMBOS //////////////////////////////////////
 ////////////////////////////////// ELEMENTAL MONK 2ND COMBOS //////////////////////////////////////
 ////////////////////////////////// ELEMENTAL MONK 2ND COMBOS //////////////////////////////////////
@@ -11350,7 +12130,7 @@ const fireSeal = {
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`${penetrationType} `, penetrationType, line2)
 		customizeEachWord(`damage. `, 'green', line2)
-		customizeEachWord(`(Enemy resists `, 'white', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
@@ -11484,7 +12264,7 @@ const waterSeal = {
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`${penetrationType} `, penetrationType, line2)
 		customizeEachWord(`damage. `, 'green', line2)
-		customizeEachWord(`(Enemy resists `, 'white', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
@@ -11602,7 +12382,7 @@ const earthSeal = {
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`${penetrationType} `, penetrationType, line2)
 		customizeEachWord(`damage. `, 'green', line2)
-		customizeEachWord(`(Enemy resists `, 'white', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
@@ -11686,8 +12466,8 @@ const mysticFist = {
 		blankSpace()
 		customizeEachWord(`Your hands begin to glow and you become super-charged with electricity! `, `monk-ability-text-color`, line1)
 		customizeEachWord(`You rush forward at the `, `monk-ability-text-color`, line1)
-		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(` and let loose a barage of fists!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		customizeEachWord(`letting loose a barage of fists!`, `monk-ability-text-color`, line1)
 		customizeEachWord(`${this.name} `, 'earth', line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
@@ -12032,16 +12812,18 @@ const markOfTheBeast = {
 		maxStacks: function() {
 			return 5
 		},
-		damage: function(swingObject) {
-			//bonus damage starts at 10% and goes up by 10% each level
-			let bonusDamage = 0
-			if (typeof(swingObject) == 'object') {
-				bonusDamage = (swingObject.totalDamage * (player.markOfTheBeast.level * 0.1))
-			} else {
-				bonusDamage = swingObject * (player.markOfTheBeast.level * 0.1)
-			}
-			console.log(bonusDamage, ' BONUS DAMAGE')
-			return Math.ceil(bonusDamage)
+		damage: function(enemy, swingObject) {
+			let stacks = enemy.debuffs.markOfTheBeast.stacks
+			let bonusMultiplier = 0
+			if (player.markOfTheBeast.level == 1) {bonusMultiplier = 0.1 * stacks}
+			if (player.markOfTheBeast.level == 2) {bonusMultiplier = 0.2 * stacks}
+			if (player.markOfTheBeast.level == 3) {bonusMultiplier = 0.3 * stacks}
+			if (player.markOfTheBeast.level == 4) {bonusMultiplier = 0.4 * stacks}
+			if (player.markOfTheBeast.level >= 5) {bonusMultiplier = 0.5 * stacks}
+			let damage = swingObject.totalDamage
+			let bonusDamage = Math.ceil(damage * bonusMultiplier)
+			return bonusDamage
+
 		},
 		type: 'mark',
 		color: 'ranger-color',
@@ -12057,7 +12839,7 @@ player.markOfTheBeast = {...markOfTheBeast}
 
 
 const shadowMark = {
-	level: 6,
+	level: 1,
 	name: 'Shadow Mark',
 	refName: 'shadowMark',
 	type: 'ability',
@@ -12072,7 +12854,7 @@ const shadowMark = {
 			return 5
 		},
 		type: 'mark',
-		color: 'ranger-color',
+		color: 'shadow',
 	},
 	goldToUpgrade: function () {
 		return 9 * this.level
@@ -12109,12 +12891,26 @@ const shadowVenom = {
 		maxStacks: function() {
 			return 20
 		},
-		flavorText: function(enemy, damage) {
+		flavorText: function(enemy, damage, elementType, damageResisted) {
 			let line1 = lineFunc()
 			customizeEachWord(`You hit for `, 'green', line1)
 			customizeEachWord(`${damage} `, 'light-blue', line1)
 			customizeEachWord(`additional `, 'green', line1)
-			customizeEachWord(`shadow damage`, 'shadow', line1)
+			customizeEachWord(`shadow `, 'shadow', line1)
+			customizeEachWord(`damage. `, 'green', line1)
+			customizeEachWord(`(Enemy resists `, 'white', line1)
+			customizeEachWord(`${damageResisted}`, 'light-blue', line1)
+			customizeEachWord(`)`, 'white', line1)
+		},
+		flavorTextWearsOff: function() {
+			let line1 = lineFunc()
+			customizeEachWord(`${this.name} `, 'shadow', line1)
+			customizeEachWord(`has faded from your weapon`, 'white', line1)
+		},
+		flavorTextApplyBuff: function() {
+			let line1 = lineFunc()
+			customizeEachWord(`Your weapon glows purple with `, 'white', line1)
+			customizeEachWord(`${this.name}`, 'shadow', line1)
 		},
 		type: 'mark',
 		color: 'shadow',
@@ -12146,10 +12942,12 @@ const poisonWeapon = {
 	buff: {
 		name: 'Poison',
 		refName: 'poison',
-		duration: 30000,
+		get duration() {
+			return Math.trunc(60000 * player.poisonWeapon.level)
+		},
 		stacks: 0,
 		damage: function(enemy) {
-			let totalDamage = baseAttackDamageRight()
+			let totalDamage = player.poisonWeapon.level + player.mys
 			if (enemy.debuffs) {
 				if (enemy.debuffs.shadowMark) {
 					let stacks = enemy.debuffs.shadowMark.stacks
@@ -12159,7 +12957,7 @@ const poisonWeapon = {
 			return totalDamage
 		},
 		maxStacks: function() {
-			return 20
+			return player.poisonWeapon.level + 4
 		},
 		flavorText: function(enemy, damage) {
 			let line1 = lineFunc()
@@ -12240,10 +13038,10 @@ const elementalFist = {
 }
 player.elementalFist = {...elementalFist}
 
-const timedShot = {
+const piercingArrow = {
 	level: 1,
-	name: 'Timed Shot',
-	refName: 'timedShot',
+	name: 'Piercing Arrow',
+	refName: 'piercingArrow',
 	color: 'ranger-color',
 	cooldownSet: 10000,
 	cooldown: 10000,
@@ -12253,8 +13051,8 @@ const timedShot = {
 	resourceCost: 5,
 	weaponTypesUsed: ['bows'],
 	debuff: {
-		name: 'Timed Shot',
-		refName: 'timedShot',
+		name: 'Piercing Arrow',
+		refName: 'piercingArrow',
 		damage: function(swingObject) {
 			return Math.ceil(swingObject.totalDamage * 0.5)
 		},
@@ -12267,7 +13065,7 @@ const timedShot = {
 		color: 'ranger-color',
 		flavorText: function(enemy, damage) {
 			let line1 = lineFunc()
-			customizeEachWord(`Timed Shot mark `, 'ranger-color', line1)
+			customizeEachWord(`Piercing Arrow mark `, 'ranger-color', line1)
 			customizeEachWord(`hits for `, 'green', line1)
 			customizeEachWord(`${damage} `, 'light-blue', line1)
 			customizeEachWord(`damage`, 'green', line1)
@@ -12294,9 +13092,15 @@ const timedShot = {
 					bonusMultiplier = 1.75
 					quickMessage(`You hit for 1.75x damage!`)
 				}
-				else if (this.timer < this.windUp * 0.4) {bonusMultiplier = 1.6}
-				else if (this.timer < this.windUp * 0.5) {bonusMultiplier = 1.5}
-				else if (this.timer < this.windUp * 1.0) {bonusMultiplier = 1.0}
+				else if (this.timer < this.windUp * 0.4) {
+					bonusMultiplier = 1.6
+				}
+				else if (this.timer < this.windUp * 0.5) {
+					bonusMultiplier = 1.5
+				}
+				else if (this.timer < this.windUp * 1.0) {
+					bonusMultiplier = 1.0
+				}
 			}
 		return Math.ceil(baseAttackDamageRight() * bonusMultiplier)
 	},
@@ -12309,31 +13113,34 @@ const timedShot = {
 		if (this.onCooldown == false) {
 			this.queued = true
 			player.isAbilityQueued = true
-			timedShotInterval = setInterval(() => {
+			piercingArrowInterval = setInterval(() => {
 				if (remainingTime <= 0) {
 					player.isAbilityQueued = false
 					this.queued = false
 					conjureBar.style.width = 0
 					let weaponTypesToCheck = this.weaponTypesUsed
 					let weaponUsed = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
-					let totalDamage = this.damage(weaponUsed)
+					// let totalDamage = this.damage(weaponUsed)
 					let targetEnemy = targetAnyEnemy(secondCommand, thirdCommand)
 					let hitChance = playerAbilityHitChance(targetEnemy)
+					let baseDamage = this.damage()
+					let penetrationType = calculatePenetrationRoll()
+					let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+					let damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+					let damageBlocked = baseDamage - damageAfterArmor
 					if (hitChance == false) {
 						this.releaseTimer()
 						this.timer = this.windUp
 						this.flavorTextMiss(targetEnemy, weaponUsed)
-						clearInterval(timedShotInterval)
+						clearInterval(piercingArrowInterval)
 					} else if (hitChance == true) {
 						this.releaseTimer(weaponUsed)
 						this.timer = this.windUp
-						this.flavorText(targetEnemy, weaponUsed, totalDamage)
-						console.log(targetEnemey)
-						console.log(totalDamage)
-						applyDamageToEnemy(targetEnemy, totalDamage)
+						this.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+						applyDamageToEnemy(targetEnemy, damageAfterArmor)
 						updateScroll()
 					} 
-					clearInterval(timedShotInterval)
+					clearInterval(piercingArrowInterval)
 					return
 				}
 				width = ((windUpTime - remainingTime) / windUpTime) * 100
@@ -12347,7 +13154,7 @@ const timedShot = {
 		let conjureBar = document.querySelector('.bar-1')
 		this.timer = this.windUp
 		conjureBar.style.width = 0
-		clearInterval(timedShotInterval)
+		clearInterval(piercingArrowInterval)
 		this.queued = false
 		this.cooldown = this.cooldownSet
 		updateScroll()
@@ -12363,35 +13170,35 @@ const timedShot = {
 	},
 	windUpText: function() {
 		let line1 = lineFunc()
-		customizeEachWord(`You begin gathering your energy for `, 'white', line1)
+		customizeEachWord(`You gather your focus as you try to time the perfect shot with `, 'white', line1)
 		customizeEachWord(`${this.name}`, this.color, line1)
 	},
-	flavorText: function(enemy, weapon, damage) {
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
-		let line3 = document.createElement('div')
-		customizeEachWord(`With a burst of energy, you launch yourself at the enemy!`, this.color, line1)
-		customizeEachWord(`Pivoting on your heel, you whirl around, swinging your `, this.color, line2)
-		customizeEachWord(`${weapon.name} `, `${weapon.color}`, line2)
-		customizeEachWord(`in a wide arc ripping into the `, enemy.color, line2)
-		customizeEachWord(`${enemy.name}`, `enemy.color`, line2)
-		customizeEachWord(`!`, this.color, line2)
-		customizeEachWord(`You hit for `, 'green', line3)
-		customizeEachWord(`${damage} `, 'light-blue', line3)
-		customizeEachWord(`damage`, 'green', line3)
+		customizeEachWord(`After honing your full attention to this shot, you pull back the bowstring of your `, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${weapon.name} `, weapon.color, line1)
+		customizeEachWord(`and let fly an arrow that pierces the `, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
 		flavorTextMiss: function(enemy, weapon) {
 		let line1 = lineFunc()
 		//You launch yourself toward the enemy, swinging your {weapon} in a wide arc, but it moves out of the way just in time and you miss!
-		customizeEachWord(`You `, 'light-blue', line1)
-		customizeEachWord(`launch yourself toward the `, 'white', line1)
+		customizeEachWord(`Your concentration was broken at the last second. You fire your arrow at the `, `ranger-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`swinging your `, 'white', line1)
-		customizeEachWord(`${weapon.name} `, weapon.color, line1)
-		customizeEachWord(`in a wide arc, but it moves out of the way just in time and you `, 'white', line1)
+		customizeEachWord(`and `, `ranger-ability-text-color`, line1)
 		customizeEachWord(`miss`, 'red', line1)
-		customizeEachWord(`!`, 'white', line1)
+		customizeEachWord(`!`, `ranger-ability-text-color`, line1)
 		blankSpace()
 	},
 	queued: false,
@@ -12404,12 +13211,12 @@ const timedShot = {
 		return this.level + 1
 	},
 }
-player.timedShot = {...timedShot}
+player.piercingArrow = { ...piercingArrow }
 
-const multiShot = {
+const hydraArrow = {
 	level: 1,
-	name: 'Multi Shot',
-	refName: 'multiShot',
+	name: 'Hydra Arrow',
+	refName: 'hydraArrow',
 	color: 'ranger-color',
 	cooldownSet: 10000,
 	cooldown: 10000,
@@ -12418,8 +13225,8 @@ const multiShot = {
 	resourceCost: 5,
 	statusEffect: 'huntersMark',
 	debuff: {
-		name: 'Multi Shot',
-		refName: 'multiShot',
+		name: 'Hydra Arrow',
+		refName: 'hydraArrow',
 		damage: function(swingObject) {
 			let damage = swingObject.totalDamage
 			return Math.ceil(damage * 0.5)
@@ -12431,7 +13238,7 @@ const multiShot = {
 		},
 		flavorText: function(enemy, damage) {
 			let line1 = lineFunc()
-			customizeEachWord(`Multi Shot mark `, 'ranger-color', line1)
+			customizeEachWord(`Hydra Arrow mark `, 'ranger-color', line1)
 			customizeEachWord(`hits for `, 'green', line1)
 			customizeEachWord(`${damage} `, 'light-blue', line1)
 			customizeEachWord(`damage`, 'green', line1)
@@ -12444,21 +13251,10 @@ const multiShot = {
 		return this.level + 1
 	},
 	weaponTypesUsed: ['bows'],
-	damage: function (weapon1) {
-		if (weapon1 != undefined) {
-			let currentAttackPower = player[weapon1.skillUsed].attackPower
-			let currentWeaponSkillBotModifier = player[weapon1.skillUsed].botMultiplier
-			let currentWeaponSkillTopModifier = player[weapon1.skillUsed].topMultiplier
-			let currentWeaponSkillBotDamage = weapon1.botDamage
-			let currentWeaponSkillTopDamage = weapon1.topDamage
-			let currentWeaponWeight = weapon1.mods.weight
-			let lowDamage = Math.floor(currentAttackPower * currentWeaponSkillBotModifier * currentWeaponSkillBotDamage + (1 + this.level * 0.1))
-			let highDamage = Math.floor(currentAttackPower * currentWeaponSkillTopModifier * currentWeaponSkillTopDamage + (1 + this.level * 0.1))
-			let weaponDamage = randomNumberRange(lowDamage, highDamage)
-			let bonusDamage = Math.ceil(weaponDamage * ((player.might - 1) * .1)) + 10 //this does 10% per stack of might bonus damage + 10 flat damage rounded up
-			rightWeaponDamage = weaponDamage + bonusDamage
-			return rightWeaponDamage
-			}
+	damage: function () {
+		let baseDamage = baseAttackDamageRight()
+		let totalDamage = Math.ceil(baseDamage)
+		return totalDamage
 	},
 	abilityWeaponsCheck: function(playerWeapon) {
 		if (playerWeapon == undefined) {
@@ -12473,31 +13269,31 @@ const multiShot = {
 		customizeEachWord(`You begin gathering your energy for `, 'white', line1)
 		customizeEachWord(`${this.name}`, this.color, line1)
 	},
-	flavorText: function(enemy, weapon, damage) {
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
-		let line3 = document.createElement('div')
-		customizeEachWord(`With a burst of energy, you launch yourself at the enemy!`, this.color, line1)
-		customizeEachWord(`Pivoting on your heel, you whirl around, swinging your `, this.color, line2)
-		customizeEachWord(`${weapon.name} `, `${weapon.color}`, line2)
-		customizeEachWord(`in a wide arc ripping into the `, enemy.color, line2)
-		customizeEachWord(`${enemy.name}`, `enemy.color`, line2)
-		customizeEachWord(`!`, this.color, line2)
-		customizeEachWord(`You hit for `, 'green', line3)
-		customizeEachWord(`${damage} `, 'light-blue', line3)
-		customizeEachWord(`damage`, 'green', line3)
+		blankSpace()
+		customizeEachWord(`You position arrows on your `, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${weapon.name} `, weapon.color, line1)
+		customizeEachWord(`, firing them all at once at the `, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
-		flavorTextMiss: function(enemy, weapon) {
+	flavorTextMiss: function(enemy, weapon) {
 		let line1 = lineFunc()
-		//You launch yourself toward the enemy, swinging your {weapon} in a wide arc, but it moves out of the way just in time and you miss!
-		customizeEachWord(`You `, 'light-blue', line1)
-		customizeEachWord(`launch yourself toward the `, 'white', line1)
+		customizeEachWord(`An arrow strays just passed the `, `ranger-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`swinging your `, 'white', line1)
-		customizeEachWord(`${weapon.name} `, weapon.color, line1)
-		customizeEachWord(`in a wide arc, but it moves out of the way just in time and you `, 'white', line1)
-		customizeEachWord(`miss`, 'red', line1)
+		customizeEachWord(`and `, 'white', line1)
+		customizeEachWord(`misses`, 'red', line1)
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
 	},
@@ -12511,7 +13307,7 @@ const multiShot = {
 		return this.level + 1
 	},
 }
-player.multiShot = {...multiShot}
+player.hydraArrow = {...hydraArrow}
 const rapidFireShot = {
 	level: 1,
 	name: 'Rapid Fire Shot',
@@ -12526,8 +13322,12 @@ const rapidFireShot = {
 		return this.level + 2
 	},
 	weaponTypesUsed: ['bows'],
-	damage: function () {
-		return baseAttackDamageRight()
+	damage: function (enemy) {
+		let baseDamage = baseAttackDamageRight()
+		let markBonus = enemy?.debuffs?.markOfTheBeast?.damage() ? enemy?.debuffs?.markOfTheBeast?.damage() : 0
+		let bonusDamage = baseDamage * markBonus
+		let totalDamage = Math.ceil(baseDamage + bonusDamage)
+		return totalDamage
 	},
 	abilityWeaponsCheck: function(playerWeapon) {
 		if (playerWeapon == undefined) {
@@ -12539,34 +13339,34 @@ const rapidFireShot = {
 	},
 	windUpText: function() {
 		let line1 = lineFunc()
-		customizeEachWord(`You begin gathering your energy for `, 'white', line1)
+		customizeEachWord(`You begin gathering the arrows needed for `, 'white', line1)
 		customizeEachWord(`${this.name}`, this.color, line1)
 	},
-	flavorText: function(enemy, weapon, damage) {
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
-		let line3 = document.createElement('div')
-		customizeEachWord(`With a burst of energy, you launch yourself at the enemy!`, this.color, line1)
-		customizeEachWord(`Pivoting on your heel, you whirl around, swinging your `, this.color, line2)
-		customizeEachWord(`${weapon.name} `, `${weapon.color}`, line2)
-		customizeEachWord(`in a wide arc ripping into the `, enemy.color, line2)
-		customizeEachWord(`${enemy.name}`, `enemy.color`, line2)
-		customizeEachWord(`!`, this.color, line2)
-		customizeEachWord(`You hit for `, 'green', line3)
-		customizeEachWord(`${damage} `, 'light-blue', line3)
-		customizeEachWord(`damage`, 'green', line3)
+		blankSpace()
+		customizeEachWord(`You draw back several arrows with your `, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${weapon.name} `, weapon.color, line1)
+		customizeEachWord(`, firing them all at the `, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		customizeEachWord(`in rapid succession!`, `ranger-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
 	},
-		flavorTextMiss: function(enemy, weapon) {
+		flavorTextMiss: function(enemy) {
 		let line1 = lineFunc()
-		//You launch yourself toward the enemy, swinging your {weapon} in a wide arc, but it moves out of the way just in time and you miss!
-		customizeEachWord(`You `, 'light-blue', line1)
-		customizeEachWord(`launch yourself toward the `, 'white', line1)
+		customizeEachWord(`An arrow from your volley wizzes just by the `, `ranger-ability-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`swinging your `, 'white', line1)
-		customizeEachWord(`${weapon.name} `, weapon.color, line1)
-		customizeEachWord(`in a wide arc, but it moves out of the way just in time and you `, 'white', line1)
-		customizeEachWord(`miss`, 'red', line1)
+		customizeEachWord(`and `, 'white', line1)
+		customizeEachWord(`misses`, 'red', line1)
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
 	},
@@ -12913,7 +13713,7 @@ const fireflames = {
 		stacks: 0,
 		duration: 30000,
 		maxStacks: function() {
-			return 3
+			return player.fireflames.level + 2
 		},
 		damage: function() {
 			let damage = player.fireflames.damage() * 2
@@ -12932,48 +13732,61 @@ const fireflames = {
 	},
 	cast: function(enemy, spell) {
 		if (checkAvailableEnemy(enemy)) {return}
-		if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
 		let enemyFireResist = enemy?.fireResist ? enemy?.fireResist : 0
 		let spellIndex = player.spellsConjured.indexOf(spell)
 		let damageObject = calculateMagicDamage(enemy, spell, enemyFireResist)
 		console.log(damageObject, 'Fireflames damage object')
 		let { damageBeforeMagicResist, damageAfterMagicResist, damageResisted } = damageObject
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 		spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 		applyDamageToEnemy(enemy, damageAfterMagicResist)
 		calculateBurnEffect(enemy, spell, damageBeforeMagicResist)
+		let numberOfDebuffApplications
+		if (this.level == 1) {numberOfDebuffApplications = 1}
+		if (this.level == 2) {numberOfDebuffApplications = 1}
+		if (this.level == 3) {numberOfDebuffApplications = 2}
+		if (this.level == 4) {numberOfDebuffApplications = 2}
+		if (this.level >= 5) {numberOfDebuffApplications = 2}
+		for (let i = 0; i < numberOfDebuffApplications; i++) {
+			if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
+		}
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`Fire 1`, 'fire', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`Fire 1`, 'fire', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`With a wave of your arm you send a ball of `, 'mage-color', line1)
+		customizeEachWord(`With a wave of your arm you send a ball of `, `pyromancer-spell-text-color`, line1)
 		customizeEachWord(`Fire `, 'fire', line1)
-		customizeEachWord(`hurling towards the `, 'mage-color', line1)
+		customizeEachWord(`hurling towards the `, `pyromancer-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`!`, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`fire `, `fire`, line2)
-		customizeEachWord(`damage `, `green`, line2)
-		customizeEachWord(`(enemy resists `, `white`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
 		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
 		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
@@ -13004,8 +13817,8 @@ const inferno = {
 		console.log(topDamage, 'FIRE 2 TOP DAMAGE RANGE')
 		return damageBeforeMagicResist
 	},
-	botMod: 1.5,
-	topMod: 2.5,
+	botMod: 1.0,
+	topMod: 2.0,
 	proficiency: 1.0,
 	chambered: false,
 	goldToUpgrade: function () {
@@ -13016,64 +13829,72 @@ const inferno = {
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`Fire 2`, 'fire', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`Fire 2`, 'fire', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`With a wave of your arm you send an `, 'mage-color', line1)
+		customizeEachWord(`Holding out your arms, a raging `, `pyromancer-spell-text-color`, line1)
 		customizeEachWord(`Inferno `, 'fire', line1)
-		customizeEachWord(`hurling towards the `, 'mage-color', line1)
+		customizeEachWord(`rapidly forms around you before it surges into the `, `pyromancer-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`!`, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`fire `, `fire`, line2)
-		customizeEachWord(`damage `, `green`, line2)
-		customizeEachWord(`(enemy resists `, 'white', line2)
-		customizeEachWord(`${damageResisted}`, 'light-blue', line2)
-		customizeEachWord(`)`, 'white', line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 	cast: function(enemy, spell) {
 		if (checkAvailableEnemy(enemy)) {return}
-		if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
+		// if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
+		let allEnemiesInRoom = getAllEnemiesInRoom()
+		let enemiesToTarget = allEnemiesInRoom.slice(0, allEnemiesInRoom.length);
 		let enemyFireResist = enemy?.fireResist ? enemy?.fireResist : 0
 		let spellIndex = player.spellsConjured.indexOf(spell)
 		let damageObject = calculateMagicDamage(enemy, spell, enemyFireResist)
 		let { damageBeforeMagicResist, damageAfterMagicResist, damageResisted } = damageObject
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 		spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 		applyDamageToEnemy(enemy, damageAfterMagicResist)
-		calculateBurnEffect(enemy, spell, damageBeforeMagicResist)
+		calculateBurnEffect(enemy, spell, damageBeforeMagicResist, enemiesToTarget)
 	},
 	specialEffect: function(enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
 		customizeEachWord(`Inferno's `, 'fire', line1)
-		customizeEachWord(`explosion blasts the `, 'white', line1)
+		customizeEachWord(`explosion blasts the `, `pyromancer-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
 		customizeEachWord(`!`, 'white', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`${this.name} `, `fire`, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`fire `, `fire`, line2)
-		customizeEachWord(`damage `, `green`, line2)
-		customizeEachWord(`(enemy resists `, `white`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
 		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
 		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
@@ -13098,19 +13919,33 @@ const meteor = {
 	// Add an effect so that if the enemy has 3 burn stacks when this spell hits, it deals bonus damage
 	// Add an effect so that if the enemy has 3 burn stacks when this spell hits, it deals bonus damage
 	damage: function(enemy) {
+		let burnStacksBonus
+		if (this.level == 1) {burnStacksBonus = 0.4}
+		if (this.level == 2) {burnStacksBonus = 0.8}
+		if (this.level == 3) {burnStacksBonus = 1.2}
+		if (this.level == 4) {burnStacksBonus = 1.6}
+		if (this.level >= 5) {burnStacksBonus = 2.0}
 		let baseDamage = 70
 		let burnStacks = enemy?.debuffs?.burn?.stacks ? enemy?.debuffs?.burn?.stacks : 0
-		let botDamage = player.spellPower * this.botMod
-		let topDamage = player.spellPower * this.topMod
-		let damageBeforeBonus = Math.pow(randomNumberRange(botDamage, topDamage), this.proficiency)
-		let burnBonusDamage = (burnStacks * 0.2) * damageBeforeBonus
-		let damageBeforeMagicResist = Math.ceil(damageBeforeBonus + burnBonusDamage + baseDamage)
-		quickMessage(`${damageBeforeMagicResist} this is damage before magic resist`)
-		let totalDamage = damageBeforeMagicResist
-		return Math.ceil(totalDamage)
+		let botDamage = player.spellPower * this.botMod + baseDamage
+		let topDamage = player.spellPower * this.topMod + baseDamage
+		let damage = Math.ceil(Math.pow(randomNumberRange(botDamage, topDamage), this.proficiency))
+		let totalDamage = Math.ceil((damage * (burnStacks * burnStacksBonus)) + damage)
+		return totalDamage
 	},
-	botMod: 1.5,
-	topMod: 2.5,
+	burnBonusDamage: function(damage) {
+		let baseDamage = damage
+		let bonusMultiplier = 0
+		if (this.level == 1) {bonusMultiplier = 0.50}
+		if (this.level == 2) {bonusMultiplier = 1.0}
+		if (this.level == 3) {bonusMultiplier = 1.50}
+		if (this.level == 4) {bonusMultiplier = 2.0}
+		if (this.level >= 5) {bonusMultiplier = 2.50}
+		let totalDamage = Math.ceil(baseDamage * bonusMultiplier)
+		return totalDamage
+	},
+	botMod: 1.0,
+	topMod: 2.0,
 	proficiency: 1.0,
 	chambered: false,
 	goldToUpgrade: function () {
@@ -13119,54 +13954,77 @@ const meteor = {
 	pointsToUpgrade: function () {
 		return this.level + 1
 	},
-	cast: function(undefined, spell) {
-		let allEnemies = getAllEnemiesInRoom()
-		let numberOfTargets = spell.numberOfTargets == 'all' ? allEnemies.length : spell.numberOfTargets
-		for (let i = 0; i < numberOfTargets; i++) {
-			if (checkAvailableEnemy(allEnemies[i])) {return}
-			let enemyFireResist = allEnemies[i]?.fireResist ? allEnemies[i]?.fireResist : 0
-			let damageObject = calculateMagicDamage(allEnemies[i], spell, enemyFireResist)
-			console.log(damageObject, ' DAMAGE OBJECT')
-			let { damageBeforeMagicResist, damageAfterMagicResist, damageResisted } = damageObject
-			spell.flavorTextCast(allEnemies[i], damageAfterMagicResist, damageResisted)
-			applyDamageToEnemy(allEnemies[i], damageAfterMagicResist)
+	cast: function(enemy, spell) {
+		let allEnemies = getAllEnemiesInRoom();
+		let numberOfTargets = spell.numberOfTargets == 'all' ? allEnemies.length : spell.numberOfTargets;
+		let enemiesToTarget = allEnemies.slice(0, numberOfTargets);
+		for (let i = 0; i < enemiesToTarget.length; i++) {
+			let enemy = enemiesToTarget[i];
+			let damage = this.damage(enemy);
+			damage = Math.ceil(damage / numberOfTargets);
+			let damageAfterResist = calculateMagicDamageWithResist(damage, enemy.fireResist);
+			let damageResisted = damage - damageAfterResist;
+			spell.flavorTextCast(enemy, damageAfterResist, damageResisted);
+			applyDamageToEnemy(enemy, damageAfterResist);
+			calculateBurnEffect(enemy, spell, damageAfterResist);
 		}
-		let spellIndex = player.spellsConjured.indexOf(spell)
-		player.spellsConjured.splice(spellIndex, 1)
-		spell.chambered = false
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`Fire 2`, 'fire', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`Fire 2`, 'fire', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`You hold your arms out above your head as you summon forth a massive fiery `, 'mage-color', line1)
-		customizeEachWord(`Meteor. `, 'fire', line1)
-		customizeEachWord(`Pulling your arms down, the ball of fire follows and crashes into the  `, 'mage-color', line1)
+		customizeEachWord(`You hold your arms out above your head as you summon forth a massive `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`Meteor`, 'fire', line1)
+		customizeEachWord(`. Pulling your arms down, the ball of fire follows your motions as it speeds through the air, exploding as it crashes into the `, `pyromancer-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`!`, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
 		customizeEachWord(`fire `, `fire`, line2)
-		customizeEachWord(`damage `, `green`, line2)
-		customizeEachWord(`(enemy resists `, 'white', line2)
-		customizeEachWord(`${damageResisted}`, 'light-blue', line2)
-		customizeEachWord(`)`, 'white', line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
+		blankSpace()
+	},
+	specialEffect: function (enemy, damage, damageResisted) {
+		let line1 = document.createElement('div')
+		let line2 = document.createElement('div')
+		blankSpace()
+		customizeEachWord(`The `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`Meteor `, 'fire', line1)
+		customizeEachWord(`explodes!!! And blasts the `, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, enemy.color, line1)
+		customizeEachWord(`!`, `pyromancer-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`fire `, `fire`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 }
@@ -13179,10 +14037,11 @@ const frostfreeze = {
 	color: 'ice',
 	conjureBarColor: 'ice-conjure',
 	type: 'ice',
-	conjureTime: 2000,
-	channelTime: 2000,
+	conjureTime: 1000,
+	channelTime: 1000,
 	damage: function() {
-		let baseDamage = 10
+		//set baseDamage to 10
+		let baseDamage = 0
 		let botDamage = player.spellPower * this.botMod + baseDamage
 		let topDamage = player.spellPower * this.topMod + baseDamage
 		let totalDamage = Math.ceil(Math.pow(randomNumberRange(botDamage, topDamage), this.proficiency))
@@ -13216,7 +14075,7 @@ const frostfreeze = {
 		let spellIndex = player.spellsConjured.indexOf(spell)
 		let damageObject = calculateMagicDamage(enemy, spell, enemyIceResist)
 		let { damageBeforeMagicResist, damageAfterMagicResist, damageResisted } = damageObject
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 		spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 		applyDamageToEnemy(enemy, damageAfterMagicResist)
@@ -13225,42 +14084,64 @@ const frostfreeze = {
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
-	flavorTextCast: function (enemy, damage) {
+	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`Ice particles crystallize around your hand. You swing your arm sending a barrage of ice crystals at the `, 'mage-color', line1)
+		customizeEachWord(`Ice particles crystallize around your hand. You swing your arm sending a barrage of ice shards into the `, `cryo-mage-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`!`, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`ice `, `ice`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
-	specialEffect: function (enemy, damage) {
+	specialEffect: function(enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`The accumulated ice around the `, 'mage-color', line1)
+		customizeEachWord(`The accumulated ice around the `, `cryo-mage-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`shatters!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`shatters!`, `cryo-mage-spell-text-color`, line1)
+		blankSpace()
+	},
+	specialEffect2: function(enemy, damage, damageResisted) {
+		let line1 = document.createElement('div')
+		let line2 = document.createElement('div')
+		blankSpace()
+		customizeEachWord(`${this.name}'s Shatter `, this.color, line2)
+		customizeEachWord(`hits `, `green`, line2)
+		customizeEachWord(`${enemy.name} `, enemy.color, line2)
+		customizeEachWord(`for `, `green`, line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`ice `, `ice`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 }
@@ -13273,11 +14154,14 @@ const blizzard = {
 	conjureBarColor: 'ice-conjure',
 	type: 'ice',
 	aoe: true,
-	numberOfTargets: 'all',
+	get numberOfTargets() {
+		return 2 + this.level
+	}, 
 	conjureTime: 2000,
 	channelTime: 2000,
 	damage: function() {
-		let baseDamage = 10
+		//set base to 10
+		let baseDamage = 0
 		let botDamage = player.spellPower * this.botMod + baseDamage
 		let topDamage = player.spellPower * this.topMod + baseDamage
 		let totalDamage = Math.ceil(Math.pow(randomNumberRange(botDamage, topDamage), this.proficiency))
@@ -13306,59 +14190,75 @@ const blizzard = {
 		return this.level + 1
 	},
 	cast: function(undefined, spell) {
-		let allEnemies = getAllEnemiesInRoom()
-		let numberOfTargets = spell.numberOfTargets == 'all' ? allEnemies.length : spell.numberOfTargets
+		let mainAllEnemies = getAllEnemiesInRoom()
+		let numberOfTargets = spell.numberOfTargets > allEnemies.length ? allEnemies.length : spell.numberOfTargets
+		let allEnemies = mainAllEnemies.slice(0, numberOfTargets);
+		if (checkAvailableEnemy(allEnemies[0])) {return}
 		for (let i = 0; i < numberOfTargets; i++) {
-			if (checkAvailableEnemy(allEnemies[i])) {return}
 			let enemyIceResist = allEnemies[i]?.iceResist ? allEnemies[i]?.iceResist : 0
 			let damageObject = calculateMagicDamage(allEnemies[i], spell, enemyIceResist)
 			console.log(damageObject, ' DAMAGE OBJECT')
 			let { damageAfterMagicResist, damageResisted } = damageObject
 			spell.flavorTextCast(allEnemies[i], damageAfterMagicResist, damageResisted)
 			applyDamageToEnemy(allEnemies[i], damageAfterMagicResist)
+			if (spell.debuff) {applyDebuff(allEnemies[i], spell.debuff)}
 		}
 		let spellIndex = player.spellsConjured.indexOf(spell)
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
-	flavorTextCast: function (enemy, damage) {
+	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`Ice particles crystallize around your hand. You swing your arm sending a barrage of ice crystals at the `, 'mage-color', line1)
+		customizeEachWord(`You raise your arms to the sky, conjuring a storm of ice that crashes down onto the `, `cryo-mage-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`!`, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`ice `, `ice`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
-	specialEffect: function (enemy, damage) {
+	specialEffect: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`The accumulated ice around the `, 'mage-color', line1)
+		customizeEachWord(`The accumulated ice around the `, `cryo-mage-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`shatters!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`shatters!`, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, `cryo-mage-spell-text-color`, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`ice `, `ice`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 }
@@ -13367,18 +14267,31 @@ player.blizzard = { ...blizzard }
 const cryoclast = {
 	level: 1,
 	name: 'Cryoclast',
-	refName: 'ice3',
+	refName: 'cryoclast',
 	color: 'ice',
 	conjureBarColor: 'ice-conjure',
 	type: 'ice',
 	conjureTime: 2000,
 	channelTime: 2000,
 	damage: function() {
-		let baseDamage = 70
+		//set base to 70
+		let baseDamage = 0
 		let botDamage = player.spellPower * this.botMod + baseDamage
 		let topDamage = player.spellPower * this.topMod + baseDamage
 		let totalDamage = Math.ceil(Math.pow(randomNumberRange(botDamage, topDamage), this.proficiency))
 		return totalDamage
+	},
+	debuff: {
+		name: 'Frostbite',
+		refName: 'frostbite',
+		stacks: 0,
+		maxStacks: function() {
+			return 2
+		},
+		// damage: function() {
+		// 	let damage = player.fire.damage() * 2
+		// 	return damage
+		// }
 	},
 	botMod: 1.0,
 	topMod: 2.0,
@@ -13392,12 +14305,12 @@ const cryoclast = {
 	},
 	cast: function(enemy, spell) {
 		if (checkAvailableEnemy(enemy)) {return}
-		if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
+		// if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
 		let enemyIceResist = enemy?.iceResist ? enemy?.iceResist : 0
 		let spellIndex = player.spellsConjured.indexOf(spell)
 		let damageObject = calculateMagicDamage(enemy, spell, enemyIceResist)
 		let { damageBeforeMagicResist, damageAfterMagicResist, damageResisted } = damageObject
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 		spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 		applyDamageToEnemy(enemy, damageAfterMagicResist)
@@ -13405,54 +14318,73 @@ const cryoclast = {
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
-	flavorTextCast: function (enemy, damage) {
+	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`Ice particles crystallize around your hand. You swing your arm sending a barrage of ice crystals at the `, 'mage-color', line1)
+		customizeEachWord(`You conjure an enormous boulder of ice above your head, launching it at blinding speed into the `, `cryo-mage-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`!`, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`ice `, `ice`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
-	specialEffect: function (enemy, damage) {
+	specialEffect: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`The accumulated ice around the `, 'mage-color', line1)
+		customizeEachWord(`The accumulated ice around the `, `cryo-mage-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`shatters!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`shatters!`, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, `ice`, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`ice `, `ice`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
-	specialEffect2: function (enemy, damage) {
+	specialEffect2: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`The impact causes the ice around the `, 'mage-color', line1)
+		customizeEachWord(`The impact causes the ice around the `, `cryo-mage-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`to explode in an icy blast!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`to explode in an icy blast!`, `cryo-mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, `ice`, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`ice `, `ice`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 }
@@ -13464,8 +14396,8 @@ const flashbolt = {
 	color: 'lightning',
 	conjureBarColor: 'lightning-conjure',
 	type: 'lightning',
-	conjureTime: 2000,
-	channelTime: 2000,
+	conjureTime: 1000,
+	channelTime: 1000,
 	damage: function() {
 		let baseDamage = 10
 		let botDamage = player.spellPower * this.botMod + baseDamage
@@ -13497,12 +14429,13 @@ const flashbolt = {
 	},
 	cast: function(enemy, spell) {
 		if (checkAvailableEnemy(enemy)) {return}
-		let allEnemies = getAllEnemiesInRoom()
+		let mainAllEnemies = getAllEnemiesInRoom()
+		let allEnemies = mainAllEnemies.slice(0, mainAllEnemies.length);
 		let enemyLightningResist = enemy.lightningResist
 		let spellIndex = player.spellsConjured.indexOf(spell)
 		let damageObject = calculateMagicDamage(enemy, spell, enemyLightningResist)
 		let { damageAfterMagicResist, damageResisted } = damageObject
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 		spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 		applyDamageToEnemy(enemy, damageAfterMagicResist)
@@ -13545,42 +14478,55 @@ const flashbolt = {
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
-	flavorTextCast: function (enemy, damage) {
+	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`Holding out your arm, you channel the electricity from your hand to the `, 'mage-color', line1)
-		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`, both erupting in an electric flash!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`lightning damage`, this.color, line2)
-		blankSpace()
-	},
-	specialEffect: function (enemy, damage) {
-		let line1 = document.createElement('div')
-		let line2 = document.createElement('div')
-		blankSpace()
-		customizeEachWord(`The accumulated ice around the `, 'mage-color', line1)
+		customizeEachWord(`Holding up your hand, you channel electricity to the `, `lightning-magus-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`shatters!`, 'mage-color', line1)
+		customizeEachWord(` in an electric flash!`, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`lightning `, `lightning`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
+		blankSpace()
+	},
+	specialEffect: function (enemy, damage, damageResisted) {
+		let line1 = document.createElement('div')
+		let line2 = document.createElement('div')
+		blankSpace()
+		customizeEachWord(`The accumulated ice around the `, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		customizeEachWord(`shatters!`, `lightning-magus-spell-text-color`, line1)
 		customizeEachWord(`You hit for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`lightning `, `lightning`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 }
@@ -13592,8 +14538,8 @@ const chainLightning = {
 	color: 'lightning',
 	conjureBarColor: 'lightning-conjure',
 	type: 'lightning',
-	conjureTime: 2000,
-	channelTime: 2000,
+	conjureTime: 1000,
+	channelTime: 1000,
 	damage: function() {
 		let baseDamage = 30
 		let botDamage = player.spellPower * this.botMod + baseDamage
@@ -13624,8 +14570,9 @@ const chainLightning = {
 		return this.level + 1
 	},
 	cast: function(enemy, spell) {
-		let allEnemies = getAllEnemiesInRoom()
 		let numberOfTargets = this.level + 4
+		let mainAllEnemies = getAllEnemiesInRoom()
+		let allEnemies = mainAllEnemies.slice(0, numberOfTargets);
 		for (let i = 0; i < numberOfTargets; i++) {
 			if (checkAvailableEnemy2(allEnemies[i])) {break}
 			// let damageObject = {
@@ -13650,47 +14597,59 @@ const chainLightning = {
 			console.log(damageObject, 'Chain Lightning Damage Object')
 		}
 		let spellIndex = player.spellsConjured.indexOf(spell)
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
-	flavorTextCast: function (enemy, damage) {
+	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`You pull back your arm as it accumulates lightning energy`, 'mage-color', line1)
+		customizeEachWord(`You hold your arms back as they accumulate lightning energy. Throwing your arms forward, thick tendrils of lightning surge into the `, `lightning-magus-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`, both erupting in an electric flash!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`lightning damage`, this.color, line2)
+		customizeEachWord(`lightning `, `lightning`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
-	specialEffect: function (enemy, damage) {
+	specialEffect: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`The accumulated ice around the `, 'mage-color', line1)
+		customizeEachWord(`The accumulated ice around the `, `lightning-magus-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`shatters!`, 'mage-color', line1)
+		customizeEachWord(`shatters!`, `lightning-magus-spell-text-color`, line1)
 		customizeEachWord(`You hit for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`lightning `, `lightning`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 }
@@ -13728,7 +14687,7 @@ const gigavolt = {
 		let spellIndex = player.spellsConjured.indexOf(spell)
 		let damageObject = calculateMagicDamage(enemy, spell, enemyLightningResist)
 		let { damageAfterMagicResist, damageResisted } = damageObject
-		player.spellsConjured.splice(spellIndex, 1)
+		// player.spellsConjured.splice(spellIndex, 1)
 		spell.chambered = false
 		spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 		applyDamageToEnemy(enemy, damageAfterMagicResist)
@@ -13740,7 +14699,6 @@ const gigavolt = {
 			let spellIndex = player.spellsConjured.indexOf(spell)
 			let damageObject = calculateMagicDamage(enemy, spell, enemyLightningResist)
 			let { damageAfterMagicResist, damageResisted } = damageObject
-			player.spellsConjured.splice(spellIndex, 1)
 			spell.chambered = false
 			spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 			applyDamageToEnemy(enemy, damageAfterMagicResist)
@@ -13782,42 +14740,55 @@ const gigavolt = {
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you conjure `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	flavorTextChannel: function (enemy) {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You shape your hands in concentration as you channel `, 'mage-color', line1)
-		customizeEachWord(`${this.name} `, 'ice', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
 		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
-	flavorTextCast: function (enemy, damage) {
+	flavorTextCast: function (enemy, damage, damageResisted) {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`Holding out your arm, you channel the electricity from your hand to the `, 'mage-color', line1)
-		customizeEachWord(`${enemy.name}`, enemy.color, line1)
-		customizeEachWord(`, both erupting in an electric flash!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`lightning damage`, this.color, line2)
-		blankSpace()
-	},
-	specialEffect: function (enemy, damage) {
-		let line1 = document.createElement('div')
-		let line2 = document.createElement('div')
-		blankSpace()
-		customizeEachWord(`The accumulated ice around the `, 'mage-color', line1)
+		customizeEachWord(`The air crackles with electricity as you channel a giant bolt of lightning from the sky that spirals into the `, `lightning-magus-spell-text-color`, line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`shatters!`, 'mage-color', line1)
-		customizeEachWord(`You hit for `, 'green', line2)
+		customizeEachWord(`with a deafening boom!`, `lightning-magus-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, `green`, line2)		
 		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`ice damage`, this.color, line2)
+		customizeEachWord(`lightning `, `lightning`, line2)
+		customizeEachWord(`damage. `, `green`, line2)
+		customizeEachWord(`(Enemy resists `, `white`, line2)
+		customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		customizeEachWord(`)`, `white`, line2)
+		blankSpace()
+	},
+	specialEffect: function (enemy, damage, damageResisted) {
+		let line1 = document.createElement('div')
+		let line2 = document.createElement('div')
+		blankSpace()
+		customizeEachWord(`FIX GFIX FGIX IFG `, `lightning-magus-spell-text-color`, line1)
+		// customizeEachWord(`${enemy.name} `, enemy.color, line1)
+		// customizeEachWord(`shatters!`, `lightning-magus-spell-text-color`, line1)
+		// customizeEachWord(`You hit for `, 'green', line2)
+		// customizeEachWord(`${damage} `, 'light-blue', line2)
+		// customizeEachWord(`lightning `, `lightning`, line2)
+		// customizeEachWord(`damage. `, `green`, line2)
+		// customizeEachWord(`(Enemy resists `, `white`, line2)
+		// customizeEachWord(`${damageResisted}`, `light-blue`, line2)
+		// customizeEachWord(`)`, `white`, line2)
 		blankSpace()
 	},
 }
@@ -13842,15 +14813,25 @@ const heal = {
 	pointsToUpgrade: function () {
 		return this.level + 1
 	},
-	channel: function () {
+	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
-		customizeEachWord(`You `, 'light-blue', line1)
-		customizeEachWord(`shape your hands in concentration as you channel `, 'white', line1)
-		customizeEachWord(`${this.name} `, 'heal-color', line1)
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you conjure `, `mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
 		customizeEachWord(`[`, 'white', line1)
-		customizeEachWord(`${this.channelTime}`, 'yellow', line1)
+		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
 		customizeEachWord(`]`, 'white', line1)
-		initiateSpellChannel(this)
+		blankSpace()
+	},
+	flavorTextChannel: function (enemy) {
+		let line1 = document.createElement('div')
+		blankSpace()
+		customizeEachWord(`You shape your hands in concentration as you channel `, `mage-spell-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line1)
+		customizeEachWord(`[`, 'white', line1)
+		customizeEachWord(`${this.channelTime / 1000}`, 'yellow', line1)
+		customizeEachWord(`]`, 'white', line1)
+		blankSpace()
 	},
 	cast: function (enemy) {
 		let line1 = document.createElement('div')
@@ -14172,7 +15153,7 @@ function updateResource() {
 			maxResource = ''
 			resourceName = ''
 	}
-	player.maxResource = 20
+	player.maxResource = 30
 	const percent =  resource ? (player[resource] / player[maxResource]) * 100 : resource
 	resourceBar.style.width =  resource ? `${percent}%` : ``
 	resourceText.innerHTML = resource ? `${capitalizeFirstLetter(resourceName)}: ${player[resource]}/${player[maxResource]}` : ``
@@ -14195,10 +15176,10 @@ function updateTwoHanded() {
 	let dex = player.dex + player.mods.dex
 	let agi = player.agi + player.mods.agi
 
-	let twoHandedAttributes = (str * 2) + dex + agi
+	let twoHandedAttributes = ((str * 2) + dex + agi) - 4
 	player.twoHanded.attackPower = twoHandedAttributes
-	player.twoHanded.topMultiplier = parseFloat((0.45 + player.twoHanded.level / 20).toFixed(2))
-	player.twoHanded.botMultiplier = parseFloat((0.45 + player.twoHanded.level / 20).toFixed(2))
+	player.twoHanded.topMultiplier = parseFloat((0.30 + player.twoHanded.level / 20).toFixed(2))
+	player.twoHanded.botMultiplier = parseFloat((0.30 + player.twoHanded.level / 20).toFixed(2))
 	player.twoHanded.accuracy = Math.floor(10 + ((dex * 3) + player.twoHanded.level + player.mods.accuracy) * 10) / 10
 	player.twoHanded.speed = player.twoHanded.speed <= 2 ? 2 : (6.2 - Math.floor((player.twoHanded.level / 5) * 100) / 100).toFixed(1)
 }
@@ -14206,7 +15187,6 @@ function updateTwoHanded() {
 function updateOneHanded() {
 	let str = player.str + player.mods.str
 	let dex = player.dex + player.mods.dex
-	let agi = player.agi + player.mods.agi
 	const rightWeapon = player.currentRightHandWeapon().skillUsed;
 	const leftWeapon = player.currentLeftHandWeapon().skillUsed;
 	//This is basically saying, if the player is dual wielding daggers or swords, apply the accuracy penalty of -10
@@ -14216,10 +15196,10 @@ function updateOneHanded() {
 	} else {
 		player.oneHanded.accuracy = Math.floor(10 + (dex + player.oneHanded.level + player.mods.accuracy) * 10) / 10
 	}
-	let oneHandedAttributes = (str * 1.5) + (dex * 1.5) + agi
+	let oneHandedAttributes = str + dex
 	player.oneHanded.attackPower = oneHandedAttributes
-	player.oneHanded.topMultiplier = parseFloat((0.45 + player.oneHanded.level / 20).toFixed(2)) //parseFloat((0.40 + 1 / 20).toFixed(2));
-	player.oneHanded.botMultiplier = parseFloat((0.45 + player.oneHanded.level / 20).toFixed(2))
+	player.oneHanded.topMultiplier = parseFloat((0.30 + player.oneHanded.level / 20).toFixed(2)) //parseFloat((0.40 + 1 / 20).toFixed(2));
+	player.oneHanded.botMultiplier = parseFloat((0.30 + player.oneHanded.level / 20).toFixed(2))
 	player.oneHanded.speed = player.oneHanded.speed <= 2 ? 2 : (4.1 - Math.floor((player.oneHanded.level / 10) * 100) / 100).toFixed(1)
 }
 // function updateDualWield() {
@@ -14233,22 +15213,23 @@ function updateOneHanded() {
 // }
 
 function updateDaggers() {
-	let str = player.str + player.mods.str
+	// let str = player.str + player.mods.str
 	let dex = player.dex + player.mods.dex
 	let agi = player.agi + player.mods.agi
+	let dualSwingPenalty = 10
 	const rightWeapon = player.currentRightHandWeapon().skillUsed;
 	const leftWeapon = player.currentLeftHandWeapon().skillUsed;
 	if ((leftWeapon === 'daggers' || leftWeapon === 'oneHanded') &&
     (rightWeapon === 'daggers' || rightWeapon === 'oneHanded')) {
-		player.daggers.accuracy = Math.floor(((dex + player.daggers.level + player.mods.accuracy) * 10) / 10) - 10
+		player.daggers.accuracy = Math.floor(((dex + player.daggers.level + player.mods.accuracy) * 10) / 10) - dualSwingPenalty
 	} else {
 		player.daggers.accuracy = Math.floor(10 + (dex + player.daggers.level + player.mods.accuracy) * 10) / 10
 	}
-	let daggersAttributes = (dex * 1.5) + (agi * 1.5) + str
+	let daggersAttributes = dex + agi
 //mods
-	player.daggers.attackPower = daggersAttributes
-	player.daggers.topMultiplier = parseFloat((0.45 + player.daggers.level / 20).toFixed(2))
-	player.daggers.botMultiplier = parseFloat((0.45 + player.daggers.level / 20).toFixed(2))
+	player.daggers.attackPower = Math.ceil(daggersAttributes)
+	player.daggers.topMultiplier = parseFloat((0.30 + player.daggers.level / 20).toFixed(2))
+	player.daggers.botMultiplier = parseFloat((0.30 + player.daggers.level / 20).toFixed(2))
 	//1 point of dex increases accuracy by 1
 	player.daggers.speed = player.daggers.speed <= 2 ? 2 : (5.1 - Math.floor((player.daggers.level / 10) * 100) / 100).toFixed(1)
 }
@@ -14257,24 +15238,24 @@ function updateUnarmed() {
 	let str = player.str + player.mods.str
 	let dex = player.dex + player.mods.dex
 	let agi = player.agi + player.mods.agi
+	let dualSwingPenalty = 10
 	let unarmedAttributes = (str + dex + agi)
 
-	player.unarmed.attackPower = unarmedAttributes
-	player.unarmed.topMultiplier = parseFloat((0.45 + player.unarmed.level / 20).toFixed(2))
-	player.unarmed.botMultiplier = parseFloat((0.45 + player.unarmed.level / 20).toFixed(2))
-	player.unarmed.accuracy = Math.floor(10 + (dex + player.mods.accuracy + player.unarmed.level) * 10) / 10
+	player.unarmed.attackPower = Math.ceil(unarmedAttributes)
+	player.unarmed.topMultiplier = parseFloat((0.30 + player.unarmed.level / 20).toFixed(2))
+	player.unarmed.botMultiplier = parseFloat((0.30 + player.unarmed.level / 20).toFixed(2))
+	player.unarmed.accuracy = Math.floor(10 + (dex + player.mods.accuracy + player.unarmed.level - dualSwingPenalty) * 10) / 10
 	player.unarmed.speed = parseFloat((4.1 - Math.floor((player.unarmed.level / 10) * 100) / 100).toFixed(1) < 2 ? 2 : parseFloat((4.1 - Math.floor((player.unarmed.level / 10) * 100) / 100).toFixed(1)))
 }
 
 function updateBows() {
-	let str = player.str + player.mods.str
 	let dex = player.dex + player.mods.dex
 	let agi = player.agi + player.mods.agi
-	let bowsAttributes = (str * 1.5) +  (agi * 1.5)
+	let bowsAttributes = dex + agi
 
-	player.bows.attackPower = bowsAttributes
-	player.bows.topMultiplier = parseFloat((0.45 + player.bows.level / 20).toFixed(2))
-	player.bows.botMultiplier = parseFloat((0.45 + player.bows.level / 20).toFixed(2))
+	player.bows.attackPower = Math.ceil(bowsAttributes)
+	player.bows.topMultiplier = parseFloat((0.30 + player.bows.level / 20).toFixed(2))
+	player.bows.botMultiplier = parseFloat((0.30 + player.bows.level / 20).toFixed(2))
 	player.bows.accuracy = Math.floor(10 + (dex + player.bows.level + player.mods.accuracy) * 10) / 10
 	player.bows.speed = player.bows.speed <= 2 ? 2 : (5.1 - Math.floor((player.bows.level / 10) * 100) / 100).toFixed(1)
 }
@@ -14304,14 +15285,23 @@ function updateShields() {
 function updateDodge() {
 	//SHOULD MAKE AGILITY FACTOR INTO DODGE
 	//every point of agility gives 3 to dodge
-	let calculatedDodge = player.level + player.dodging.rating() + (player.agi * 3)
+	let calculatedDodge = player.level + player.dodging.rating() + ((player.mods.agi + player.agi) * 3) + player.mods.dodge
 	player.dodge = calculatedDodge - player.weight <= 0 ? 0 : calculatedDodge - player.weight
 }
 
 
 function updateArmor() {
-	player.armor = player.mods.armor + player.toughness.rating()
+	player.armor = player.mods.armor
+	player.slashingArmor = player.mods.slashingArmor + player.toughness.rating()
+	player.piercingArmor = player.mods.piercingArmor + player.toughness.rating()
+	player.bluntArmor = player.mods.bluntArmor + player.toughness.rating()
 }
+function updateMagicResist() {
+	//no skills to raise this yet. Need to have magic resist skill and then individual element resists
+	player.magicResist.fire = player.mods.fire
+}
+
+
 function updateExpertise() {
 	player.slashingPen = player.mods.slashingPen + player.slashingExpertise.amount()
 	player.piercingPen = player.mods.piercingPen + player.piercingExpertise.amount()
@@ -14339,12 +15329,12 @@ function updateCurrentWeaponSkill() {
 
 function initializePlayerStats() {}
 
-// function updateWeight() {
-// 	player.weight = player.mods.weight - (player.str * 5) <= 0 ? 0 : player.mods.weight - (player.str * 5)
-// }
-// function updateSpeed() {
-// 	player.currentWeaponSkill.speed = player.currentWeaponSkill.speed + (player.weight * 0.1)
-// }
+function updateWeight() {
+	player.weight = player.mods.weight - (player.str * 5) <= 0 ? 0 : player.mods.weight - (player.str * 5)
+}
+function updateSpeed() {
+	player.currentWeaponSkill.speed = player.currentWeaponSkill.speed + (player.weight * 0.1)
+}
 function updateSpellPower() {
 	player.spellPower = Math.ceil(Math.pow(player.int * 2 + player.wis, 1.3) + player.mods.spellPower)
 }
@@ -14357,15 +15347,14 @@ function updateRetreatSpeed() {
 
 function updatePlayerStats() {
 	playerStance()
-	// updateWeight()
-	// updateSpeed()
+	updateWeight()
+	updateSpeed()
 	updateHealth()
 	updateMana()
 	updateResource()
 
 	updateOneHanded()
 	updateTwoHanded()
-	// updateDualWield()
 	updateUnarmed()
 	updateDaggers()
 	updateBows()
@@ -15290,7 +16279,7 @@ async function specificNpcMovement(npc) {
 			behaviorB = true
 		}
 	}   else if (behaviorB == true) {
-		console.log('before NPC moves')
+		// console.log('before NPC moves')
 		let directionKey = `${xAxisB[xCounterB]},${yAxisB[yCounterB]}`
 		direction = movesToDirectionMap[directionKey]
 		entersFromDirection = entersFromDirectionMap[directionKey]
@@ -15973,11 +16962,11 @@ const ragnar = {
 			quickMessage(`You must be a Fighter in order to train with Ragnar`)
 		}
 	},
-	skillsOffered: [dualStrike, bladeBlitz, gore, charge, oneHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, bloodthirst, battleRage, weaponTempering, armorTempering, counterAttack, tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft],
+	skillsOffered: [dualStrike, bladeBlitz, shred, charge, oneHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, bloodthirst, battleRage, weaponTempering, armorTempering, counterAttack, tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft],
 	skillsMaxLevel: {
 		dualStrike: 5,
 		bladeBlitz: 5,
-		gore: 5,
+		shred: 5,
 		oneHanded: 5,
 		charge: 5,
 		thrillOfTheKill: 5,
@@ -16263,14 +17252,15 @@ let fieldsTrainerDialogue = {
 			crossroads_shops_and_fields.descriptions.zoneExitsBool.south = true
 			return
 		}
-		if (this.questSequence.fourth && !player.killList.lesserMudElemental && !player.killList.lesserGrassElemental && !player.killList.lesserWaterElemental) {
+		if (!player.killList.lesserMudElemental && !player.killList.lesserGrassElemental && !player.killList.lesserWaterElemental) {
 			await dialogueWait(200)
 			customizeEachWord(`${this.name}: `, this.nameColor, line1)
 			customizeEachWord(`"The way is open to the south. Return to me when you have slain the boss elemental."`, 'white', line1)
 			blankSpace()
 			return
 		}
-		if (!this.questSequence.fifth) {
+		if (player.killList.lesserMudElemental && player.killList.lesserGrassElemental && player.killList.lesserWaterElemental) {
+			this.questSequence.fifth = true
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`${this.name}: `, this.nameColor, line1)
@@ -16937,7 +17927,7 @@ const delverick = {
 		}
 	},
 	skillsOffered: [catalyst, tempest, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
-		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin],
+		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin, wayOfTheFist],
 	skillsMaxLevel: {
 		//flying kick
 		//cyclone kick
@@ -16956,6 +17946,7 @@ const delverick = {
 		precision: 5,
 		vigor: 5,
 		hardenedSkin: 5,
+		wayOfTheFist: 5,
 	},
 	questSequence: {
 	},
@@ -17012,7 +18003,7 @@ const maelius = {
 		}
 	},
 	skillsOffered: [fireSeal, waterSeal, earthSeal, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
-		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin],
+		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin, wayOfTheFist],
 	skillsMaxLevel: {
 		fireSeal: 5,
 		waterSeal: 5,
@@ -17030,6 +18021,7 @@ const maelius = {
 		precision: 5,
 		vigor: 5,
 		hardenedSkin: 5,
+		wayOfTheFist: 5,
 	},
 	questSequence: {
 	},
@@ -17086,7 +18078,7 @@ const fearecia = {
 		}
 	},
 	skillsOffered: [blazingFist, tidalFist, quakeFist, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
-		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin],
+		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin, wayOfTheFist],
 	skillsMaxLevel: {
 		blazingFist: 5,
 		tidalFist: 5,
@@ -17104,6 +18096,7 @@ const fearecia = {
 		precision: 5,
 		vigor: 5,
 		hardenedSkin: 5,
+		wayOfTheFist: 5,
 	},
 	questSequence: {
 	},
@@ -17221,12 +18214,12 @@ const talon = {
 		}
 		trainInteraction(secondCommand, this)
 	},
-	skillsOffered: [timedShot, rapidFireShot, multiShot, evasiveRoll, bows, sideStep, markOfTheBeast, headshot, doubleDraw,
+	skillsOffered: [piercingArrow, rapidFireShot, hydraArrow, evasiveRoll, bows, sideStep, markOfTheBeast, headshot, doubleDraw,
 		weakSpot, dodging, tactics, precision],
 	skillsMaxLevel: {
-		timedShot: 5,
+		piercingArrow: 5,
 		rapidFireShot: 5,
-		multiShot: 5,
+		hydraArrow: 5,
 		evasiveRoll: 5,
 		bows: 5,
 		sideStep: 5,
@@ -18037,7 +19030,7 @@ let arnoldo = {
 			player.killList.koboldChild == 1 &&
 			player.killList.koboldDigger == 1 &&
 			player.killList.koboldScoundrel == 1 &&
-			player.killList.koboldSpearman == 1 &&
+			player.killList.koboldSpearthrower == 1 &&
 			player.killList.koboldChief == 1) {
 				isQuestObjectiveComplete = true
 			}
@@ -19364,9 +20357,11 @@ function trainInteraction(secondCommand, npc) {
 	let line1 = document.createElement('div')
  	if (masterSkill == undefined) {
 		customizeEachWord(`That skill is not one of the choices`, 'white', line1)
-	} else if (masterSkill.requiredPlayerLevel && player.level < masterSkill.requiredPlayerLevel()) {
-		quickMessage(`You must be level ${masterSkill.requiredPlayerLevel()} in order to train this ability`)
-	} else if (playerGold < goldCost) {
+	} 
+	// else if (masterSkill.requiredPlayerLevel && player.level < masterSkill.requiredPlayerLevel()) {
+	// 	quickMessage(`You must be level ${masterSkill.requiredPlayerLevel()} in order to train this ability`)
+	// } 
+	else if (playerGold < goldCost) {
 		quickMessage(`You do not have enough gold to learn this skill!`)
 	} else if (playerPoints < pointsCost) {
 		quickMessage(`You do not have enough ability points to learn this skill!`)
@@ -19421,9 +20416,11 @@ function learnInteraction(secondCommand, npc) {
 	let line1 = document.createElement('div')
  	if (masterSpell == undefined) {
 		customizeEachWord(`That spell is not one of the choices`, 'white', line1)
-	} else if (masterSpell.requiredPlayerLevel && player.level < masterSpell.requiredPlayerLevel()) {
-		quickMessage(`You must be level ${masterSpell.requiredPlayerLevel()} in order to train this ability`)
-	} else if (playerGold < goldCost) {
+	} 
+	// else if (masterSpell.requiredPlayerLevel && player.level < masterSpell.requiredPlayerLevel()) {
+	// 	quickMessage(`You must be level ${masterSpell.requiredPlayerLevel()} in order to train this ability`)
+	// } 
+	else if (playerGold < goldCost) {
 		quickMessage(`You do not have enough gold to learn this spell!`)
 	} else if (playerPoints < pointsCost) {
 		quickMessage(`You do not have enough ability points to learn this spell!`)
@@ -19925,7 +20922,7 @@ function displayShopSkillsOrSpells(targetNpc, ssoi) {
 					requiredLevelString.classList.add('build-points-string')
 					requiredLevelNumber.classList.add('red')
 					requiredLevelDiv.classList.add('price-g')
-					requiredLevelNumber.textContent = skill.requiredPlayerLevel()
+					// requiredLevelNumber.textContent = skill.requiredPlayerLevel()
 					requiredLevelString.textContent = 'Required level'
 					requiredLevelDiv.appendChild(requiredLevelString)
 					requiredLevelDiv.appendChild(requiredLevelNumber)
@@ -20712,6 +21709,16 @@ let galvadiaWelcomeArea2 = new AreaMaker(
 		},
 	}
 )
+function calculateSupremeDodging() {
+	applyBuff(player.supremeDodging.buff)
+}
+function applyOnHitSkillBuffs(weaponObject) {
+	if (weaponObject.doesSwingHit) {
+		if (player.supremeDodging.level > 0) {
+			calculateSupremeDodging()
+		}
+	}
+}
 
 function inspectHTML(message, classChange, div, line) {
 	let span = document.createElement('span') //string 1
@@ -22783,21 +23790,24 @@ let underFields1 = new AreaMaker(
 	})
 )
 
-fields1.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 39}, {enemy: waterling, probability: 39}, {enemy: grassling, probability: 39}])}
-fields2.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 39}, {enemy: waterling, probability: 39}, {enemy: grassling, probability: 39}])}
-fields3.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 39}, {enemy: waterling, probability: 39}, {enemy: grassling, probability: 39}])}
+fields1.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 33}, {enemy: waterling, probability: 33}, {enemy: grassling, probability: 34}])}
+fields2.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
+fields3.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
 fields4.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
 fields5.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
 fields6.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
 fields7.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
 fields8.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
 fields9.onEntry = function() {spawnMonsterOnEntry([{enemy: mudling, probability: 3}, {enemy: waterling, probability: 3}, {enemy: grassling, probability: 3}])}
+
 lette_fields1.onEntry = function() {spawnMonsterOnEntry([{enemy: mudlet, probability: 3}, {enemy: waterlet, probability: 3}, {enemy: grasslet, probability: 3}])}
 lette_fields2.onEntry = function() {spawnMonsterOnEntry([{enemy: mudlet, probability: 3}, {enemy: waterlet, probability: 3}, {enemy: grasslet, probability: 3}])}
 lette_fields3.onEntry = function() {spawnMonsterOnEntry([{enemy: mudlet, probability: 3}, {enemy: waterlet, probability: 3}, {enemy: grasslet, probability: 3}])}
 lette_fields4.onEntry = function() {spawnMonsterOnEntry([{enemy: mudlet, probability: 3}, {enemy: waterlet, probability: 3}, {enemy: grasslet, probability: 3}])}
 lette_fields5.onEntry = function() {spawnMonsterOnEntry([{enemy: mudlet, probability: 3}, {enemy: waterlet, probability: 3}, {enemy: grasslet, probability: 3}])}
 lette_fields6.onEntry = function() {spawnMonsterOnEntry([{enemy: mudlet, probability: 3}, {enemy: waterlet, probability: 3}, {enemy: grasslet, probability: 3}])}
+
+
 
 
 
@@ -23638,13 +24648,26 @@ let castleMoat = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'bridge',
-		areaName: `In Font Of The Castle Moat Bridge`, //change area name
+		areaName: `In Front Of The Castle Moat Bridge`, //change area name
 		zoneType: "galvadia_exterior_north",
-		desc: `Two guards stand at the entrance to the moat bridge, inspecting people as they pass.`,
+		desc: `Two guards stand at the entrance to the moat bridge, inspecting people as they pass.
+		There is a sign here.`,
 		zoneExitsBool: {
 			north: true,
 			southeast: true,
 			southwest: true,
+		},
+		sign: function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The sign reads: `, 'light-brown', line1)
+			customizeEachWord(`North: Castle`, 'white', line2)
+			customizeEachWord(`Southeast: Glade of Galvadia`, 'white', line3)
+			customizeEachWord(`Southwest: Galvadian Fields`, 'white', line4)
+			blankSpace()
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -23658,7 +24681,16 @@ let castleMoat = new AreaMaker( //change name
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		actionWord: ['sign'],
+	}),
+	{
+		sign: {
+			names: ['sign'],
+			color: function() {
+				return 'light-brown'
+			},
+		}
+	}
 )
 let junction_castle_town_fields = new AreaMaker( //change name
 	0,
@@ -23674,7 +24706,8 @@ let junction_castle_town_fields = new AreaMaker( //change name
 		areaNameClass: 'bridge',
 		areaName: `West Castle Crossroads`, //change area name
 		zoneType: "galvadia_exterior_north",
-		desc: `This is the start of the path that leads away fraom both the castle and town. It follows the castle moat to the west, and extends beyond it far into the distance well into the Galvadian Fields.`,
+		desc: `This is the start of the path that leads away fraom both the castle and town. It follows the castle moat to the west, and extends beyond it far into the distance well into the Galvadian Fields.
+		There is a sign here.`,
 		zoneExitsBool: {
 			northeast: true,
 			southeast: true,
@@ -23687,11 +24720,10 @@ let junction_castle_town_fields = new AreaMaker( //change name
 			let line4 = document.createElement('div')
 			let line5 = document.createElement('div')
 			blankSpace()
-			customizeEachWord(`The sign reads: `, 'white', line1)
-			customizeEachWord(`To the west: Galvadian Fields`, 'white', line2)
-			customizeEachWord(`To the north: Castle `, 'white', line3)
-			customizeEachWord(`To the east: Forest`, 'white', line4)
-			customizeEachWord(`To the east then south: Town`, 'white', line5)
+			customizeEachWord(`The sign reads: `, 'light-brown', line1)
+			customizeEachWord(`Northeast: Castle`, 'white', line2)
+			customizeEachWord(`Southeast: Town Square`, 'white', line3)
+			customizeEachWord(`West: Galvadian Fields`, 'white', line4)
 			blankSpace()
 		},
 		zoneExits: [],
@@ -23706,7 +24738,16 @@ let junction_castle_town_fields = new AreaMaker( //change name
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		actionWord: ['sign'],
+	}),
+	{
+		sign: {
+			names: ['sign'],
+			color: function() {
+				return 'light-brown'
+			},
+		}
+	}
 )
 let toGalvadiaFields1 = new AreaMaker( //change name
 	0,
@@ -24996,6 +26037,7 @@ let koboldCaveEntrance = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Entrance to the Kobold Caves`, //change area name
 		desc: `You stand in front of a large cave mouth. Animal skulls litter the ground with some decoratively strung up across the entrance and other still fresh heads stuck on pikes. The area is quiet with no animals in sight - you can only imagine why. You hear the occasional, crazed yelping coming from within the caves.`,
+		zoneType: "galvadia_fields_main",
 		zoneExitsBool: {
 			east: true,
 			down: true,
@@ -25018,7 +26060,7 @@ let koboldCavesRoom1 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-23, // x coord
 	-1, // y coord
@@ -25028,6 +26070,7 @@ let koboldCavesRoom1 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Dark Damp Cave`, //change area name
 		desc: `A steep slope extends upward toward the mouth of the cave. Tunnels wind in several directions. Through dimly lit torch light, you can see that the northern and southern tunnels curve around. To the west, you hear much more loudly the yips and yelps of kobolds. To the east is quiet, and seemingly less active.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -25053,7 +26096,7 @@ let koboldCavesRoom2 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-23, // x coord
 	0, // y coord
@@ -25063,6 +26106,7 @@ let koboldCavesRoom2 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Through A Narrow Passage`, //change area name
 		desc: `You can see a spotlight of sunshine to the south that illuminates the ground. The north tunnel extends farther into the caves.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -25085,7 +26129,7 @@ let koboldCavesRoom3 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-23, // x coord
 	1, // y coord
@@ -25095,6 +26139,7 @@ let koboldCavesRoom3 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At A Turn in the Caves`, //change area name
 		desc: `Crumbled stone litters the area. It's hard to gain footing with all the rubble under your feet. Torches are dotted around the walls at least making it easier to see. Large chunks of colored stone jut out from the walls in what looks like a copper vein.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			northwest: true,
 			south: true,
@@ -25163,7 +26208,7 @@ let koboldCavesRoom4 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, // x coord
 	2, // y coord
@@ -25173,6 +26218,7 @@ let koboldCavesRoom4 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At A Turn In The Caves`, //change area name
 		desc: `Winding through the turn, you see light coming from the southeast. More crumbled stone starts to crunch under your feet.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			southeast: true,
 			west: true,
@@ -25195,7 +26241,7 @@ let koboldCavesRoom5 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-25, // x coord
 	2, // y coord
@@ -25205,6 +26251,7 @@ let koboldCavesRoom5 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Through The Cave Tunnels`, //change area name
 		desc: `You see dim light to the east and west, but you can barely see anything in front of you.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -25227,7 +26274,7 @@ let koboldCavesRoom6 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-26, // x coord
 	2, // y coord
@@ -25237,6 +26284,7 @@ let koboldCavesRoom6 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At A Turn In The Caves`, //change area name
 		desc: `Little Kobold torches line the walls here and to the southwest. They must have a reason for wanting to see better here at this part of the tunnels.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			southwest: true,
@@ -25259,7 +26307,7 @@ let koboldCavesRoom7 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-27, // x coord
 	1, // y coord
@@ -25269,6 +26317,7 @@ let koboldCavesRoom7 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Winding Through The Tunnels`, //change area name
 		desc: `Boulders, rocks, and dirt have been pushed and piled in such a way as to make way for traffic. Footprints show in the thick dust on the floor`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			northeast: true,
 			south: true,
@@ -25291,7 +26340,7 @@ let koboldCavesRoom8 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-27, // x coord
 	0, // y coord
@@ -25302,6 +26351,7 @@ let koboldCavesRoom8 = new AreaMaker( //change name
 		areaName: `Heading Down The Narrow Tunnels`, //change area name
 		desc: `The tunnel has been cleared of rocks and dirt. Slender planks have been braced against the walls and ceiling to keep the roof from creating a cave-in.  A glowing moss that emits enough light to see grows along the
 		walls.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -25324,7 +26374,7 @@ let koboldCavesRoom9 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-27, // x coord
 	-1, // y coord
@@ -25334,6 +26384,7 @@ let koboldCavesRoom9 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At A Branch In The Tunnels`, //change area name
 		desc: `There is extra light coming from the east. You can also hear clatterings and excited yips coming from that direction. To the south, the dark tunnels continue.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -25357,7 +26408,7 @@ let koboldCavesRoom10 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-27, // x coord
 	-2, // y coord
@@ -25367,6 +26418,7 @@ let koboldCavesRoom10 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Travelling Through The Narrow Tunnels`, //change area name
 		desc: `Faint light can be seen illuminating the turn to the south. With what light there is in this room, you can see little footsteps making their way to the north and curving around to the east.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -25389,7 +26441,7 @@ let koboldCavesRoom11 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-27, // x coord
 	-3, // y coord
@@ -25399,6 +26451,7 @@ let koboldCavesRoom11 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At A Turn In The Tunnels`, //change area name
 		desc: `The walls have been recently reinforced with old wood and other stolen materials from nearby buildings above ground. You can smell the mildew emitting from the materials.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			southeast: true,
@@ -25421,7 +26474,7 @@ let koboldCavesRoom12 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-26, // x coord
 	-4, // y coord
@@ -25431,6 +26484,7 @@ let koboldCavesRoom12 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Winding Through The Tunnels`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			northwest: true,
 			east: true,
@@ -25453,7 +26507,7 @@ let koboldCavesRoom13 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-25, // x coord
 	-4, // y coord
@@ -25463,6 +26517,7 @@ let koboldCavesRoom13 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -25485,7 +26540,7 @@ let koboldCavesRoom14 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, // x coord
 	-4, // y coord
@@ -25495,6 +26550,7 @@ let koboldCavesRoom14 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			northeast: true,
 			west: true,
@@ -25517,7 +26573,7 @@ let koboldCavesRoom15 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-23, // x coord
 	-3, // y coord
@@ -25527,6 +26583,7 @@ let koboldCavesRoom15 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			southwest: true,
@@ -25549,7 +26606,7 @@ let koboldCavesRoom16 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-23, // x coord
 	-2, // y coord
@@ -25559,6 +26616,7 @@ let koboldCavesRoom16 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -25581,7 +26639,7 @@ let koboldCavesRoom17 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, // x coord
 	-1, // y coord
@@ -25591,6 +26649,7 @@ let koboldCavesRoom17 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Heading Down A Well Worn Tunnel`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -25613,7 +26672,7 @@ let koboldCavesRoom18 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-25, // x coord
 	-1, // y coord
@@ -25623,6 +26682,7 @@ let koboldCavesRoom18 = new AreaMaker( //change name
 		areaNameClass: 'blue',
 		areaName: `At A Pond In The Middle Of A Large Room`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -25647,7 +26707,7 @@ let koboldCavesRoom19 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-26, // x coord
 	-1, // y coord
@@ -25657,6 +26717,7 @@ let koboldCavesRoom19 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On A Lit Path Through The Tunnels`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -25679,7 +26740,7 @@ let koboldCavesRoom20 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, // x coord
 	0, // y coord
@@ -25689,6 +26750,7 @@ let koboldCavesRoom20 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `On path to fields 7`,
+		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			west: true,
 		},
@@ -25710,7 +26772,7 @@ let koboldCavesRoom21 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-25, // x coord
 	0, // y coord
@@ -25720,6 +26782,7 @@ let koboldCavesRoom21 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Living Area`, //change area name
 		desc: `The walls come closer together only allowing a couple to pass through at a time. The walls have been scraped and scratched by equipment being dragged through the hallway. Small bits of fabric, fur, arrowheads, and other items can be seen scattered along the passageway.`,
+		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			east: true,
 			south: true,
@@ -25743,7 +26806,7 @@ let koboldCavesRoom22 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-26, // x coord
 	0, // y coord
@@ -25753,6 +26816,7 @@ let koboldCavesRoom22 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Dwelling`, //change area name
 		desc: `Carved into the wall is a large enclave for a Kobold Family. Scraggled animal pelts have been stacked up for what look to be beds. Skinned rat carcassed hang from the ceiling. Makeshift weapons and armor are stacked to one side.`,
+		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			east: true,
 		},
@@ -25822,7 +26886,7 @@ let koboldCavesRoom23 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, // x coord
 	-2, // y coord
@@ -25832,6 +26896,7 @@ let koboldCavesRoom23 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Dwelling`, //change area name
 		desc: `A lit fire is at the center of this enclave. Critter bones lay strewn about near the fire.`,
+		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			west: true,
 		},
@@ -25894,7 +26959,7 @@ let koboldCavesRoom24 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-25, // x coord
 	-2, // y coord
@@ -25904,6 +26969,7 @@ let koboldCavesRoom24 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Living Area`, //change area name
 		desc: `Well worn stone has been smoothed out from the many years of use.`,
+		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -25927,7 +26993,7 @@ let koboldCavesRoom25 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-26, // x coord
 	-2, // y coord
@@ -25937,6 +27003,7 @@ let koboldCavesRoom25 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Dwelling`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			east: true,
 		},
@@ -25958,7 +27025,7 @@ let koboldCavesRoom26 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-22, // x coord
 	-1, // y coord
@@ -25968,6 +27035,7 @@ let koboldCavesRoom26 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -25990,7 +27058,7 @@ let koboldCavesRoom27 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-21, // x coord
 	-1, // y coord
@@ -26000,6 +27068,7 @@ let koboldCavesRoom27 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			southeast: true,
 			west: true,
@@ -26022,7 +27091,7 @@ let koboldCavesRoom28 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-20, // x coord
 	-2, // y coord
@@ -26032,6 +27101,7 @@ let koboldCavesRoom28 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `On path to fields 7`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			northwest: true,
 			down: true,
@@ -26054,7 +27124,7 @@ let koboldCavesFloor2Room1 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-20, // x coord
 	-2, // y coord
@@ -26064,6 +27134,7 @@ let koboldCavesFloor2Room1 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			west: true,
 			up: true,
@@ -26086,7 +27157,7 @@ let koboldCavesFloor2Room2 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-21, // x coord
 	-2, // y coord
@@ -26096,6 +27167,7 @@ let koboldCavesFloor2Room2 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -26118,7 +27190,7 @@ let koboldCavesFloor2Room3 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-22, // x coord
 	-2, // y coord
@@ -26128,6 +27200,7 @@ let koboldCavesFloor2Room3 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -26151,7 +27224,7 @@ let koboldCavesFloor2Room4 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-22, // x coord
 	-1, // y coord
@@ -26161,6 +27234,7 @@ let koboldCavesFloor2Room4 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Overlooking A Steep Dropoff`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			south: true,
 		},
@@ -26182,7 +27256,7 @@ let koboldCavesFloor2Room5 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-23, // x coord
 	-2, // y coord
@@ -26192,6 +27266,7 @@ let koboldCavesFloor2Room5 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
 			northwest: true,
@@ -26214,7 +27289,7 @@ let koboldCavesFloor2Room6 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, // x coord
 	-1, // y coord
@@ -26224,6 +27299,7 @@ let koboldCavesFloor2Room6 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
 			southeast: true,
@@ -26246,7 +27322,7 @@ let koboldCavesFloor2Room7 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, // x coord
 	0, // y coord
@@ -26256,6 +27332,7 @@ let koboldCavesFloor2Room7 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Chief Chambers`, //change area name
 		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		zoneType: "kobold_cave_chief_room",
 		zoneExitsBool: {
 			south: true,
 		},
@@ -26273,19 +27350,43 @@ let koboldCavesFloor2Room7 = new AreaMaker( //change name
 		},
 	})
 )
-koboldCavesRoom1.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom2.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom3.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom4.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom5.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom6.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom7.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom8.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-koboldCavesRoom9.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearman, probability: 3}])}
-
-
-
-
+//tunnels
+koboldCavesRoom1.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom2.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom3.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom4.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom5.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom6.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom7.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom8.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom9.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom10.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom11.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom12.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom13.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom14.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom15.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom16.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom17.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom27.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+koboldCavesRoom28.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldArcher, probability: 3}, {enemy: koboldScoundrel, probability: 3}, {enemy: koboldSpearthrower, probability: 3}])}
+//main
+koboldCavesRoom18.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+koboldCavesRoom20.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+koboldCavesRoom21.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+koboldCavesRoom22.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+koboldCavesRoom23.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+koboldCavesRoom24.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+koboldCavesRoom25.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+koboldCavesRoom26.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
+//floor 2
+koboldCavesFloor2Room1.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
+koboldCavesFloor2Room2.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
+koboldCavesFloor2Room3.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
+koboldCavesFloor2Room4.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
+koboldCavesFloor2Room5.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
+koboldCavesFloor2Room6.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
+koboldCavesFloor2Room7.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
 
 
 
@@ -28453,10 +29554,13 @@ let trainingHallsCombatRoom4 = new AreaMaker( //change name
 	0,
 	0,
 	(descriptions = {
-		areaNameClass: 'dark-green',
-		areaName: `Ranger Initiate Room`, //change area name
+		areaNameClass: 'light-blue',
+		areaName: `Defensive Attributes`, //change area name
 		zoneType: 'galvadia_advanced_training_rooms',
-		desc: ``,
+		desc: `Attack, armor, and penetration types: 
+		There are three attack types that are possible for both you and enemies: slashing, piercing, and blunt swings. Your attack type is determined by your weapon. You can check what type a weapon is by examining or inspecting it. If you swing with a weapon that has only one swing type, you will always swing that type, and your weapon's damage will be matched against the enemy's armor of that type. This works the same for an enemy attacking you. If an enemy swings at you with a slashing attack, its damage will be matched against your slashing armor: piercing attack against piercing armor, and blunt attack against blunt armor. The way in which your attack type is determined if your weapon has multiple swing types, say it's a slashing and piercing type, is random. If it's a slashing and piercing type, there is a 50/50 chance of swinging either type. If your weapon happens to have three swing types (very rare circumstances), then there would be an even split chance amongst all three types.
+
+		Armor value: Armor value is very effective in that it prevents 1 damage per point of armor. An attack with 10 damage against an armor value of 10 would be completely negated. There is also a damage percent negation for every point of damage beyond that, making armor very effective for both you and enemies. You will eventually come across weapons, skills, and abilities that increase your armor penetration that will allow you to deal more damage to heavily armored enemies. Each point of penetration will negate the value of the coresponding type by 1. If an enemy has 10 slashing armor, and you have 5 slashing penetration, its slashing armor will be reduced to 5. The swing type is always matched against the enemy's armor type. That is to say, if an enemy has 10 slashing armor, and you have 10 slashing penetration, but your weapon swing is a blunt attack, the damage will be matched against the enemy's blunt armor, so your slashing penetration will have no effect for that swing.`,
 		zoneExitsBool: {
 			west: true,
 		},
@@ -28573,6 +29677,7 @@ let theShallowsEntrance = new AreaMaker(
 			northeast: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28605,6 +29710,7 @@ let theShallows1 = new AreaMaker(
 			northeast: true,
 			southwest: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28637,6 +29743,7 @@ let theShallows2 = new AreaMaker(
 			north: true,
 			southwest: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28671,6 +29778,7 @@ let theShallows3 = new AreaMaker(
 			south: true,
 			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28704,6 +29812,7 @@ let theShallows24 = new AreaMaker(
 			south: true,
 			northwest: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28733,9 +29842,10 @@ let theShallows25 = new AreaMaker(
 		areaName: 'Northeastern edge of the Glade',
 		desc: 'NORTHEAST PART',
 		zoneExitsBool: {
-			west: true,
 			southeast: true,
+			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28768,6 +29878,7 @@ let theShallows26 = new AreaMaker(
 			east: true,
 			southwest: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28800,6 +29911,7 @@ let theShallows4 = new AreaMaker(
 			east: true,
 			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28832,6 +29944,7 @@ let theShallows5 = new AreaMaker(
 			northeast: true,
 			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28864,6 +29977,7 @@ let theShallows6 = new AreaMaker(
 			north: true,
 			southwest: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28896,6 +30010,7 @@ let theShallows7 = new AreaMaker(
 			west: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28922,14 +30037,14 @@ let theShallows7 = new AreaMaker(
 			},
 			desc: function() {
 				let line1 = lineFunc()
-				if (!northTownCrossroads.interactables.cotton.empty) {
+				if (!theShallows7.interactables.cotton.empty) {
 					customizeEachWord(`A blossom of cotton that looks ripe for the pickins`, 'white', line1)
 				} else {
 					customizeEachWord(`There is no blossom to pick`, 'white', line1)
 				}
 			},
 			color: function() {
-				if (northTownCrossroads.interactables.cotton.empty) {
+				if (theShallows7.interactables.cotton.empty) {
 					return 'white'
 				} else {
 					return 'green'
@@ -28957,6 +30072,7 @@ let theShallows8 = new AreaMaker(
 			east: true,
 			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -28988,6 +30104,7 @@ let theShallows9 = new AreaMaker(
 		zoneExitsBool: {
 			east: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29020,6 +30137,7 @@ let theShallows10 = new AreaMaker(
 			north: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29052,6 +30170,7 @@ let theShallows11 = new AreaMaker(
 			northwest: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29084,6 +30203,7 @@ let theShallows12 = new AreaMaker(
 			southeast: true,
 			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29110,14 +30230,14 @@ let theShallows12 = new AreaMaker(
 			},
 			desc: function() {
 				let line1 = lineFunc()
-				if (!northTownCrossroads.interactables.cotton.empty) {
+				if (!theShallows12.interactables.cotton.empty) {
 					customizeEachWord(`A blossom of cotton that looks ripe for the pickins`, 'white', line1)
 				} else {
 					customizeEachWord(`There is no blossom to pick`, 'white', line1)
 				}
 			},
 			color: function() {
-				if (northTownCrossroads.interactables.cotton.empty) {
+				if (theShallows12.interactables.cotton.empty) {
 					return 'white'
 				} else {
 					return 'green'
@@ -29145,6 +30265,7 @@ let theShallows13 = new AreaMaker(
 			south: true,
 			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29177,6 +30298,7 @@ let theShallows14 = new AreaMaker(
 			north: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29208,6 +30330,7 @@ let theShallows15 = new AreaMaker(
 		zoneExitsBool: {
 			north: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29240,6 +30363,7 @@ let theShallows16 = new AreaMaker(
 			east: true,
 			southwest: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29266,14 +30390,14 @@ let theShallows16 = new AreaMaker(
 			},
 			desc: function() {
 				let line1 = lineFunc()
-				if (!northTownCrossroads.interactables.cotton.empty) {
+				if (!theShallows16.interactables.cotton.empty) {
 					customizeEachWord(`A blossom of cotton that looks ripe for the pickins`, 'white', line1)
 				} else {
 					customizeEachWord(`There is no blossom to pick`, 'white', line1)
 				}
 			},
 			color: function() {
-				if (northTownCrossroads.interactables.cotton.empty) {
+				if (theShallows16.interactables.cotton.empty) {
 					return 'white'
 				} else {
 					return 'green'
@@ -29300,6 +30424,7 @@ let theShallows17 = new AreaMaker(
 			northeast: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29332,6 +30457,7 @@ let theShallows18 = new AreaMaker(
 			north: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29365,6 +30491,7 @@ let theShallows19 = new AreaMaker(
 			east: true,
 			west: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29397,6 +30524,7 @@ let theShallows20 = new AreaMaker(
 			east: true,
 			south: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29429,6 +30557,7 @@ let theShallows21 = new AreaMaker(
 			north: true,
 			southeast: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29461,6 +30590,7 @@ let theShallows22 = new AreaMaker(
 			northwest: true,
 			east: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29493,6 +30623,7 @@ let theShallows23 = new AreaMaker(
 			west: true,
 			east: true,
 		},
+		zoneType: 'the_shallows',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29548,7 +30679,7 @@ let centralGlade = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: `The Central Glade of Galvadia`,
-		desc: `Between the town and castle walls, deep within the Galvadian forest, you find yourself standing in a massive glade. The surrounding trees tower high above you, and in the very middle stands the biggest tree youve ever seen. Roots extend from the base of the tree like giant tendrils. A massive trunk extends through the top of the forest canopy, the crown blossoms beyond the glade itself. The bits of light that make its way through cast soft spotlights around the glade. Despite the lack of direct light, the forest itself glows a comforting amber allowing you to see vividly.`,
+		desc: `Between the town and castle walls, deep within the Galvadian forest, you find yourself standing in a massive glade. The surrounding trees tower high above you, and in the very middle stands the biggest tree youve ever seen. Roots extend from the base of the tree like giant tendrils. A massive trunk extends through the top of the forest canopy, the crown blossoms beyond the glade itself. The bits of light that make its way through cast soft spotlights around the glade. Despite the lack of direct light, the forest itself glows a comforting amber.`,
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
@@ -29559,6 +30690,7 @@ let centralGlade = new AreaMaker(
 			southwest: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29596,6 +30728,7 @@ let westGladeOfGalvadia = new AreaMaker(
 			south: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29629,6 +30762,7 @@ let northwestGladeOfGalvadia = new AreaMaker(
 			southeast: true,
 			south: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29665,6 +30799,7 @@ let northGladeOfGalvadia = new AreaMaker(
 			southwest: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29700,6 +30835,7 @@ let northeastGladeOfGalvadia = new AreaMaker(
 			southwest: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29737,6 +30873,7 @@ let eastGladeOfGalvadia = new AreaMaker(
 			southwest: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29770,6 +30907,7 @@ let southeastGladeOfGalvadia = new AreaMaker(
 			north: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29806,6 +30944,7 @@ let southGladeOfGalvadia = new AreaMaker(
 			east: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29846,6 +30985,7 @@ let southwestGladeOfGalvadia = new AreaMaker(
 				gameDialogue(`This is the entrance to the Ranger's Guild`)
 			},
 		},
+		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29880,6 +31020,7 @@ let entranceToGladeOfGalvadia3 = new AreaMaker(
 			south: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_entrance',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29912,6 +31053,7 @@ let entranceToGladeOfGalvadia2 = new AreaMaker(
 			east: true,
 			west: true,
 		},
+		zoneType: 'galvadian_glade_entrance',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -29945,6 +31087,7 @@ let entranceToGladeOfGalvadia1 = new AreaMaker(
 			east: true,
 			southwest: true,
 		},
+		zoneType: 'galvadian_glade_entrance',
 		zoneExits: [],
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -30178,11 +31321,24 @@ let offTheCastlePath = new AreaMaker(
 		areaNameClass: dirtPath,
 		areaName: 'East Castle Crossroads',
 		zoneType: "galvadia_exterior_north",
-		desc: `The business of the town square can be heard as you stand at the East Castle Crossroads. The eastern path is a long, dirt road that borders the castle moat. It extends past the moat up a long, steady incline toward the forest. Townspeople travel this road often to visit the glade.`,
+		desc: `The business of the town square can be heard as you stand at the East Castle Crossroads. The eastern path is a long, dirt road that borders the castle moat. It extends past the moat up a long, steady incline toward the forest. Townspeople travel this road often to visit the glade.
+		There is a sign here.`,
 		zoneExitsBool: {
 			northwest: true,
 			east: true,
 			southwest: true,
+		},
+		sign: function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The sign reads: `, 'white', line1)
+			customizeEachWord(`North: Castle`, 'white', line2)
+			customizeEachWord(`East: Glade of Galvadia`, 'white', line3)
+			customizeEachWord(`South: Town Square`, 'white', line4)
+			blankSpace()
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -30196,7 +31352,16 @@ let offTheCastlePath = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		actionWord: ['sign'],
+	}),
+	{
+		sign: {
+			names: ['sign'],
+			color: function() {
+				return 'light-brown'
+			},
+		}
+	}
 )
 
 let startingAreaEastSecretDown = new AreaMaker(
@@ -30433,12 +31598,25 @@ let northTownGate = new AreaMaker(
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
 		areaName: 'Passing through the town gates',
-		desc: `Many people travelling through the gates, to and from the castle. Citizens passing through on their way to the forest`,
+		desc: `Many people travelling through the gates, to and from the castle. Citizens passing through on their way to the forest.
+		There is a sign here.`,
 		zoneType: "galvadia_town",
 		zoneExitsBool: {
 			northwest: true,
 			northeast: true,
 			south: true,
+		},
+		sign: function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The sign reads: `, 'light-brown', line1)
+			customizeEachWord(`Northwest: Galvadian Fields`, 'white', line2)
+			customizeEachWord(`Northeast: Glade of Galvadia`, 'white', line3)
+			customizeEachWord(`South: Town Square`, 'white', line4)
+			blankSpace()
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -30452,7 +31630,16 @@ let northTownGate = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		actionWord: ['sign'],
+	}),
+	{
+		sign: {
+			names: ['sign'],
+			color: function() {
+				return 'light-brown'
+			},
+		}
+	}
 )
 let northMostGalvadianTown = new AreaMaker(
 	0,
@@ -30571,9 +31758,10 @@ let galvadiaTownSquare = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Galvadia City Square',
+		areaName: 'Galvadia Town Square',
 		zoneType: "galvadia_town",
-		desc: 'The town square is easily one of the more crowded areas within the walls. A large fountain is in the center of the square, allowing people to sit or take a drink. There are shopkeepers on every corner selling their wares, from food and potions to swords and armor. In front of the fountain is a large SIGN',
+		desc: `The town square is easily one of the more crowded areas within the walls. A large fountain is in the center of the square, allowing people to sit or take a drink. There are shopkeepers on every corner selling their wares, from food and potions to swords and armor.
+		There is a sign here.`,
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
@@ -30590,12 +31778,20 @@ let galvadiaTownSquare = new AreaMaker(
 			let line3 = document.createElement('div')
 			let line4 = document.createElement('div')
 			let line5 = document.createElement('div')
+			let line6 = document.createElement('div')
+			let line7 = document.createElement('div')
+			let line8 = document.createElement('div')
+			let line9 = document.createElement('div')
 			blankSpace()
 			customizeEachWord(`The sign reads: `, 'white', line1)
-			customizeEachWord(`To the north: Castle Crossroads`, 'white', line2)
-			customizeEachWord(`To the east: East Residential, Graveyard`, 'white', line3)
-			customizeEachWord(`To the south: Guild Plaza`, 'white', line4)
-			customizeEachWord(`To the West Residential **currently closed**`, 'white', line5)
+			customizeEachWord(`Northwest: Bakery`, 'white', line2)
+			customizeEachWord(`North: Castle Crossroads`, 'white', line3)
+			customizeEachWord(`Northeast: Blacksmith and Armorsmith`, 'white', line4)
+			customizeEachWord(`East: East Residential`, 'white', line5)
+			customizeEachWord(`Southeast: Magic Shop`, 'white', line6)
+			customizeEachWord(`South: Guild Plaza`, 'white', line7)
+			customizeEachWord(`Southwest: Bows, Daggers, and Leathers`, 'white', line8)
+			customizeEachWord(`West: West Residential`, 'white', line9)
 			blankSpace()
 		},
 		zoneExits: [],
@@ -30610,7 +31806,16 @@ let galvadiaTownSquare = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
+		actionWord: ['sign']
 	}),
+	{
+		sign: {
+			names: ['sign'],
+			color: function() {
+				return 'light-brown'
+			}
+		}
+	}
 )
 let galvadiaCity_East = new AreaMaker(
 	0,
@@ -32698,7 +33903,7 @@ let galvadiaCityWest = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Galvadia City West',
+		areaName: 'Galvadia Town West',
 		zoneType: "galvadia_town",
 		desc: 'The town square is easily one of the more crowded areas within the walls. A large fountain is in the center of the square, allowing people to sit or take a drink. There are shopkeepers on every corner selling their wares, from food and potions to swords and armor. In front of the fountain is a large SIGN',
 		zoneExitsBool: {
@@ -32838,7 +34043,7 @@ let galvadiaGuildPlaza = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Galvadia Guild Plaza',
+		areaName: 'North Side Of The Galvadian Guild Plaza',
 		zoneType: "galvadia_guild_square",
 		desc: 'Entering the guild district, buildings tower on all sides. During classes, the plaza is nearly empty, but the sounds of metal clanging and distant blasts can be heard.',
 		zoneExitsBool: {
@@ -34831,7 +36036,7 @@ function sinistralAbilities(ability, weaponUsed, targetEnemy) {
 		quickMessage(`There is no enemy for you to attack`)
 		return
 	}
-	player.isStealthed = false
+	stealthBreak()
 	player.combat = true
 	targetEnemy.combat = true
 	let hitChance = playerAbilityHitChance(targetEnemy)
@@ -34849,14 +36054,43 @@ function sinistralAbilities(ability, weaponUsed, targetEnemy) {
 		let damageBlocked = baseDamage - damageAfterArmor
 		if (ability.debuff) {applyDebuff(targetEnemy, ability.debuff)}
 		if (ability.refName == 'bane') {
-			if (targetEnemy.debuffs?.poison) {removeDebuff(targetEnemy, targetEnemy.debuffs.poison)}
+			if (targetEnemy.debuffs?.poison) {
+				let weapon1 = getWeapon1()
+				let weapon2 = getWeapon2()
+				// let weaponArray = [weapon1, weapon2]
+				applyEnchantmentToWeapon(weapon1, weapon2, targetEnemy.debuffs.poison)
+				removeDebuff(targetEnemy, targetEnemy.debuffs.poison)
+			}
 		}
 		ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
 		applyDamageToEnemy(targetEnemy, damageAfterArmor)
+		if (ability.refName == 'ambush') {
+			if (targetEnemy.health <= 0) {
+				ability.flavorTextSpecial()
+				player.isStealthed = true
+			}
+		}
+		if (ability.refName == 'guillotine') {
+			if (targetEnemy.health <= 0) {
+				if (targetEnemy?.debuffs?.sinisterMark) {
+					let adrenalineGained = targetEnemy.debuffs.sinisterMark.stacks * 5
+					ability.flavorTextAdrenalineGain()
+					resourceGained(ability, adrenalineGained, 'maxAdrenaline')
+				}
+			}
+		}
 	}
 	ability.cooldown = ability.cooldownSet
 	initiateAbilityCooldown(ability)
 	updateScroll()
+}
+
+function stealthBreak() {
+	if (player.isStealthed) {
+		player.isStealthed = false
+		player.stealth.flavorTextStealthBreak()
+		applyBuff(player.stealth.buff)
+	}
 }
 
 function chargeEffect() {
@@ -35071,7 +36305,7 @@ function ambushFunction(secondCommand, thirdCommand) {
 	let targetEnemy = targetAnyEnemy(secondCommand, thirdCommand)
 	if (weaponUsed[0]) {
 		if (weaponUsed[0].skillUsed != 'daggers' || weaponUsed[1].skillUsed != 'daggers') {
-			quickMessage(`gotta have 2 dags`)
+			quickMessage(`This ability requires two daggers!`)
 			return
 		}
 	}
@@ -35133,22 +36367,19 @@ function contagionFunction(secondCommand, thirdCommand) {
 	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
 	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
-	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	// let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon2 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	let weaponUsed = weapon2
 	if (doesPlayerHaveAbility(ability)) {return}
 	if (abilityWeaponsCheck(ability, weaponUsed)) {return}
 	if (abilityResourceCheck(ability)) {return}
 	if (abilityCooldownCheck(ability)) {return}
 	if (abilityCombatCheck()) {return}
 	resourceConsumed(ability)
-	const meleeCombatMonsters = getAllEnemiesInCombat()
-	let numberOfTargets = meleeCombatMonsters.length
-	for (let i = 0; i < numberOfTargets; i++) {
-		const targetEnemy = meleeCombatMonsters[i]
-		const hitChance = playerAbilityHitChance(targetEnemy)
-		if (!hitChance) {
+	let targetEnemy = targetAnyEnemy(secondCommand, thirdCommand)
+	const hitChance = playerAbilityHitChance(targetEnemy)
+		if (hitChance == false) {
 			ability.flavorTextMiss(targetEnemy, weaponUsed)
 		} else {
-			console.log(ability, ' ABILITY')
 			baseDamage = player[ability.refName].damage(targetEnemy)
 			penetrationType = calculatePenetrationRoll()
 			penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
@@ -35156,16 +36387,9 @@ function contagionFunction(secondCommand, thirdCommand) {
 			damageBlocked = baseDamage - damageAfterArmor
 			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
 			applyDamageToEnemy(targetEnemy, damageAfterArmor)
-			if (numberOfTargets == 1) {
-				const abilityMaxStacks = ability.debuff.maxStacks()
-				for (let i = 0; i < abilityMaxStacks; i++) {
-					applyDebuff(targetEnemy, ability.debuff)
-				}
-			} else {
-				applyDebuff(targetEnemy, ability.debuff)
-			}
+			applyDebuff(targetEnemy, ability.debuff)
+			applyDebuff(targetEnemy, ability.debuff)
 		}
-	}
 	resourceConsumed(ability)
 	ability.cooldown = ability.cooldownSet
 	initiateAbilityCooldown(ability)
@@ -35195,7 +36419,7 @@ function shadowVenomFunction(secondCommand, thirdCommand) {
 	if (abilityResourceCheck(ability)) {return}
 	console.log(weaponUsed)
 	resourceConsumed(ability)
-	applyEnchantmentToWeapon(weaponUsed, ability.buff)
+	applyEnchantmentToWeapon(weaponUsed[0], weaponUsed[1], ability.buff)
 }
 function poisonWeaponFunction(secondCommand, thirdCommand) {
 	let ability = player.poisonWeapon
@@ -35209,7 +36433,7 @@ function poisonWeaponFunction(secondCommand, thirdCommand) {
 	if (abilityResourceCheck(ability)) {return}
 	console.log(weaponUsed)
 	resourceConsumed(ability)
-	applyEnchantmentToWeapon(weaponUsed, ability.buff)
+	applyEnchantmentToWeapon(weaponUsed[0], weaponUsed[1], ability.buff)
 }
 
 function shadowDaggersFunction(secondCommand, thirdCommand) {
@@ -35220,6 +36444,8 @@ function shadowDaggersFunction(secondCommand, thirdCommand) {
 	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
 	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
 	let doesApplyShadowMark = false
+	let allEnemies = getAllEnemiesInRoom()
+	if (checkAvailableEnemy(allEnemies[0])) {return}
 	if (doesPlayerHaveAbility(ability)) {return}
 	if (abilityWeaponsCheck(ability, weaponUsed)) {return}
 	if (abilityResourceCheck(ability)) {return}
@@ -35230,7 +36456,7 @@ function shadowDaggersFunction(secondCommand, thirdCommand) {
 		doesApplyShadowMark = true
 	}
 	let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
-	for (let i = 0; i < 3; i++) {
+	for (let i = 0; i < ability.numberOfHits(); i++) {
 		let hitChance = playerAbilityHitChance(targetEnemy)
 		if (hitChance == false) {
 			ability.flavorTextMiss(targetEnemy, weaponUsed)
@@ -35244,9 +36470,10 @@ function shadowDaggersFunction(secondCommand, thirdCommand) {
 			if (doesApplyShadowMark) {
 				applyDebuff(targetEnemy, player.shadowMark.debuff)
 			}
-			applyDebuff(targetEnemy, ability.debuff[i])
-			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, i)
-			applyDamageToEnemy(targetEnemy, damageAfterArmor)				// combatCount(weaponSkillSpeed)
+			applyDebuff(targetEnemy, ability.debuff[0])
+			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, 0)
+			applyDamageToEnemy(targetEnemy, damageAfterArmor)				
+			// combatCount(weaponSkillSpeed)
 			}
 	}
 	ability.cooldown = ability.cooldownSet
@@ -35262,12 +36489,13 @@ function shadowsurgeFunction(secondCommand, thirdCommand) {
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
 	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
 	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	let targetEnemy = getAllEnemiesInRoom()[0]
+	if (checkAvailableEnemy(targetEnemy)) {return}
 	if (doesPlayerHaveAbility(ability)) {return}
 	if (abilityWeaponsCheck(ability, weaponUsed)) {return}
 	if (abilityResourceCheck(ability)) {return}
 	if (abilityCooldownCheck(ability)) {return}
 	resourceConsumed(ability)
-	let targetEnemy = getAllEnemiesInRoom()[0]
 	let doesPlayerShadowStep = false
 	if (player.combat == false && targetEnemy) {
 		player.combat = true
@@ -35275,7 +36503,6 @@ function shadowsurgeFunction(secondCommand, thirdCommand) {
 		doesPlayerShadowStep = true
 	}
 	if (doesPlayerShadowStep) {
-		let totalDamage = ability.damage(targetEnemy, doesPlayerShadowStep)
 		let hitChance = playerAbilityHitChance(targetEnemy)
 		if (hitChance == false) {
 			ability.flavorTextMiss(targetEnemy, weaponUsed, doesPlayerShadowStep)
@@ -35288,17 +36515,17 @@ function shadowsurgeFunction(secondCommand, thirdCommand) {
 			let damageBlocked = baseDamage - damageAfterArmor
 			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, doesPlayerShadowStep)
 			applyDamageToEnemy(targetEnemy, damageAfterArmor)
+			applyDebuff(targetEnemy, player.shadowMark.debuff)
 			// combatCount(weaponSkillSpeed)
 		}
 	}
 	if (!doesPlayerShadowStep) {
-		let enemiesInRoom = getAllEnemiesInRoom()
+		let enemiesInRoom = getAllEnemiesInCombat()
 		let hitChance = playerAbilityHitChance(targetEnemy)
 		if (hitChance == false) {
 			ability.flavorTextMiss(targetEnemy, weaponUsed, doesPlayerShadowStep)
 			// combatCount(weaponSkillSpeed)
 		} else if (hitChance == true) {
-			
 			let baseRegularDamage = player[ability.refName].damage(targetEnemy)
 			let penetrationType = calculatePenetrationRoll()
 			let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
@@ -35316,7 +36543,10 @@ function shadowsurgeFunction(secondCommand, thirdCommand) {
 				let damageBlocked = baseDamage - damageAfterArmor
 				ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, doesPlayerShadowStep)
 				applyDamageToEnemy(targetEnemy, damageAfterArmor)
+				let enemyStacks = shadowMarkedEnemies[i].debuffs.shadowMark.stacks
 				removeDebuff(shadowMarkedEnemies[i], shadowMarkedEnemies[i].debuffs.shadowMark)
+				applyBuff(player.shadowsurge.buff)
+				player.buffs.shadowbane.stacks = (enemyStacks - 1)  + player.buffs.shadowbane.stacks > player.buffs.shadowbane.maxStacks() ? player.buffs.shadowbane.maxStacks() : (enemyStacks - 1) + player.buffs.shadowbane.stacks
 			}
 		}
 
@@ -35326,58 +36556,188 @@ function shadowsurgeFunction(secondCommand, thirdCommand) {
 	updateScroll()
 }
 
-
-
-function applyEnchantmentToWeapon(weaponArray, enchantBuff) {
-	if (Array.isArray(weaponArray)) {
-		weaponArray.forEach(weapon => {
-			if (!weapon.enchantment[0]) {
-				let line1 = lineFunc()
-				customizeEachWord(`You enchant your `, 'white', line1)
-				customizeEachWord(`${weapon.name} `, weapon.color, line1)
-				customizeEachWord(`with `, 'white', line1)
-				customizeEachWord(`${enchantBuff.name}`, enchantBuff.color, line1)
-				customizeEachWord(`!`, 'white', line1)
-				weapon.enchantment.push(enchantBuff)
-				let index = weapon.enchantment.indexOf(enchantBuff)
-				weapon.enchantment[index].timer = setTimeout(() => {
-					weapon.enchantment.splice(index, 1)
-					quickMessage(`${enchantBuff.name} expires`)
-				}, enchantBuff.duration)
-
-			} else {
-				console.log(weapon)
-				weapon.enchantment.forEach(enchant => {
-					if (enchant.refName == 'shadowVenom') {
-						quickMessage(`You reapply ${enchantBuff.name} to your ${weapon.name}`)
-						clearTimeout(enchant.timer)
-						let index = weapon.enchantment.indexOf(enchant)
-						weapon.enchantment.splice(index, 1)
-						weapon.enchantment.push(enchantBuff)
-						weapon.enchantment[index].timer = setTimeout(() => {
-							weapon.enchantment.splice(index, 1)
-							quickMessage(`${enchantBuff.name} expires`)
-						}, enchantBuff.duration)
-					}
-					// if (enchant.refName == 'shadowVenom') {
-					// 	quickMessage(`You reapply Shadow Venom to your ${weapon.name}`)
-					// 	let index = weapon.enchantment.indexOf(enchant)
-					// 	console.log(enchant)
-					// 	clearTimeout(enchant.timer)
-					// 	weapon.enchantment.splice(index, 1)
-					// 	enchant.timer = setTimeout(() => {
-					// 		let index = weapon.enchantment.indexOf(enchant)
-					// 		weapon.enchantment.splice(index, 1)
-					// 		quickMessage(`Shadow Venom expires`)
-					// 	}, enchant.duration)
-					// }
-				})
-			}
-		})
-	
-	} else {
-		quickMessage(`You are not wielding the proper weapons to enchant`)
+function shadowNovaFunction(secondCommand, thirdCommand) {
+	let ability = player.shadowNova
+	let abilityName = ability.refName
+	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
+	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
+	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
+	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	let doesApplyShadowMark = false
+	let allEnemies = getAllEnemiesInRoom()
+	if (checkAvailableEnemy(allEnemies[0])) {return}
+	if (doesPlayerHaveAbility(ability)) {return}
+	if (abilityWeaponsCheck(ability, weaponUsed)) {return}
+	if (abilityResourceCheck(ability)) {return}
+	if (abilityCooldownCheck(ability)) {return}
+	resourceConsumed(ability)
+	if (player.isStealthed) {
+		player.isStealthed = false
+		doesApplyShadowMark = true
 	}
+		let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
+		let hitChance = playerAbilityHitChance(targetEnemy)
+		if (hitChance == false) {
+			ability.flavorTextMiss(targetEnemy, weaponUsed)
+			// combatCount(weaponSkillSpeed)
+		} else if (hitChance == true) {
+			let allEnemiesInCombat = getAllEnemiesInCombat()
+			let targetEnemyIndex = allEnemiesInCombat.indexOf(targetEnemy)
+			allEnemiesInCombat.splice(targetEnemyIndex, 1)
+			baseDamage = player[ability.refName].damage(targetEnemy)
+			penetrationType = calculatePenetrationRoll()
+			penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+			damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+			damageBlocked = baseDamage - damageAfterArmor
+
+			if (player?.buffs?.shadowbane) {
+				let shadowbaneStacks = player?.buffs?.shadowbane?.stacks ? player?.buffs?.shadowbane?.stacks : 0
+				let splitStacks = Math.floor(shadowbaneStacks / allEnemiesInCombat.length)
+				if (splitStacks > 0) {
+					for (let i = 0; i < allEnemiesInCombat.length; i++) {
+						let newMarkedEnemy = allEnemiesInCombat[i]
+						applyDebuff(newMarkedEnemy, player.shadowMark.debuff)
+						newMarkedEnemy.debuffs.shadowMark.stacks + (splitStacks - 1) > newMarkedEnemy.debuffs.shadowMark.maxStacks() ? newMarkedEnemy.debuffs.shadowMark.stacks = newMarkedEnemy.debuffs.shadowMark.maxStacks() : newMarkedEnemy.debuffs.shadowMark.stacks += splitStacks - 1
+					}
+				} else {
+					for (let i = 0; i < shadowbaneStacks; i++) {
+						let newMarkedEnemy = allEnemiesInCombat[i]
+						applyDebuff(newMarkedEnemy, player.shadowMark.debuff)
+					}
+				}
+			}
+			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, 0)
+			applyDamageToEnemy(targetEnemy, damageAfterArmor)				
+			// combatCount(weaponSkillSpeed)
+			}
+	
+	ability.cooldown = ability.cooldownSet
+	initiateAbilityCooldown(ability)
+	updateScroll()
+
+}
+
+
+function applyEnchantmentToWeapon(weapon1, weapon2, enchantBuff) {
+	if (!weapon1.enchantment[0]) {
+		let newBuff = {...enchantBuff}
+		weapon1.enchantment.push(newBuff)
+		newBuff.flavorTextApplyBuff()
+		newBuff.timer = setTimeout(() => {
+			weapon1.enchantment.splice(0, 1)
+			newBuff.flavorTextWearsOff()
+		}, newBuff.duration)
+	} else 	{
+		for (let i = 0; i < weapon1.enchantment.length; i++) {
+			if (weapon1.enchantment[i].refName == enchantBuff.refName) {
+				let updatedStacks = weapon1.enchantment[i].stacks > enchantBuff.stacks ? weapon1.enchantment[i].stacks : enchantBuff.stacks
+				let newBuff = {...enchantBuff}
+				clearTimeout(weapon1.enchantment[i].timer)
+				weapon1.enchantment.splice(i, 1)
+				weapon1.enchantment.push(newBuff)
+				newBuff.stacks = updatedStacks
+				newBuff.flavorTextApplyBuff()
+				newBuff.timer = setTimeout(() => {
+					weapon1.enchantment.splice(i, 1)
+					newBuff.flavorTextWearsOff()
+				}, newBuff.duration)
+			}
+		}
+	}
+	if (!weapon2.enchantment[0]) {
+		let newBuff = {...enchantBuff}
+		weapon2.enchantment.push(newBuff)
+		newBuff.flavorTextApplyBuff()
+		newBuff.timer = setTimeout(() => {
+			weapon2.enchantment.splice(0, 1)
+			newBuff.flavorTextWearsOff()
+		}, newBuff.duration)
+	} else {
+		for (let i = 0; i < weapon2.enchantment.length; i++) {
+			if (weapon2.enchantment[i].refName == enchantBuff.refName) {
+				let updatedStacks = weapon2.enchantment[i].stacks > enchantBuff.stacks ? weapon2.enchantment[i].stacks : enchantBuff.stacks
+				let newBuff = {...enchantBuff}
+				clearTimeout(weapon2.enchantment[i].timer)
+				weapon2.enchantment.splice(i, 1)
+				weapon2.enchantment.push(newBuff)
+				newBuff.stacks = updatedStacks
+				newBuff.flavorTextApplyBuff()
+				newBuff.timer = setTimeout(() => {
+					weapon2.enchantment.splice(i, 1)
+					newBuff.flavorTextWearsOff()
+				}, newBuff.duration)
+			}
+		}
+	}
+
+
+
+
+	// let weaponArray = [weapon1, weapon2]
+	// if (Array.isArray(weaponArray)) {
+	// 	weaponArray.forEach(weapon => {
+	// 		if (!weapon.enchantment[0]) {
+	// 			quickMessage(`first ran`)
+	// 			let line1 = lineFunc()
+	// 			customizeEachWord(`You enchant your `, 'white', line1)
+	// 			customizeEachWord(`${weapon.name} `, weapon.color, line1)
+	// 			customizeEachWord(`with `, 'white', line1)
+	// 			customizeEachWord(`${enchantBuff.name}`, enchantBuff.color, line1)
+	// 			customizeEachWord(`!`, 'white', line1)
+	// 			weapon.enchantment.push(enchantBuff)
+	// 			let index = weapon.enchantment.indexOf(enchantBuff)
+	// 			weapon.enchantment[index].timer = setTimeout(() => {
+	// 				let line1 = lineFunc()
+	// 				customizeEachWord(`${enchantBuff.name} `, enchantBuff.color, line1)
+	// 				customizeEachWord(`wears off first`, `white`, line1)
+	// 				weapon.enchantment.splice(index, 1)
+	// 			}, enchantBuff.duration)
+
+	// 		} else {
+	// 			quickMessage(`second ran`)
+	// 			console.log(weapon)
+	// 			weapon.enchantment.forEach((enchant, ind) => {
+	// 				console.log(enchant, ' enchant')
+	// 				console.log(enchantBuff, ' ENCHANT BUFF ENCHANT BUFF')
+	// 				quickMessage(`Index foreach: ${ind}`)
+	// 				quickMessage(`Enchant name of second application: ${enchant.name}`)
+	// 				if (enchant.refName == 'poison') {
+	// 					clearTimeout(enchant.timer)
+	// 					let previousStacks = enchant.stacks > enchantBuff.stacks? enchant.stacks : enchantBuff.stacks
+	// 					quickMessage(`You reapply ${enchantBuff.name} to your ${weapon.name}`)
+	// 					let index = weapon.enchantment.indexOf(enchant)
+	// 					quickMessage(`Index indexOf custom assign: ${index}`)
+	// 					weapon.enchantment.splice(index, 1)
+	// 					weapon.enchantment.push(enchantBuff)
+	// 					enchantBuff.stacks = previousStacks
+	// 					weapon.enchantment[index].timer = setTimeout(() => {
+	// 						let index2 = weapon.enchantment.indexOf(enchantBuff)
+	// 						let line1 = lineFunc()
+	// 						customizeEachWord(`${enchantBuff.name} `, enchantBuff.color, line1)
+	// 						customizeEachWord(`wears off second`, `white`, line1)
+	// 						weapon.enchantment.splice(index2, 1)
+	// 					}, enchantBuff.duration)
+	// 				}
+	// 				if (enchant.refName == 'shadowVenom') {
+	// 					quickMessage(`You reapply ${enchantBuff.name} to your ${weapon.name}`)
+	// 					clearTimeout(enchant.timer)
+	// 					let index = weapon.enchantment.indexOf(enchant)
+	// 					weapon.enchantment.splice(index, 1)
+	// 					weapon.enchantment.push(enchantBuff)
+	// 					weapon.enchantment[index].timer = setTimeout(() => {
+	// 						let line1 = lineFunc()
+	// 						customizeEachWord(`${enchantBuff.name} `, enchantBuff.color, line1)
+	// 						customizeEachWord(`wears off`, `white`, line1)
+	// 						weapon.enchantment.splice(index, 1)
+	// 					}, enchantBuff.duration)
+	// 				}
+	// 			})
+	// 		}
+	// 	})
+	
+	// } else {
+	// 	quickMessage(`You are not wielding the proper weapons to enchant`)
+	// }
 }
 
 
@@ -35429,8 +36789,12 @@ function doesPlayerHaveAbility(ability) {
 	}
 }
 function abilityResourceCheck(ability) {
-	if (player[ability.resourceName] - ability.resourceCost < 0) {
-		let line1 = lineFunc()
+	let line1 = lineFunc()
+	if (typeof(ability.resourceCost) == 'function' && player[ability.resourceName] - ability.resourceCost() < 0) {
+		blankSpace()
+		customizeEachWord(`You do not have enough ${capitalizeFirstLetter(ability.resourceName)} to perform this ability`, 'white', line1)
+		return true
+	} else if (player[ability.resourceName] - ability.resourceCost < 0) {
 		customizeEachWord(`You do not have enough ${capitalizeFirstLetter(ability.resourceName)} to perform this ability`, 'white', line1)
 		blankSpace()
 		return true
@@ -35443,6 +36807,25 @@ function loseResource(resourceName, resourceCost) {
 	player[resourceName] = player[resourceName] - resourceCost
 	updateResource()
 }
+
+function resourceConsumed(ability) {
+	if (typeof(ability.resourceCost) == 'function') {
+		player[ability.resourceName] -= ability.resourceCost()
+	} else {
+		player[ability.resourceName] -= ability.resourceCost
+	}
+	updateResource()
+}
+function resourceGained(ability, amountGained, maxResource) {
+	if (player[ability.resourceName] + amountGained > player[maxResource]) {
+		player[ability.resourceName] = player[maxResource]
+	} else {
+		player[ability.resourceName] += amountGained
+	}
+	updateResource()
+}
+
+
 function gainClassResourceOnAttack(doesSwingHit) {
 	if (!doesSwingHit) {
 		return
@@ -35470,12 +36853,7 @@ function gainClassResourceOnAttack(doesSwingHit) {
 		maxResource = 'maxAdrenaline'
 		resourceGain = 5
 	}
-	console.log(player.guild)
-	console.log(player[resource])
-	console.log(resourceGain)
-	console.log(player[maxResource])
 	player[resource] + resourceGain > player[maxResource] ? player[maxResource] : player[resource] += resourceGain
-	console.log(player.guild)
 	updateResource()
 }
 
@@ -35525,10 +36903,7 @@ function abilityWeaponsCheck(ability, weaponUsed) {
 	}
 }
 
-function resourceConsumed(ability) {
-	player[ability.resourceName] = player[ability.resourceName] - ability.resourceCost
-	updateResource()
-}
+
 
 function ripslashFunction(secondCommand, thirdCommand) {
 	let ability = player.ripslash
@@ -35569,6 +36944,9 @@ function ripslashFunction(secondCommand, thirdCommand) {
 					damageBlocked = baseDamage - damageAfterArmor
 					ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
 					applyDamageToEnemy(targetEnemy, damageAfterArmor)
+					if (targetEnemy?.debuffs?.bleed) {
+						applyDebuff(targetEnemy, player.bleed)
+					}
 				}
 			} else {
 				player[abilityName].cooldown = player[abilityName].cooldownSet
@@ -35620,7 +36998,7 @@ function cycloneFunction() {
 							damageBlocked = baseDamage - damageAfterArmor
 							ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
 							applyDamageToEnemy(targetEnemy, damageAfterArmor)
-							applyDebuff(targetEnemy, ability.debuff)
+							applyDebuff(targetEnemy, player.bleed)
 						}
 					}
 				} else {
@@ -35653,22 +37031,76 @@ function cataclysmFunction(secondCommand, thirdCommand) {
 			return
 		}
 		if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
-			let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
-			let totalDamage = player[abilityName].damage(targetEnemy)
-			let hitChance = playerAbilityHitChance(targetEnemy)
+			let enemy = targetCombatEnemy(secondCommand, thirdCommand)
+			let hitChance = playerAbilityHitChance(enemy)
 			resourceConsumed(ability)
 			player[abilityName].queued = false
 			player.isAbilityQueued = false
 			if (hitChance == false) {
-				ability.flavorTextMiss(targetEnemy, weaponUsed)
+				ability.flavorTextMiss(enemy, weaponUsed)
 			} else if (hitChance == true) {
-				baseDamage = player[abilityName].damage(targetEnemy)
-				penetrationType = calculatePenetrationRoll()
-				penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
-				damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
-				damageBlocked = baseDamage - damageAfterArmor
-				ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
-				applyDamageToEnemy(targetEnemy, damageAfterArmor)
+				let allEnemiesInRoom = getAllEnemiesInRoom()
+				let mainEnemyIndex = allEnemiesInRoom.indexOf(enemy)
+				let additionalEnemy1
+				let additionalEnemy2
+				let baseDamage = ability.damage(enemy)
+				let additionalEnemyBaseDamage = Math.ceil(baseDamage * 0.5)
+				let penetrationType = calculatePenetrationRoll()
+				let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+				let damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemy, baseDamage, penetrationType)
+				let damageBlocked = baseDamage - damageAfterArmor
+				ability.flavorText(enemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+				applyDamageToEnemy(enemy, damageAfterArmor)
+				applyDebuff(enemy, ability.debuff)
+				if (allEnemiesInRoom[2]) {
+					if (mainEnemyIndex == 0) {
+						//Additional enemies are the two after the main target
+						additionalEnemy1 = allEnemiesInRoom[mainEnemyIndex + 1]
+						additionalEnemy2 = allEnemiesInRoom[mainEnemyIndex + 2]
+					} else if (mainEnemyIndex == allEnemiesInRoom.length - 1) {
+						//additional enemies are the two before the main target
+						additionalEnemy1 = allEnemiesInRoom[mainEnemyIndex - 1]
+						additionalEnemy2 = allEnemiesInRoom[mainEnemyIndex - 2]
+					} else {
+						//additional enemies are ones before and one after the main target
+						additionalEnemy1 = allEnemiesInRoom[mainEnemyIndex - 1]
+						additionalEnemy2 = allEnemiesInRoom[mainEnemyIndex + 1]
+					}
+					let additionalDamage1 = calculateAbilityDamageAgainstEnemyArmor(enemy, additionalEnemyBaseDamage, penetrationType)
+					let damageBlocked1 = additionalEnemyBaseDamage - additionalDamage1
+					ability.specialEffect(additionalEnemy1, additionalDamage1, penetrationFlavorText, damageBlocked1)
+					applyDamageToEnemy(additionalEnemy1, additionalDamage1)
+					applyDebuff(additionalEnemy1, ability.debuff)
+					let additionalDamage2 = calculateAbilityDamageAgainstEnemyArmor(enemy, additionalEnemyBaseDamage, penetrationType)
+					let damageBlocked2 = additionalEnemyBaseDamage - additionalDamage2
+					ability.specialEffect(additionalEnemy2, additionalDamage2, penetrationFlavorText, damageBlocked2)
+					applyDamageToEnemy(additionalEnemy2, additionalDamage2)
+					applyDebuff(additionalEnemy2, ability.debuff)
+				} else if (allEnemiesInRoom[1]) {
+					if (mainEnemyIndex == 0) {
+						additionalEnemy1 = allEnemiesInRoom[1]
+					} else if (mainEnemyIndex == 1) {
+						additionalEnemy1 = allEnemiesInRoom[0]
+					}
+					let additionalDamage1 = calculateAbilityDamageAgainstEnemyArmor(enemy, additionalEnemyBaseDamage, penetrationType)
+					let damageBlocked1 = additionalEnemyBaseDamage - additionalDamage1
+					ability.specialEffect(additionalEnemy1, additionalDamage1, penetrationFlavorText, damageBlocked1)
+					applyDamageToEnemy(additionalEnemy1, additionalDamage1)
+					applyDebuff(additionalEnemy1, ability.debuff)
+				}
+
+
+
+
+
+
+
+
+
+
+
+
+
 			}
 		} else {
 			player[abilityName].cooldown = player[abilityName].cooldownSet
@@ -35708,17 +37140,21 @@ function dualStrikeFunction(secondCommand, thirdCommand) {
 		}
 		if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
 			let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
-			let totalDamage = player[abilityName].damage(targetEnemy)
 			let hitChance = playerAbilityHitChance(targetEnemy)
 			player[abilityName].queued = false
 			player.isAbilityQueued = false
+			resourceConsumed(ability)
 			if (hitChance == false) {
 				ability.flavorTextMiss(targetEnemy, weaponUsed)
-				resourceConsumed(ability)
 			} else if (hitChance == true) {
-				ability.flavorText(targetEnemy, weaponUsed, totalDamage)
-				resourceConsumed(ability)
-				applyDamageToEnemy(targetEnemy, totalDamage)
+				baseDamage = player[abilityName].damage()
+				penetrationType = calculatePenetrationRoll()
+				penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+				damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+				damageBlocked = baseDamage - damageAfterArmor
+				ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+				applyDamageToEnemy(targetEnemy, damageAfterArmor)
+				applyDebuff(targetEnemy, ability.debuff)
 			}
 		} else {
 			player[abilityName].cooldown = player[abilityName].cooldownSet
@@ -35747,46 +37183,40 @@ function bladeBlitzFunction(secondCommand, thirdCommand) {
 	player.isAbilityQueued = true
 	initiateAbilityWindup(player[abilityName])	
 	setTimeout(() => {
-		if (abilityWeaponsCheck(ability, weaponUsed) || abilityResourceCheck(player[abilityName])) {
-			player[abilityName].cooldown = player[abilityName].cooldownSet
+		if (abilityWeaponsCheck(ability, weaponUsed) || abilityResourceCheck(ability)) {
+			player[abilityName].cooldown = ability.cooldownSet
 			initiateAbilityCooldown(ability)
 			return
 		}
-		if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
-			const meleeCombatMonsters = getAllEnemiesInCombat()
-			let numberOfTargets = meleeCombatMonsters.length
-			let numberOfSwings = ability.numberOfSwings
+		if (player.combat == true && ability.cooldown == player[abilityName].cooldownSet) {
+			let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
 			player[abilityName].queued = false
 			player.isAbilityQueued = false
-			ability.flavorText2(weaponUsed) //This flavor text is for abilities that hit multiple enemies
-			for (let i = 0; i < numberOfSwings; i++) {
-				const randomIndexNumber = randomNumberRange(0, numberOfTargets - 1)
-				const targetEnemy = meleeCombatMonsters[randomIndexNumber]
-				const rightWeaponOrLeftWeapon = Array.isArray(weaponUsed) ? weaponUsed[randomNumberRange(0, 1)] : weaponUsed
-				console.log(weaponUsed, ' WEAPON USED')
-				console.log(rightWeaponOrLeftWeapon, ' RIGHT WEAPON OR LEFT WEAPON')
+			for (let i = 0; i < ability.numberOfSwings(); i++) {
 				let hitChance = playerAbilityHitChance(targetEnemy)
 				if (hitChance == false) {
-					ability.flavorTextMiss(targetEnemy, rightWeaponOrLeftWeapon)
-					resourceConsumed(ability)
+					ability.flavorTextMiss(targetEnemy, weaponUsed)
 				} else if (hitChance == true) {
-					let totalDamage = player[abilityName].damage(rightWeaponOrLeftWeapon)
-					ability.flavorText(targetEnemy, rightWeaponOrLeftWeapon, totalDamage)
-					applyDebuff(targetEnemy, ability.debuff)
-					resourceConsumed(ability)
-					applyDamageToEnemy(targetEnemy, totalDamage)
+					baseDamage = player[abilityName].damage(targetEnemy)
+					penetrationType = calculatePenetrationRoll()
+					penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+					damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+					damageBlocked = baseDamage - damageAfterArmor
+					ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+					applyDamageToEnemy(targetEnemy, damageAfterArmor)
 				}
 			}
 		} else {
 			player[abilityName].cooldown = player[abilityName].cooldownSet
 			initiateAbilityCooldown(player[abilityName])
 		}
+		resourceConsumed(ability)
 		updateScroll()
 	}, timeoutInterval)
 }
 
-function goreFunction(secondCommand, thirdCommand) {
-	let ability = player.gore
+function shredFunction(secondCommand, thirdCommand) {
+	let ability = player.shred
 	if (!player.currentWeaponRight().skillUsed == 'oneHanded' || !player.currentWeaponLeft().skillUsed == 'oneHanded') {
 		let line1 = lineFunc()
 		customizeEachWord(`You must be `, 'white', line1)
@@ -35800,7 +37230,7 @@ function goreFunction(secondCommand, thirdCommand) {
 	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
 	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
-	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	let weaponUsed = weapon1 && weapon2 ? [weapon1, weapon2] : weapon1 && !weapon2 ? weapon1 : !weapon1 && weapon2 ? weapon2 : undefined
 	// if (actionWait()) {return}
 	if (doesPlayerHaveAbility(ability)) {return}
 	if (abilityWeaponsCheck(ability, weaponUsed)) {return}
@@ -35817,18 +37247,36 @@ function goreFunction(secondCommand, thirdCommand) {
 			return
 		}
 		if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
+			resourceConsumed(ability)
 			let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
-			let totalDamage = player[abilityName].damage(targetEnemy)
 			let hitChance = playerAbilityHitChance(targetEnemy)
 			player[abilityName].queued = false
 			player.isAbilityQueued = false
 			if (hitChance == false) {
 				ability.flavorTextMiss(targetEnemy, weaponUsed)
-				resourceConsumed(ability)
 			} else if (hitChance == true) {
-				ability.flavorText(targetEnemy, weaponUsed, totalDamage)
-				resourceConsumed(ability)
-				applyDamageToEnemy(targetEnemy, totalDamage)
+				let allEnemies = getAllEnemiesInCombat()
+				if (allEnemies[1]) {
+					for (let i = 0; i < 2; i++) {
+						baseDamage = player[abilityName].damage(allEnemies[i])
+						penetrationType = calculatePenetrationRoll()
+						penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+						damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(allEnemies[i], baseDamage, penetrationType)
+						damageBlocked = baseDamage - damageAfterArmor
+						ability.flavorText(allEnemies[i], weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+						applyDamageToEnemy(allEnemies[i], damageAfterArmor)
+						applyDebuff(allEnemies[i], ability.debuff)
+					}
+				} else {
+					baseDamage = player[abilityName].damage()
+					penetrationType = calculatePenetrationRoll()
+					penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+					damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+					damageBlocked = baseDamage - damageAfterArmor
+					ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+					applyDamageToEnemy(targetEnemy, damageAfterArmor)
+					applyDebuff(targetEnemy, ability.debuff)
+				}
 			}
 		} else {
 			player[abilityName].cooldown = player[abilityName].cooldownSet
@@ -35836,6 +37284,56 @@ function goreFunction(secondCommand, thirdCommand) {
 		}
 		updateScroll()
 	}, timeoutInterval)
+}
+
+
+
+function valorStrikeFunction(secondCommand, thirdCommand) {
+	let ability = player.valorStrike
+	let abilityName = ability.refName
+	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
+	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
+	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
+	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	if (doesPlayerHaveAbility(player[abilityName])) {return}
+	if (abilityWeaponsCheck(ability, weaponUsed)) {return}
+	if (abilityResourceCheck(player[abilityName])) {return}
+	if (abilityCooldownCheck(player[abilityName])) {return}
+	if (abilityQueueCheck(ability)) {return}
+	ability.windUpText()
+	player.isAbilityQueued = true
+	initiateAbilityWindup(ability)
+	//windup
+	setTimeout(() => {
+		if (abilityWeaponsCheck(ability, weaponUsed) || abilityResourceCheck(player[abilityName])) {
+			player[abilityName].cooldown = player[abilityName].cooldownSet
+			initiateAbilityCooldown(ability)
+			return
+		}
+		if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
+			let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
+			let hitChance = playerAbilityHitChance(targetEnemy)
+			player.isAbilityQueued = false
+			player[abilityName].queued = false
+			resourceConsumed(ability)
+			if (hitChance == false) {
+				ability.flavorTextMiss(targetEnemy, weaponUsed)
+			} else if (hitChance == true) {
+				baseDamage = player[abilityName].damage()
+				penetrationType = calculatePenetrationRoll()
+				penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+				damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+				damageBlocked = baseDamage - damageAfterArmor
+				ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+				applyDamageToEnemy(targetEnemy, damageAfterArmor)
+				applyBuff(ability.buff)
+			}
+		} else {
+			player[abilityName].cooldown = player[abilityName].cooldownSet
+			initiateAbilityCooldown(ability)
+		}
+		updateScroll()
+	}, ability.windUp * 1000)
 }
 
 function shieldSlamFunction() {
@@ -35862,23 +37360,33 @@ function shieldSlamFunction() {
 				return
 			}
 			if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
-				const meleeCombatMonsters = getAllEnemiesInCombat()
-				let numberOfEnemies = meleeCombatMonsters.length
-				let maxAbilityTargets = ability.level
-				let numberOfTargets = Math.min(numberOfEnemies, maxAbilityTargets)
-				let totalDamage = Math.ceil(ability.damage() / numberOfTargets)
+				let allEnemiesInCombat = getAllEnemiesInCombat()
+				let numberOfEnemies = allEnemiesInCombat.length
+				let abilityTargetsMax = ability.numberOfTargets()
+				let numberOfTargets = Math.min(numberOfEnemies, abilityTargetsMax)
+				let baseDamage = player[abilityName].damage()
+				let damagePerEnemy = Math.ceil(baseDamage / numberOfTargets)
 				player[abilityName].queued = false
 				player.isAbilityQueued = false
-				ability.flavorText2()
+				ability.flavorText2(weaponUsed)
 				for (let i = 0; i < numberOfTargets; i++) {
-					let targetEnemy = meleeCombatMonsters[i]
+					let targetEnemy = allEnemiesInCombat[i]
 					let hitChance = playerAbilityHitChance(targetEnemy)
 					if (hitChance == false) {
 						ability.flavorTextMiss(targetEnemy, weaponUsed)
 					} else if (hitChance == true) {
+						penetrationType = calculatePenetrationRoll()
+						penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+						damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, damagePerEnemy, penetrationType)
+						damageBlocked = damagePerEnemy - damageAfterArmor
+						console.log(penetrationType)
+						console.log(damageAfterArmor)
+						console.log(damageBlocked)
+						console.log(damagePerEnemy)
+						console.log(baseDamage)
+						ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+						applyDamageToEnemy(targetEnemy, damageAfterArmor)
 						applyDebuff(targetEnemy, ability.debuff)
-						ability.flavorText(targetEnemy, totalDamage, weaponUsed)
-						applyDamageToEnemy(targetEnemy, totalDamage)
 					}
 				} 
 			} else {
@@ -35888,50 +37396,6 @@ function shieldSlamFunction() {
 			resourceConsumed(ability)
 		}, timeoutInterval)
 	}
-
-function valorStrikeFunction(secondCommand, thirdCommand) {
-	let ability = player.valorStrike
-	let abilityName = ability.refName
-	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
-	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
-	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
-	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
-	if (doesPlayerHaveAbility(player[abilityName])) {return}
-	if (abilityWeaponsCheck(ability, weaponUsed)) {return}
-	if (abilityResourceCheck(player[abilityName])) {return}
-	if (abilityCooldownCheck(player[abilityName])) {return}
-	if (abilityQueueCheck(ability)) {return}
-	ability.windUpText()
-	player.isAbilityQueued = true
-	initiateAbilityWindup(ability)
-	//windup
-	setTimeout(() => {
-		if (abilityWeaponsCheck(ability, weaponUsed) || abilityResourceCheck(player[abilityName])) {
-			player[abilityName].cooldown = player[abilityName].cooldownSet
-			initiateAbilityCooldown(ability)
-			return
-		}
-		if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
-			let totalDamage = player[abilityName].damage()
-			let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
-			let hitChance = playerAbilityHitChance(targetEnemy)
-			player.isAbilityQueued = false
-			player[abilityName].queued = false
-			resourceConsumed(ability)
-			if (hitChance == false) {
-				ability.flavorTextMiss(targetEnemy, weaponUsed)
-			} else if (hitChance == true) {
-				ability.flavorText(targetEnemy, totalDamage, weaponUsed)
-				applyDamageToEnemy(targetEnemy, totalDamage)
-				applyBuff(ability.buff)
-			}
-		} else {
-			player[abilityName].cooldown = player[abilityName].cooldownSet
-			initiateAbilityCooldown(ability)
-		}
-		updateScroll()
-	}, ability.windUp * 1000)
-}
 
 function boomingMightFunction() {
 	let ability = player.boomingMight
@@ -35953,23 +37417,25 @@ function boomingMightFunction() {
 	initiateAbilityWindup(ability)
 		setTimeout(() => {
 			if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
-				let meleeCombatMonsters = getAllEnemiesInCombat()
-				let numberOfEnemies = meleeCombatMonsters.length
-				let combinedDamage = player[abilityName].damage()
-				let damagePerEnemy = Math.ceil(combinedDamage / numberOfEnemies)
+				let allEnemiesInCombat = getAllEnemiesInCombat()
+				let numberOfEnemies = allEnemiesInCombat.length
+				let baseDamage = player[abilityName].damage()
+				let damagePerEnemy = Math.ceil(baseDamage / numberOfEnemies)
 				player[abilityName].queued = false
 				player.isAbilityQueued = false
 				ability.flavorText2()
-				meleeCombatMonsters.forEach(monster => {
-					let hitChance = playerAbilityHitChance(monster)
+				allEnemiesInCombat.forEach(enemy => {
+					let hitChance = playerAbilityHitChance(enemy)
 					if (hitChance == false) {
-						ability.flavorTextMiss(monster)
-
+						ability.flavorTextMiss(enemy)
 					} else if (hitChance == true) {
-					ability.flavorText(monster, damagePerEnemy)
-					applyDamageToEnemy(monster, damagePerEnemy)
-					applyBuff(ability.buff)
-					updateScroll()
+						penetrationType = calculatePenetrationRoll()
+						penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+						damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemy, damagePerEnemy, penetrationType)
+						damageBlocked = damagePerEnemy - damageAfterArmor
+						ability.flavorText(enemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+						applyDamageToEnemy(enemy, damageAfterArmor)
+						applyBuff(ability.buff)
 					}
 				})
 			} else {
@@ -36053,6 +37519,91 @@ function tempestFunction(secondCommand, thirdCommand) {
 		}
 	// ability.cooldown = ability.cooldownSet
 	// initiateAbilityCooldown(ability)
+	updateScroll()
+}
+function callOfWindFunction(secondCommand, thirdCommand) {
+	let ability = player.callOfWind
+	let abilityName = ability.refName
+	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
+	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
+	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
+	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	if (doesPlayerHaveAbility(player[abilityName])) {return}
+	if (abilityWeaponsCheck(ability, weapon1, weapon2)) {return}
+	if (abilityResourceCheck(player[abilityName])) {return}
+	if (abilityCooldownCheck(player[abilityName])) {return}
+	// if (abilityCombatCheck()) {return}
+	let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
+	let targetEnemyWithDebuff = getAllEnemiesInRoom().find(enemy => enemy?.debuffs?.['callOfWind'])
+	if (targetEnemyWithDebuff) {
+		let hitChance = playerAbilityHitChance(targetEnemyWithDebuff)
+		if (hitChance == false) {
+			//miss text needs to be for missing the in-combat ability
+			ability.flavorTextMissCombat(targetEnemyWithDebuff, weaponUsed)
+		} else if (hitChance == true) {
+			player.combat = true
+			targetEnemyWithDebuff.combat = true
+			let baseDamage = player[ability.refName].damageCombat(targetEnemyWithDebuff)
+			let penetrationType = calculatePenetrationRoll()
+			let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+			let damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemyWithDebuff, baseDamage, penetrationType)
+			let damageBlocked = baseDamage - damageAfterArmor
+			ability.flavorTextCombat(targetEnemyWithDebuff, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+			applyDamageToEnemy(targetEnemyWithDebuff, damageAfterArmor)
+			removeDebuff(targetEnemy, ability.debuff)
+		}
+		resourceConsumed(ability)
+	} else {
+		let hitChance = playerAbilityHitChance(targetEnemy)
+		if (hitChance == false) {
+			//miss text needs to be for throwing out call of wind
+			ability.flavorTextMissRanged(targetEnemy, weaponUsed)
+		} else if (hitChance == true) {
+			let baseDamage = player[abilityName].damageRanged(targetEnemy)
+			let penetrationType = 'wind'
+			let damageAfterResist = calculateMagicDamageWithResist(baseDamage, targetEnemy.windResist)
+			let damageResisted = baseDamage - damageAfterResist
+			ability.flavorTextRanged(targetEnemy, damageAfterResist, penetrationType, damageResisted)
+			applyDamageToEnemy(targetEnemy, damageAfterResist)
+			applyDebuff(targetEnemy, ability.debuff)
+		}
+		resourceConsumed(ability)
+	}
+	// ability.cooldown = ability.cooldownSet
+	// initiateAbilityCooldown(ability)
+	updateScroll()
+}
+function knuckleBlitzFunction(secondCommand, thirdCommand) {
+	let ability = player.knuckleBlitz
+	let abilityName = ability.refName
+	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
+	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
+	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
+	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	if (doesPlayerHaveAbility(player[abilityName])) {return}
+	if (abilityWeaponsCheck(ability, weapon1, weapon2)) {return}
+	if (abilityResourceCheck(player[abilityName])) {return}
+	if (abilityCooldownCheck(player[abilityName])) {return}
+	// if (abilityCombatCheck()) {return}
+	let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
+	let comboCollectorStacks = player?.buffs?.comboCollector?.stacks ? player?.buffs?.comboCollector?.stacks + 1 : 1
+	for (let i = 0; i < comboCollectorStacks; i++) {
+		let hitChance = playerAbilityHitChance(targetEnemy)
+		if (hitChance == false) {
+			ability.flavorTextMiss(targetEnemy, weaponUsed)
+		} else {
+			let baseDamage = player[abilityName].damage(targetEnemy)
+			let penetrationType = calculatePenetrationRoll()
+			let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+			let damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+			let damageBlocked = baseDamage - damageAfterArmor
+			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+			applyDamageToEnemy(targetEnemy, damageAfterArmor)
+		}
+	}
+	removeBuff(player.buffs.comboCollector)
+	delete player.buffs.comboCollector
+	resourceConsumed(ability)
 	updateScroll()
 }
 	
@@ -36400,9 +37951,9 @@ function elementalTempestFunction(secondCommand, thirdCommand) {
 						let penetrationType = targetEnemy.debuffs.thunderBlaze.elementType
 						let enemyResistType = penetrationType == 'fire' ? 'fireResist' : 'lightningResist'
 						let damageAfterResist = calculateMagicDamageWithResist(damageSplit, allEnemies[i][enemyResistType])
-						let damageBlocked = damageSplit - damageAfterResist
+						let damageResisted = damageSplit - damageAfterResist
 						applyDamageToEnemy(allEnemies[i], damageAfterResist)	
-						ability.flavorTextThunderBlaze(allEnemies[i], damageAfterResist, penetrationType, damageBlocked)
+						ability.flavorTextThunderBlaze(allEnemies[i], damageAfterResist, penetrationType, damageResisted)
 					}
 					removeDebuff(targetEnemy, targetEnemy.debuffs.thunderBlaze)
 					applyBuff(thunderBlazeBuff)			
@@ -36414,8 +37965,8 @@ function elementalTempestFunction(secondCommand, thirdCommand) {
 					let penetrationType = targetEnemy.debuffs.aquaVolt.elementType
 					let enemyResistType = penetrationType == 'water' ? 'waterResist' : 'lightningResist'
 					let damageAfterResist = calculateMagicDamageWithResist(baseDamage, targetEnemy[enemyResistType])
-					let damageBlocked = baseDamage - damageAfterResist
-					ability.flavorTextAquaVolt(targetEnemy, damageAfterResist, penetrationType, damageBlocked)
+					let damageResisted = baseDamage - damageAfterResist
+					ability.flavorTextAquaVolt(targetEnemy, damageAfterResist, penetrationType, damageResisted)
 					removeDebuff(targetEnemy, targetEnemy.debuffs.aquaVolt)
 					applyBuff(aquaVoltBuff)			
 					delete targetEnemy.debuffs.aquaVolt
@@ -36574,9 +38125,9 @@ function earthTideFlavorText(enemy, sealsArray, damageObject) {
 	let line1 = lineFunc()
 	let line2 = lineFunc()
 	blankSpace()
-	customizeEachWord(`${applyingSeal} `, sealsArray[1].sealCombo.color, line1)
+	customizeEachWord(`${applyingSeal} `, sealsArray[1].color, line1)
 	customizeEachWord(`combines with `, 'white', line1)
-	customizeEachWord(`${receivingSeal} `, sealsArray[0].sealCombo.color, line1)
+	customizeEachWord(`${receivingSeal} `, sealsArray[0].color, line1)
 	customizeEachWord(`creating `, 'white', line1)
 	customizeEachWord(`${combinedAbility}`, sealsArray[1].sealCombo.color, line1)
 	customizeEachWord(`!`, 'white', line1)
@@ -36584,8 +38135,8 @@ function earthTideFlavorText(enemy, sealsArray, damageObject) {
 	customizeEachWord(`hits for `, 'green', line2)
 	customizeEachWord(`${damageObject.damageAfterResist} `, 'light-blue', line2)
 	customizeEachWord(`${sealsArray[1].sealCombo.color} `, sealsArray[1].sealCombo.elementType, line2)
-	customizeEachWord(`damage `, 'green', line2)
-	customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+	customizeEachWord(`damage. `, 'green', line2)
+	customizeEachWord(`(Enemy resists `, 'white', line2)
 	customizeEachWord(`${damageObject.damageBlocked}`, 'light-blue', line2)
 	customizeEachWord(`)`, 'white', line2)
 	blankSpace()
@@ -36612,9 +38163,9 @@ function moltenQuakeFlavorText(enemy, sealsArray, damageObject) {
 	let line1 = lineFunc()
 	let line2 = lineFunc()
 	blankSpace()
-	customizeEachWord(`${applyingSeal} `, sealsArray[1].sealCombo.color, line1)
+	customizeEachWord(`${applyingSeal} `, sealsArray[1].color, line1)
 	customizeEachWord(`combines with `, 'white', line1)
-	customizeEachWord(`${receivingSeal} `, sealsArray[0].sealCombo.color, line1)
+	customizeEachWord(`${receivingSeal} `, sealsArray[0].color, line1)
 	customizeEachWord(`creating `, 'white', line1)
 	customizeEachWord(`${combinedAbility}`, sealsArray[1].sealCombo.color, line1)
 	customizeEachWord(`!`, 'white', line1)
@@ -36622,8 +38173,8 @@ function moltenQuakeFlavorText(enemy, sealsArray, damageObject) {
 	customizeEachWord(`hits for `, 'green', line2)
 	customizeEachWord(`${damageObject.damageAfterResist} `, 'light-blue', line2)
 	customizeEachWord(`${sealsArray[1].sealCombo.color} `, sealsArray[1].sealCombo.elementType, line2)
-	customizeEachWord(`damage `, 'green', line2)
-	customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+	customizeEachWord(`damage. `, 'green', line2)
+	customizeEachWord(`(Enemy resists `, 'white', line2)
 	customizeEachWord(`${damageObject.damageBlocked}`, 'light-blue', line2)
 	customizeEachWord(`)`, 'white', line2)
 	blankSpace()
@@ -36649,9 +38200,9 @@ function hydroplosionFlavorText(enemy, sealsArray, damageObject) {
 	let line1 = lineFunc()
 	let line2 = lineFunc()
 	blankSpace()
-	customizeEachWord(`${applyingSeal} `, sealsArray[1].sealCombo.color, line1)
+	customizeEachWord(`${applyingSeal} `, sealsArray[1].color, line1)
 	customizeEachWord(`combines with `, 'white', line1)
-	customizeEachWord(`${receivingSeal} `, sealsArray[0].sealCombo.color, line1)
+	customizeEachWord(`${receivingSeal} `, sealsArray[0].color, line1)
 	customizeEachWord(`creating `, 'white', line1)
 	customizeEachWord(`${combinedAbility}`, sealsArray[1].sealCombo.color, line1)
 	customizeEachWord(`!`, 'white', line1)
@@ -36659,8 +38210,8 @@ function hydroplosionFlavorText(enemy, sealsArray, damageObject) {
 	customizeEachWord(`hits for `, 'green', line2)
 	customizeEachWord(`${damageObject.damageAfterResist} `, 'light-blue', line2)
 	customizeEachWord(`${sealsArray[1].sealCombo.color} `, sealsArray[1].sealCombo.elementType, line2)
-	customizeEachWord(`damage `, 'green', line2)
-	customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+	customizeEachWord(`damage. `, 'green', line2)
+	customizeEachWord(`(Enemy resists `, 'white', line2)
 	customizeEachWord(`${damageObject.damageBlocked}`, 'light-blue', line2)
 	customizeEachWord(`)`, 'white', line2)
 	blankSpace()
@@ -36686,9 +38237,9 @@ function thunderBlazeFlavorText(enemy, sealsArray, damageObject) {
 	let line1 = lineFunc()
 	let line2 = lineFunc()
 	blankSpace()
-	customizeEachWord(`${applyingSeal} `, sealsArray[1].sealCombo.color, line1)
+	customizeEachWord(`${applyingSeal} `, sealsArray[1].color, line1)
 	customizeEachWord(`combines with `, 'white', line1)
-	customizeEachWord(`${receivingSeal} `, sealsArray[0].sealCombo.color, line1)
+	customizeEachWord(`${receivingSeal} `, sealsArray[0].color, line1)
 	customizeEachWord(`creating `, 'white', line1)
 	customizeEachWord(`${combinedAbility}`, sealsArray[1].sealCombo.color, line1)
 	customizeEachWord(`!`, 'white', line1)
@@ -36696,8 +38247,8 @@ function thunderBlazeFlavorText(enemy, sealsArray, damageObject) {
 	customizeEachWord(`hits for `, 'green', line2)
 	customizeEachWord(`${damageObject.damageAfterResist} `, 'light-blue', line2)
 	customizeEachWord(`${sealsArray[1].sealCombo.color} `, sealsArray[1].sealCombo.elementType, line2)
-	customizeEachWord(`damage `, 'green', line2)
-	customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+	customizeEachWord(`damage. `, 'green', line2)
+	customizeEachWord(`(Enemy resists `, 'white', line2)
 	customizeEachWord(`${damageObject.damageBlocked}`, 'light-blue', line2)
 	customizeEachWord(`)`, 'white', line2)
 	blankSpace()
@@ -36722,9 +38273,9 @@ function aquaVoltFlavorText(enemy, sealsArray, damageObject) {
 	let line1 = lineFunc()
 	let line2 = lineFunc()
 	blankSpace()
-	customizeEachWord(`${applyingSeal} `, sealsArray[1].sealCombo.color, line1)
+	customizeEachWord(`${applyingSeal} `, sealsArray[1].color, line1)
 	customizeEachWord(`combines with `, 'white', line1)
-	customizeEachWord(`${receivingSeal} `, sealsArray[0].sealCombo.color, line1)
+	customizeEachWord(`${receivingSeal} `, sealsArray[0].color, line1)
 	customizeEachWord(`creating `, 'white', line1)
 	customizeEachWord(`${combinedAbility}`, sealsArray[1].sealCombo.color, line1)
 	customizeEachWord(`!`, 'white', line1)
@@ -36732,8 +38283,8 @@ function aquaVoltFlavorText(enemy, sealsArray, damageObject) {
 	customizeEachWord(`hits for `, 'green', line2)
 	customizeEachWord(`${damageObject.damageAfterResist} `, 'light-blue', line2)
 	customizeEachWord(`${sealsArray[1].sealCombo.color} `, sealsArray[1].sealCombo.elementType, line2)
-	customizeEachWord(`damage `, 'green', line2)
-	customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+	customizeEachWord(`damage. `, 'green', line2)
+	customizeEachWord(`(Enemy resists `, 'white', line2)
 	customizeEachWord(`${damageObject.damageBlocked}`, 'light-blue', line2)
 	customizeEachWord(`)`, 'white', line2)
 	blankSpace()
@@ -36854,9 +38405,9 @@ function waveFistFunction(secondCommand, thirdCommand) {
 			}
 				}
 			}
-function timedShotFunction(secondCommand, thirdCommand) {
-	let ability = player.timedShot
-	let abilityName = player.timedShot.refName
+function piercingArrowFunction(secondCommand, thirdCommand) {
+	let ability = player.piercingArrow
+	let abilityName = player.piercingArrow.refName
 	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
 	let weaponUsed = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
 	let targetEnemy = targetAnyEnemy(secondCommand, thirdCommand)
@@ -36869,34 +38420,42 @@ function timedShotFunction(secondCommand, thirdCommand) {
 	if (ability.queued && player.isAbilityQueued) { //TIMEDSHOT GETS EXECUTED
 		player[abilityName].queued = false
 		player.isAbilityQueued = false
-		let totalDamage = player[abilityName].damage(weaponUsed)
-		console.log(targetEnemy)
 		let hitChance = playerAbilityHitChance(targetEnemy)
 		if (hitChance == false) { //MISSES
 			player[abilityName].releaseTimer()
 			player[abilityName].flavorTextMiss(targetEnemy, weaponUsed)
-			clearInterval(timedShotInterval)
+			clearInterval(piercingArrowInterval)
 		} else if (hitChance == true) { //HITS
+			let baseDamage = player[ability.refName].damage(targetEnemy)
+			let penetrationType = calculatePenetrationRoll()
+			let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+			let damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+			let damageBlocked = baseDamage - damageAfterArmor
+			console.log(penetrationType, 'PENETRATION TYPE')
+			console.log(penetrationFlavorText, 'PENETRATION FLAVOR TEXT')
+			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
 			player[abilityName].releaseTimer(weaponUsed)
-			player[abilityName].flavorText(targetEnemy, weaponUsed, totalDamage)
-			applyDebuff(targetEnemy, ability.debuff)
-			applyDamageToEnemy(targetEnemy, totalDamage)
+			applyDamageToEnemy(targetEnemy, damageAfterArmor)
+			// applyDebuff(targetEnemy, ability.debuff)
+			// applyDebuff(targetEnemy, ability.debuff)
+			// applyDamageToEnemy(targetEnemy, totalDamage)
 			updateScroll()
 		}
 		resourceConsumed(ability)
 	} else if (abilityQueueCheck()) {
 		return
-	} else if (!ability.queued) { //TIMEDSHOT WINDS UP
+	} else if (!ability.queued) { 
+		//TIMEDSHOT WINDS UP
 		// initiateAbilityWindup(ability)
 		player[abilityName].queued = true
 		player.isAbilityQueued = true
-		abilityWindUpText(ability)
+		ability.windUpText()
 		player[abilityName].initiateTimer(secondCommand, thirdCommand)
 		}
 }
 
-function multiShotFunction(secondCommand, thirdCommand) {
-	let ability = player.multiShot
+function hydraArrowFunction(secondCommand, thirdCommand) {
+	let ability = player.hydraArrow
 	let abilityName = ability.refName
 	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
@@ -36921,18 +38480,21 @@ function multiShotFunction(secondCommand, thirdCommand) {
 				return
 			}
 			if (player[abilityName].cooldown == player[abilityName].cooldownSet) {
-				let allCombatEnemies = getAllMonstersInRoom(secondCommand, thirdCommand)
-				for (let i = 0; i < player[abilityName].shotCount(); i++) {
+				let allCombatEnemies = getAllEnemiesInRoom(secondCommand, thirdCommand)
+				for (let i = 0; i < ability.shotCount(); i++) {
 					if (checkAvailableEnemy2(allCombatEnemies[i])) {break}
 					let hitChance = playerAbilityHitChance(allCombatEnemies[i])
-					let totalDamage = player[abilityName].damage(weapon1, weapon2)
 					if (hitChance == false) {
 						ability.flavorTextMiss(allCombatEnemies[i], weaponUsed)
 					} else if (hitChance == true) {
-						ability.flavorText(allCombatEnemies[i], weaponUsed, totalDamage)
-						applyDamageToEnemy(allCombatEnemies[i], totalDamage)
+						let baseDamage = ability.damage()
+						let penetrationType = calculatePenetrationRoll()
+						let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+						let damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(allCombatEnemies[i], baseDamage, penetrationType)
+						let damageBlocked = baseDamage - damageAfterArmor
+						ability.flavorText(allCombatEnemies[i], weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+						applyDamageToEnemy(allCombatEnemies[i], damageAfterArmor)
 						applyDebuff(allCombatEnemies[i], ability.debuff)
-						updateMonsterBox()
 						updateScroll()
 						}
 				}
@@ -36941,10 +38503,10 @@ function multiShotFunction(secondCommand, thirdCommand) {
 				player.isAbilityQueued = false
 			} else {
 				player[abilityName].cooldown = player[abilityName].cooldownSet
-				initiateAbilityCooldown(player.multiShot)
+				initiateAbilityCooldown(player.hydraArrow)
 				updateScroll()
 			}
-		}, player.multiShot.windUp * 1000)
+		}, player.hydraArrow.windUp * 1000)
 	}
 
 function rapidFireShotFunction(secondCommand, thirdCommand) {
@@ -36975,19 +38537,19 @@ function rapidFireShotFunction(secondCommand, thirdCommand) {
 					let targetEnemy = targetAnyEnemy()
 					if (checkAvailableEnemy(targetEnemy)) {break}
 					let hitChance = playerAbilityHitChance(targetEnemy)
-					let abilityDamage = player[abilityName].damage()
-					let markDamage = targetEnemy?.debuffs?.markOfTheBeast?.damage(abilityDamage) ? targetEnemy?.debuffs?.markOfTheBeast?.damage(abilityDamage) : 0
-					console.log(abilityDamage)
-					console.log(markDamage)
 					//apply
-					let totalDamage = abilityDamage + markDamage
 					player[abilityName].queued = false
 					player.isAbilityQueued = false
 					if (hitChance == false) {
 						ability.flavorTextMiss(targetEnemy, weaponUsed)
 					} else if (hitChance == true) {
-						ability.flavorText(targetEnemy, weaponUsed, totalDamage)
-						applyDamageToEnemy(targetEnemy, totalDamage)
+						let baseDamage = ability.damage()
+						let penetrationType = calculatePenetrationRoll()
+						let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+						let damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+						let damageBlocked = baseDamage - damageAfterArmor
+						ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+						applyDamageToEnemy(targetEnemy, damageAfterArmor)
 						rangerRegularAttackApplyMark(targetEnemy)
 						updateScroll()
 						}
@@ -37045,8 +38607,8 @@ function calculateOnHitDamage(enemy, swingObject) {
 	let damage = 0
 	switch (player.guild) {
 		case 'Warrior':
-			damage = calculateBleedDamage(enemy, swingObject)
-			// swingObject.onHitOrBonusDamage = 'bonus'
+			damage += calculateBleedDamage(enemy, swingObject)
+			damage += calculateFuryBonus(enemy, swingObject)
 			break;
 		case 'Monk':
 			// damage = calculateSealBreakerDamage(enemy, swingObject)	
@@ -37106,7 +38668,6 @@ function calculateWeaponEnchantmentDamage(enemy, swingObject) {
 	let damage = 0
 	for (let enchantment in swingObject.weapon.enchantment) {
 		if (swingObject.weapon.enchantment[enchantment].damage) {
-
 			let enchantmentDamage = swingObject.weapon.enchantment[enchantment].damage(enemy)
 			let resistType = swingObject.weapon.enchantment[enchantment].resistType
 			let damageAfterResist = calculateMagicDamageWithResist(enchantmentDamage, enemy[resistType])
@@ -37318,7 +38879,7 @@ function displaySwing(enemy, rightOrLeftObject) {
 	//onhit
 	console.log(rightOrLeftObject)
 	if (player.isStealthed) {
-		surpriseAttack(enemy)
+		sneakAttack(enemy)
 	}
 	if (rightOrLeftObject.weapon) {
 		if (rightOrLeftObject.doesSwingHit) {
@@ -37349,11 +38910,33 @@ function displaySwing(enemy, rightOrLeftObject) {
 }
 function calculateBleedDamage(enemy, swingObject) {
 	let damage = 0
-	if (enemy.debuffs && enemy.debuffs.bleed) {
+	if (enemy?.debuffs?.bleed) {
 		let debuff = enemy.debuffs.bleed
 		damage = debuff.damage(enemy, swingObject)
 	}
 	return damage
+}
+
+function calculateBleedBonus(enemy, baseDamage) {
+	let bleedBonus = 0
+	if (enemy?.debuffs?.bleed) {
+		bleedBonus = (player.bleed.bonusModifier() * enemy.debuffs.bleed.stacks) * baseDamage
+		console.log(bleedBonus, ' BLEED BONUS')
+	}
+	return bleedBonus
+}
+function calculateFuryBonus(enemy, swingObject) {
+	let furyBonus = 0
+	if (!enemy?.debuffs?.fury) {return furyBonus}
+	if (enemy?.debuffs?.fury) {
+		furyBonus = (player.dualStrike.debuff.bonusModifier * enemy.debuffs.fury.stacks) * swingObject.totalDamage
+		let stacks = enemy.debuffs.fury.stacks
+		let ability = player.dualStrike
+		resourceGained(ability, stacks, 'maxMight')
+		removeDebuff(enemy, enemy.debuffs.fury)
+	}
+	console.log(furyBonus, ' FURY BONUS 50% OF DAMAGE')
+	return Math.ceil(furyBonus)
 }
 
 function calculateStealthDamage(enemy, swingObject) {
@@ -37364,42 +38947,40 @@ function calculateStealthDamage(enemy, swingObject) {
 
 function rangerRegularAttackConsumeMark(enemy, swingObject) {
 	swingObject.consumedMark = []
-	if (enemy.debuffs && enemy.debuffs.multiShot) {
-		swingObject.consumedMark.push(enemy.debuffs.multiShot)
-		removeDebuff(enemy, enemy.debuffs.multiShot)
+	if (enemy.debuffs && enemy.debuffs.hydraArrow) {
+		swingObject.consumedMark.push(enemy.debuffs.hydraArrow)
+		removeDebuff(enemy, enemy.debuffs.hydraArrow)
 		updateMonsterBox()
-		delete enemy.debuffs.multiShot
+		delete enemy.debuffs.hydraArrow
 	}
-	if (enemy.debuffs && enemy.debuffs.timedShot) {
-		swingObject.consumedMark.push(enemy.debuffs.timedShot)
-		removeDebuff(enemy, enemy.debuffs.timedShot)
+	if (enemy.debuffs && enemy.debuffs.piercingArrow) {
+		swingObject.consumedMark.push(enemy.debuffs.piercingArrow)
+		removeDebuff(enemy, enemy.debuffs.piercingArrow)
 		updateMonsterBox()
-		delete enemy.debuffs.timedShot
+		delete enemy.debuffs.piercingArrow
 	}
 }
 function rangerRegularAttackConsumeMarkDamage(enemy, swingObject) {
 	let damageToAddToTotal = 0
-	if (enemy.debuffs && enemy.debuffs.multiShot) {
-		let debuff = enemy.debuffs.multiShot
+	if (enemy.debuffs && enemy.debuffs.hydraArrow) {
+		let debuff = enemy.debuffs.hydraArrow
 		let damage = debuff.damage(swingObject)
 		damageToAddToTotal += damage
-		console.log(damage + ' Multi Shot')
+		console.log(damage + ' Hydra Arrow')
 		// debuff.flavorText(enemy, damage)
 	}
-	if (enemy.debuffs && enemy.debuffs.timedShot) {
-		let debuff = enemy.debuffs.timedShot
+	if (enemy.debuffs && enemy.debuffs.piercingArrow) {
+		let debuff = enemy.debuffs.piercingArrow
 		let damage = debuff.damage(swingObject)
 		damageToAddToTotal += damage
-		console.log(damage + ' Timed Shot')
+		console.log(damage + ' Piercing Arrow')
 		// debuff.flavorText(enemy, damage)
 	}
 	if (enemy.debuffs && enemy.debuffs.markOfTheBeast) {
 		let debuff = enemy.debuffs.markOfTheBeast
-		let damage = debuff.damage(swingObject)
+		let damage = debuff.damage(enemy, swingObject)
 		damageToAddToTotal += damage
-		console.log(damage + ' Mark of the Beast')
-		console.log(debuff + ' Debuff')
-		console.log(swingObject.totalDamage + ' swing object total damage')
+		console.log(damage, ' MARK OF THE BEAST BONUS DAMAGE')
 		// debuff.flavorText(enemy, damage)
 	}
 	return Math.ceil(damageToAddToTotal)
@@ -37412,7 +38993,6 @@ function rangerRegularAttackApplyMark(enemy) {
 }
 
 function removeDebuff(enemy, debuff) {
-	console.log(debuff)
 	if (!enemy.debuffs) {
 		return
 	}
@@ -37426,7 +39006,6 @@ function removeDebuff(enemy, debuff) {
 	if (enemy.debuffs[debuff.refName]) {
 		clearTimeout(enemy.debuffs[debuff.refName].timeout)
 	} 
-	console.log(enemy.debuffs)
 	delete enemy.debuffs[debuff.refName]
 	updateMonsterBox()
 }
@@ -37501,9 +39080,11 @@ function displayBuffTextAndTimer(buff) {
   }
 
   function removeBuff(buff) {
+	if (!buff) {return}
     const buffContainer = document.getElementById('buffs-container');
     const buffElement = buffContainer.querySelector(`.${buff.refName}`);
-	const durationElement = buffContainer.querySelector(`.duration`)
+	// const durationElement = buffContainer.querySelector(`.duration`)
+	const durationElement = buffElement.nextElementSibling
 	// const currentDurationElement = durationElements[i]
 	//buff1interval
 	buffElement.innerHTML = ''
@@ -37524,34 +39105,52 @@ function applyWeaponEnchant(weaponOrWeapons, enchantment) {
 	let enchantmentToApply = enchantment
 	if (Array.isArray(weaponOrWeapons)) {
 		//weapon 1
+		let previousStacks1 = weaponOrWeapons[0]?.enchantment[enchantmentName]?.stacks
+		let previousStacks2 = weaponOrWeapons[1]?.enchantment[enchantmentName]?.stacks
+		//////////////////////////////////////////////////////////////////////////////
 		weaponOrWeapons[0].enchantment[enchantmentName] = enchantmentToApply
+		if (previousStacks1 > weaponOrWeapons[0].enchantment[enchantmentName].stacks) {
+			weaponOrWeapons[0].enchantment[enchantmentName].stacks = previousStacks1
+		}
 		clearTimeout(weaponOrWeapons[0].enchantment[enchantmentName].timeoute)
 		weaponOrWeapons[0].enchantment[enchantmentName].timeoute = setTimeout(() => {
 		clearTimeout(weaponOrWeapons[0].enchantment[enchantmentName].timeoute)
-		delete weaponOrWeapons[0].enchantment[enchantmentName]
-		let line1 = lineFunc()
-		customizeEachWord(`${enchantment.name} `, enchantment.color, line1)
-		customizeEachWord(`has worn off`, 'white', line1)
+			delete weaponOrWeapons[0].enchantment[enchantmentName]
+			let line1 = lineFunc()
+			customizeEachWord(`${enchantment.name} `, enchantment.color, line1)
+			customizeEachWord(`has worn off`, 'white', line1)
 		}, duration)
+
+
 		//weapon 2
+		//////////////////////////////////////////////////////////////////////////////
 		weaponOrWeapons[1].enchantment[enchantmentName] = enchantmentToApply
+		if (previousStacks2 > weaponOrWeapons[1].enchantment[enchantmentName].stacks) {
+			weaponOrWeapons[1].enchantment[enchantmentName].stacks = previousStacks2
+		}
 		clearTimeout(weaponOrWeapons[1].enchantment[enchantmentName].timeout)
+		quickMessage(`Timeout is set just below`)
 		weaponOrWeapons[1].enchantment[enchantmentName].timeout = setTimeout(() => {
-		clearTimeout(weaponOrWeapons[1].enchantment[enchantmentName].timeout)
-		delete weaponOrWeapons[1].enchantment[enchantmentName]
-		let line1 = lineFunc()
-		customizeEachWord(`${enchantment.name} `, enchantment.color, line1)
-		customizeEachWord(`has worn off`, 'white', line1)		
+			quickMessage(`Weapon 2 enchant should wear off here`)
+			clearTimeout(weaponOrWeapons[1].enchantment[enchantmentName].timeout)
+			delete weaponOrWeapons[1].enchantment[enchantmentName]
+			let line1 = lineFunc()
+			customizeEachWord(`${enchantment.name} `, enchantment.color, line1)
+			customizeEachWord(`has worn off`, 'white', line1)		
 		}, duration)
 	} else {
+		let previousStacks = weaponOrWeapons?.enchantment[enchantmentName]?.stacks
 		weaponOrWeapons.enchantment[enchantmentName] = enchantmentToApply
+		if (previousStacks > weaponOrWeapons.enchantment[enchantmentName].stacks) {
+			weaponOrWeapons.enchantment[enchantmentName].stacks = previousStacks
+		}
 		clearTimeout(weaponOrWeapons.enchantment[enchantmentName].timeout)
 		weaponOrWeapons.enchantment[enchantmentName].timeout = setTimeout(() => {
-		clearTimeout(weaponOrWeapons.enchantment[enchantmentName].timeout)
-		delete weaponOrWeapons.enchantment[enchantmentName]
-		let line1 = lineFunc()
-		customizeEachWord(`${enchantment.name} `, enchantment.color, line1)
-		customizeEachWord(`has worn off`, 'white', line1)
+			clearTimeout(weaponOrWeapons.enchantment[enchantmentName].timeout)
+			delete weaponOrWeapons.enchantment[enchantmentName]
+			let line1 = lineFunc()
+			customizeEachWord(`${enchantment.name} `, enchantment.color, line1)
+			customizeEachWord(`has worn off`, 'white', line1)
 		}, duration)
 	}
 }
@@ -37899,6 +39498,7 @@ function handleSpellConjure(spell) {
 	if (checkConjuring()) {return}
 	if (checkChanneling()) {return}
 	if (checkMaxSpellsConjured()) {return}
+	if (!player.isAlive) {return}
 	player.isConjuring = true
 	spell.chambered = true
 	spell.flavorTextConjure()
@@ -37907,83 +39507,166 @@ function handleSpellConjure(spell) {
 	spellConjureCount(spell)
 }
 //handles the channeling of the spell
-async function handleSpellChannel(spell) {
-	let firstEnemy = getAnyEnemyByFirst()
+async function handleSpellChannel(spell, targetedEnemy) {
+	let firstEnemy = targetedEnemy ? targetedEnemy : getAnyEnemyByFirst()
 	if (actionWait()) {return}
 	if (checkConjuring()) {return}
 	if (checkChanneling()) {return}
 	if (checkAvailableEnemy(firstEnemy)) {return}
+	if (!player.isAlive) {return}
 	player.stasis = true
 	spell.flavorTextChannel(firstEnemy)
 	spellChannelCount(spell.channelTime)
 	initiateCastBar(spell)
 	await wait(spell.channelTime)
 	player.channeling = false
+	let spellIndex = player.spellsConjured.indexOf(spell)
+	player.spellsConjured.splice(spellIndex, 1)
+	spell.chambered = false
+	// if (checkAvailableEnemy(firstEnemy)) {return}
+	if (!player.isAlive) {return}
 	spell.cast(firstEnemy, spell)
-	// if (spell.aoe) {
-	// 	handleSpellCastAoE(spell)
-	// } else {
-	// 	handleSpellCast(firstEnemy, spell)
-	// }
 }
 
-function calculateBurnEffect(enemy, spell, damage) {
-	let allEnemiesInRoom = getAllEnemiesInRoom()
+function target(secondCommand) {
+	let target = !secondCommand ? 1 : secondCommand
+	let index = target - 1
+	if (!player.spellsConjured[0]) {
+		quickMessage(`You don't have any spells conjured to cast`)
+	}
+	let allEnemies = getAllEnemiesInRoom()
+	if (!allEnemies[index]) {
+		quickMessage(`There is no enemy by that number to target`)
+	}
+	if (allEnemies[index]) {
+		quickMessage(`${allEnemies[index].name} is being targeted`)
+		if (player.spellsConjured[0]) {
+			handleSpellChannel(player.spellsConjured[0], allEnemies[index])
+		}
+	}
+}
+
+function calculateBurnEffect(enemy, spell, damage, allEnemiesFromMethod) {
+	let allEnemiesInRoom = allEnemiesFromMethod
+	console.log(allEnemiesInRoom, ' ALL ENEMIES IN ROOM FIRST')
+	console.log(allEnemiesFromMethod, ' ALL ENEMIES IN ROOM FIRST')
 	let explosionDamage = Math.ceil(damage * 0.5) //AoE damage from Fire 2 hitting a burning target. It does 50% of Fire 2's damage
+	if (enemy?.debuffs?.burn?.stacks >= 3 && spell.refName == 'meteor') {
+		let damageBeforeResist = spell.burnBonusDamage(damage)
+		let damageAfterResist = calculateMagicDamageWithResist(damageBeforeResist, enemy.fireResist)
+		let damageResisted = damageBeforeResist - damageAfterResist
+		spell.specialEffect(enemy, damageAfterResist, damageResisted)
+		applyDamageToEnemy(enemy, damageAfterResist)
+		removeDebuff(enemy, enemy.debuffs.burn)
+	}
 	if (enemy?.debuffs?.burn && spell.refName == 'inferno') {
 		let mainEnemyIndex = allEnemiesInRoom.indexOf(enemy)
-		let additionalEnemyIndex1
-		let additionalEnemyIndex2
 		let additionalEnemy1
 		let additionalEnemy2
-		let debuffToApply = enemy.debuffs.burn
-		debuffToApply.stacks -= 1
-		if (allEnemiesInRoom.length > 1) {
-			additionalEnemyIndex1 = mainEnemyIndex == 0 ? 2 : mainEnemyIndex - 1
-			additionalEnemy1 = allEnemiesInRoom[additionalEnemyIndex1]
-			let damageForFirstEnemy = calculateMagicDamageWithResist(explosionDamage, additionalEnemy1.fireResist)
-			let damageResisted = explosionDamage - damageForFirstEnemy
-			spell.specialEffect(additionalEnemy1, damageForFirstEnemy, damageResisted)
+		let debuffToApply = { ...enemy.debuffs.burn }
+		debuffToApply.stacks--
+		if (allEnemiesInRoom[2]) {
+			if (mainEnemyIndex == 0) {
+				//Additional enemies are the two after the main target
+				additionalEnemy1 = allEnemiesInRoom[mainEnemyIndex + 1]
+				additionalEnemy2 = allEnemiesInRoom[mainEnemyIndex + 2]
+			} else if (mainEnemyIndex == allEnemiesInRoom.length - 1) {
+				//additional enemies are the two before the main target
+				additionalEnemy1 = allEnemiesInRoom[mainEnemyIndex - 1]
+				additionalEnemy2 = allEnemiesInRoom[mainEnemyIndex - 2]
+			} else {
+				//additional enemies are ones before and one after the main target
+				additionalEnemy1 = allEnemiesInRoom[mainEnemyIndex - 1]
+				additionalEnemy2 = allEnemiesInRoom[mainEnemyIndex + 1]
+			}
+			let additionalDamage1 = calculateMagicDamageWithResist(explosionDamage, additionalEnemy1.fireResist)
+			let damageResisted1 = explosionDamage - additionalDamage1
+			spell.specialEffect(additionalEnemy1, additionalDamage1, damageResisted1)
 			applyDebuff(additionalEnemy1, debuffToApply)
-			applyDamageToEnemy(additionalEnemy1, damageForFirstEnemy)
-		}
-		if (allEnemiesInRoom.length > 2) {
-			additionalEnemyIndex2 = mainEnemyIndex + 1
-			additionalEnemy2 = allEnemiesInRoom[additionalEnemyIndex2]
-			let damageForSecondEnemy = calculateMagicDamageWithResist(explosionDamage, additionalEnemy2.fireResist)
-			let damageResisted = explosionDamage - damageForSecondEnemy
-			spell.specialEffect(additionalEnemy2, damageForSecondEnemy, damageResisted)
+			applyDamageToEnemy(additionalEnemy1, additionalDamage1)
+	
+			let additionalDamage2 = calculateMagicDamageWithResist(explosionDamage, additionalEnemy2.fireResist)
+			let damageResisted2 = explosionDamage - additionalDamage2
+			spell.specialEffect(additionalEnemy2, additionalDamage2, damageResisted2)
 			applyDebuff(additionalEnemy2, debuffToApply)
-			applyDamageToEnemy(additionalEnemy2, damageForSecondEnemy)
+			applyDamageToEnemy(additionalEnemy2, additionalDamage2)
+		} else if (allEnemiesInRoom[1]) {
+			if (mainEnemyIndex == 0) {
+				additionalEnemy1 = allEnemiesInRoom[1]
+			} else if (mainEnemyIndex == 1) {
+				additionalEnemy1 = allEnemiesInRoom[0]
+			}
+			let additionalDamage1 = calculateMagicDamageWithResist(explosionDamage, additionalEnemy1.fireResist)
+			let damageResisted1 = explosionDamage - additionalDamage1
+			spell.specialEffect(additionalEnemy1, additionalDamage1, damageResisted1)
+			applyDebuff(additionalEnemy1, debuffToApply)
+			applyDamageToEnemy(additionalEnemy1, additionalDamage1)
 		}
 	}
 }
 
 function calculateFrostbiteEffect(enemy, spell, damageObject) {
 	let mainDamage = damageObject.damageBeforeMagicResist
-	quickMessage(`${mainDamage} this is main damage`)
+	let mainAllEnemies = getAllEnemiesInRoom()
+	let allEnemies = mainAllEnemies.slice(0, mainAllEnemies.length);
 	if (spell.refName == 'cryoclast' && enemy?.debuffs?.frostbite?.stacks == 1) {
 		quickMessage(`This should activate the Ice 3 AoE`)
 		removeDebuff(enemy, player.frostfreeze.debuff)
-		let allEnemies = getAllEnemiesInRoom()
+
+
 		let damage = Math.ceil(mainDamage / allEnemies.length) //damage is split among all monsters in the room
+		let mainEnemyIndex = allEnemies.indexOf(enemy)
 		for (let i = 0; i < allEnemies.length; i++) {
 			//maybe add removeDebuff(allEnemies[i], spell.debuff)
 			//the above would activate ice 3s explosion AND remove all the debuffs from all enemies
-			let modifiedDamage = calculateMagicDamageWithResist(damage, enemy.iceResist)
-			spell.specialEffect2(allEnemies[i], modifiedDamage)
-			applyDamageToEnemy(allEnemies[i], modifiedDamage)
+			if (allEnemies[i].health > 0 && i != mainEnemyIndex) {
+				let damageAfterResist = calculateMagicDamageWithResist(damage, enemy.iceResist)
+				let damageResisted = damage - damageAfterResist
+				spell.specialEffect2(allEnemies[i], damageAfterResist, damageResisted)
+				applyDamageToEnemy(allEnemies[i], damageAfterResist)
+				applyDebuff(allEnemies[i], spell.debuff)
+			}
 		}
 	} else if (spell.refName == 'cryoclast' && enemy?.debuffs?.frostbite?.stacks == 2) {
 		let damage = Math.ceil(mainDamage * 0.5) //damage is half that of the main spell
+		let damageAfterResist = calculateMagicDamageWithResist(damage, enemy.iceResist)
+		let damageResisted = damage - damageAfterResist
 		removeDebuff(enemy, player.frostfreeze.debuff)
-		spell.specialEffect(enemy, damage)
-		applyDamageToEnemy(enemy, damage)
+		if (enemy.health > 0) {
+			spell.specialEffect(enemy, damageAfterResist, damageResisted)
+			applyDamageToEnemy(enemy, damageAfterResist)
+		}
 	} else if (spell.refName == 'frostfreeze' && enemy?.debuffs?.frostbite?.stacks == 3) {
-		let damage = Math.ceil(mainDamage * 0.5) //damage is half that of the main spell
+		let mainEnemyIndex = allEnemies.indexOf(enemy)
+		let additionalEnemyIndex1 = mainEnemyIndex == 0 ? 2 : mainEnemyIndex - 1
+		let additionalEnemyIndex2 = mainEnemyIndex + 1
+		let splitDamage = Math.ceil(mainDamage * 0.5) //damage is half that of the main spell
+		let damageAfterResist = calculateMagicDamageWithResist(splitDamage, enemy.iceResist)
+		let damageResisted = splitDamage - damageAfterResist
 		removeDebuff(enemy, player.frostfreeze.debuff)
-		spell.specialEffect(enemy, damage)
-		applyDamageToEnemy(enemy, damage)
+		if (enemy.health > 0) {
+			spell.specialEffect(enemy)
+			spell.specialEffect2(enemy, damageAfterResist, damageResisted)
+			applyDamageToEnemy(enemy, damageAfterResist)
+		}
+		if (allEnemies[additionalEnemyIndex2]) {
+			let damageAfterResist = calculateMagicDamageWithResist(splitDamage, allEnemies[additionalEnemyIndex2].iceResist)
+			let damageResisted = splitDamage - damageAfterResist
+			spell.specialEffect2(allEnemies[additionalEnemyIndex2], damageAfterResist, damageResisted)
+			applyDamageToEnemy(allEnemies[additionalEnemyIndex2], damageAfterResist)
+			if (allEnemies[additionalEnemyIndex2]?.debuffs?.frostbite?.stacks < 2 || !allEnemies[additionalEnemyIndex2].debuffs) {
+			applyDebuff(allEnemies[additionalEnemyIndex2], spell.debuff)
+			}
+		}
+		if (allEnemies[additionalEnemyIndex1]) {
+			let damageAfterResist = calculateMagicDamageWithResist(splitDamage, allEnemies[additionalEnemyIndex1].iceResist)
+			let damageResisted = splitDamage - damageAfterResist
+			spell.specialEffect2(allEnemies[additionalEnemyIndex1], damageAfterResist, damageResisted)
+			applyDamageToEnemy(allEnemies[additionalEnemyIndex1], damageAfterResist)
+			if (allEnemies[additionalEnemyIndex1]?.debuffs?.frostbite?.stacks < 2 || !allEnemies[additionalEnemyIndex1].debuffs) {
+				applyDebuff(allEnemies[additionalEnemyIndex1], spell.debuff)
+				}		
+			}
 	}
 }
 
@@ -37996,53 +39679,50 @@ function calculateShockEffect(enemy, spell, damageObject) {
 	}
 }
 
-function handleSpellCast(enemy, spell) {
-	let enemyFireResist
-	if (spell.type == 'fire') {
-		enemyFireResist = enemy?.fireResist ? enemy?.fireResist : 0
-	}
-	if (checkAvailableEnemy(enemy)) {return}
-	if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
-	let spellIndex = player.spellsConjured.indexOf(spell)
-	let damageBeforeMagicResist = spell.damage(enemy)
-	let damageAfterMagicResist = calculateMagicDamageWithResist(damageBeforeMagicResist, enemyFireResist)
-	let damageResisted = damageBeforeMagicResist - damageAfterMagicResist
-	player.spellsConjured.splice(spellIndex, 1)
-	spell.chambered = false
-	spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
-	applyDamageToEnemy(enemy, damageAfterMagicResist)
-	//put bonus functions here
-	calculateBurnEffect(enemy, spell, damageBeforeMagicResist)
-	calculateFrostbiteEffect(enemy, spell, damageAfterMagicResist)
-	//put bonus functions here
-}
-function handleSpellCastAoE(spell) {
-	let allEnemies = getAllEnemiesInRoom()
-	let numberOfTargets = spell.numberOfTargets == 'all' ? allEnemies.length : spell.numberOfTargets
-	console.log(numberOfTargets, ' NUMBER OF TARGETS')
-	for (let i = 0; i < numberOfTargets; i++) {
-		if (checkAvailableEnemy(allEnemies[i])) {return}
-		if (spell.debuff) {applyDebuff(allEnemies[i], spell.debuff)}
-		// let damageBeforeMagicResist = spell.damage(allEnemies[i])
-		let damageBeforeMagicResist = spell.damage(numberOfTargets, allEnemies[i])
+// function handleSpellCast(enemy, spell) {
+// 	if (!player.isAlive) {return}
+// 	if (checkAvailableEnemy(enemy)) {return}
+// 	if (spell.debuff) {applyDebuff(enemy, spell.debuff)}
+// 	let spellIndex = player.spellsConjured.indexOf(spell)
+// 	let damageBeforeMagicResist = spell.damage(enemy)
+// 	let damageAfterMagicResist = calculateMagicDamageWithResist(damageBeforeMagicResist, enemyFireResist)
+// 	let damageResisted = damageBeforeMagicResist - damageAfterMagicResist
+// 	player.spellsConjured.splice(spellIndex, 1)
+// 	spell.chambered = false
+// 	spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
+// 	applyDamageToEnemy(enemy, damageAfterMagicResist)
+// 	//put bonus functions here
+// 	calculateBurnEffect(enemy, spell, damageBeforeMagicResist)
+// 	calculateFrostbiteEffect(enemy, spell, damageAfterMagicResist)
+// 	//put bonus functions here
+// }
+// function handleSpellCastAoE(spell) {
+// 	if (!player.isAlive) {return}
+// 	let allEnemies = getAllEnemiesInRoom()
+// 	let numberOfTargets = spell.numberOfTargets == 'all' ? allEnemies.length : spell.numberOfTargets
+// 	console.log(numberOfTargets, ' NUMBER OF TARGETS')
+// 	for (let i = 0; i < numberOfTargets; i++) {
+// 		if (checkAvailableEnemy(allEnemies[i])) {return}
+// 		if (spell.debuff) {applyDebuff(allEnemies[i], spell.debuff)}
+// 		// let damageBeforeMagicResist = spell.damage(allEnemies[i])
+// 		let damageBeforeMagicResist = spell.damage(numberOfTargets, allEnemies[i])
 
-		let damageAfterMagicResist = calculateMagicDamageWithResist(damageBeforeMagicResist, enemyMagicResist)
-		let damageResisted = damageBeforeMagicResist - damageAfterMagicResist
-		quickMessage(`${damageBeforeMagicResist} before MR`)
-		quickMessage(`${damageAfterMagicResist} after MR`)
-		quickMessage(`${damageResisted} amount resisted`)
-		spell.flavorTextCast(allEnemies[i], damageAfterMagicResist, damageResisted)
-		applyDamageToEnemy(allEnemies[i], damageAfterMagicResist)
-		//put bonus functions here
-		calculateBurnEffect(allEnemies[i], spell, damageBeforeMagicResist)
-		calculateFrostbiteEffect(allEnemies[i], spell, damageAfterMagicResist)
-		//put bonus functions here
-	}
-	let spellIndex = player.spellsConjured.indexOf(spell)
-	player.spellsConjured.splice(spellIndex, 1)
-	spell.chambered = false
-
-}
+// 		let damageAfterMagicResist = calculateMagicDamageWithResist(damageBeforeMagicResist, enemyMagicResist)
+// 		let damageResisted = damageBeforeMagicResist - damageAfterMagicResist
+// 		quickMessage(`${damageBeforeMagicResist} before MR`)
+// 		quickMessage(`${damageAfterMagicResist} after MR`)
+// 		quickMessage(`${damageResisted} amount resisted`)
+// 		spell.flavorTextCast(allEnemies[i], damageAfterMagicResist, damageResisted)
+// 		applyDamageToEnemy(allEnemies[i], damageAfterMagicResist)
+// 		//put bonus functions here
+// 		calculateBurnEffect(allEnemies[i], spell, damageBeforeMagicResist)
+// 		calculateFrostbiteEffect(allEnemies[i], spell, damageAfterMagicResist)
+// 		//put bonus functions here
+// 	}
+// 	let spellIndex = player.spellsConjured.indexOf(spell)
+// 	player.spellsConjured.splice(spellIndex, 1)
+// 	spell.chambered = false
+// }
 
 
 
@@ -38118,7 +39798,6 @@ function initiateCastBar(spell) {
 			castBarToUse.style.width = 0
 			let test = Array.from(castBarToUse.classList)
 			castBarToUse.classList = test[0]
-			
 			return
 		}
 		const width = (remainingTime / castTime) * 100
@@ -38223,6 +39902,7 @@ function apple() {
 		},
 		roomId: currentArea.id,
 		name: 'Apple',
+		refName: 'apple',
 		color: 'green',
 		keywords: ['food', 'apple'],
 		type: {
@@ -38237,12 +39917,13 @@ function apple() {
 			manaBonus: 10,
 			duration: 30000,
 		},
-		price: 1,
-		sellValue: 1,
 		desc: function() {
 			let line1 = lineFunc()
-			miscItemDescription(`A solid red apple. Looks delicious!`, 'white', line1)
+			allItemDescription(`A solid red apple. Looks delicious!`, 'white', line1)
 		},
+		price: 1,
+		sellValue: 1,
+
 	}
 	return apple
 }
@@ -38260,7 +39941,7 @@ function mudBall() { //eat for health
 		refName: 'mudball',
 		color: 'green',
 		keywords: ['mud', 'ball', 'mudball'],
-		type: { 
+		type: {
 			quest: true,
 			food: true,
 		},
@@ -38276,7 +39957,7 @@ function mudBall() { //eat for health
 		sellValue: 5,
 		description: `A moist ball of mud - Try eating it or giving it to someone who likes to play with mud!`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return mudball
@@ -38311,7 +39992,7 @@ function waterBerry() { //eat for mana
 		sellValue: 5,
 		description: `A plump, luscious, Water Berry - Try eating it or giving it to someone who is thirsty!`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return waterBerry
@@ -38347,7 +40028,7 @@ function halfEatenFish() {
 		sellValue: 5,
 		desc: function() {
 			let line1 = lineFunc()
-			miscItemDescription(`The front half of a medium sized fish. The backbone and tail skeleton are still attached.`, 'white', line1)
+			allItemDescription(`The front half of a medium sized fish. The backbone and tail skeleton are still attached.`, 'white', line1)
 		},
 	}
 	return halfEatenFish
@@ -38383,7 +40064,7 @@ function rawBoarMeat() {
 		sellValue: 8,
 		description: `A big hunk of boar meat`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return rawBoarMeat
@@ -38424,7 +40105,7 @@ function boarSteak() {
 		sellValue: 15,
 		description: `A cooked boar steak`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return boarSteak
@@ -38461,7 +40142,7 @@ function applePie() {
 		sellValue: 12,
 		description: `A scrumptious smelling apple pie!`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return applePie
@@ -38489,7 +40170,7 @@ function koboldSkull() {
 		sellValue: 2,
 		description: `The small, cracked skull of a kobold`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return koboldSkull
@@ -38512,7 +40193,7 @@ function legBone() { //used in crafting to craft two-handed weapons
 		sellValue: 15,
 		description: `A human femur`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return legBone
@@ -38535,7 +40216,7 @@ function crackedBone() { //used in crafting to craft one handed weapons and dagg
 		sellValue: 5,
 		description: `A cracked, human bone`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return crackedBone
@@ -38558,7 +40239,7 @@ function ribCage() { //used in crafting to craft one handed weapons and daggers
 		sellValue: 5,
 		description: `A human ribcage`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return ribCage
@@ -38583,7 +40264,7 @@ function cultTexts() {
 		sellValue: 0,
 		description: `A book adorned with strange symbols`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return cultTexts
@@ -38606,7 +40287,7 @@ function cultTexts() {
 // 		sellValue: 0,
 // 		description: `A beautifully cut, yellow Topaz`,
 // 		desc: function () {
-// 			miscItemDescription(this)
+// 			allItemDescription(this)
 // 		},
 // 	}
 // 	return thievesJewel
@@ -38629,7 +40310,7 @@ function cultTexts() {
 // 		sellValue: 0,
 // 		description: `A book with Monk's Guild imagery painted all over it`,
 // 		desc: function () {
-// 			miscItemDescription(this)
+// 			allItemDescription(this)
 // 		},
 // 	}
 // 	return secretText
@@ -38678,7 +40359,7 @@ function goblinHead(monsterLevel) {
 		sellValue: monsterLevel,
 		description: `A decapitated goblin's with a pained expression frozen on its face`,
 		desc: () => {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return goblinHead
@@ -38701,7 +40382,7 @@ function tutorialKey() {
 		roomToUnlock: 'Galvadia Welcome Area 5',
 		description: `A simple looking key`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return tutorialKey
@@ -38722,7 +40403,7 @@ function pairOfGlasses() {
 		type: { quest: true },
 		description: `A pair of silver bifocals. Perhaps they belong to Egbert?`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return pairOfGlasses
@@ -38744,7 +40425,7 @@ function ratCarcass(level, isMonsterDrop) { //used in crafting to craft leather 
 		sellValue: 1,
 		description: '...The lifeless corpse of a rat... Looks like some of the parts could be salvaged for use in crafting',
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return ratCarcass
@@ -38766,7 +40447,7 @@ function ratHide() { //used in crafting to craft leather armor
 		sellValue: 0,
 		description: 'The skinned hide of a rat',
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return ratHide
@@ -38788,7 +40469,7 @@ function tannedRatHide(level, isMonsterDrop) { //used in crafting to craft leath
 		sellValue: 1,
 		description: 'A well tanned rat hide ready for use',
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return tannedRatHide
@@ -38812,7 +40493,7 @@ function ratTail(level, isMonsterDrop) { //used in crafting to craft leather arm
 		sellValue: 5,
 		description: `A thick, long rat tail`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return ratTail
@@ -38835,7 +40516,7 @@ function ratSkin(level, isMonsterDrop) {
 		sellValue: 5,
 		description: `The thin hide of a rat`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return ratSkin
@@ -38858,7 +40539,7 @@ function stagAntlers(level, isMonsterDrop) {
 		sellValue: 12,
 		description: `A large rack of antlers`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return stagAntlers
@@ -38881,7 +40562,7 @@ function smallSackOfGold(level, isMonsterDrop) {
 		sellValue: randomNumberRange(25, 40),
 		description: `A small sack of coins`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return smallSackOfGold
@@ -38910,7 +40591,7 @@ function thinFiber() {
 		sellValue: 10,
 		description: `Thin fibrous material used for weaving cloth armor. A tailor would have use for this.`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return thinFiber
@@ -38933,7 +40614,7 @@ function refinedFiber() {
 		sellValue: 38,
 		description: `Thin yet refined fibers used for weaving cloth armor.`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return refinedFiber
@@ -38958,11 +40639,14 @@ function lightHide(level, isMonsterDrop) { //used for crafting tier 1 and 2
 		refName: 'lightHide',
 		color: 'green',
 		keywords: ['light', 'hide', 'light hide'],
-		type: { quest: true },
+		type: { 
+			quest: true,
+			crafting: true,
+		},
 		sellValue: 18,
 		description: `The thin hide of an animal`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return lightHide
@@ -38985,7 +40669,7 @@ function thickHide(level, isMonsterDrop) { //used for crafting tier 3 and 4
 		sellValue: 55,
 		description: `The thick hide of an animal`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return thickHide
@@ -39013,7 +40697,7 @@ function copperOre() { //used in crafting to craft leather armor
 		sellValue: 26,
 		description: `A small lump of copper ore`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return copperOre
@@ -39036,7 +40720,7 @@ function ironOre() { //used in crafting to craft leather armor
 		sellValue: 77,
 		description: `A small lump of iron ore`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return ironOre
@@ -39064,7 +40748,7 @@ function crucifix(level, isMonsterDrop) { //used in crafting to craft leather ar
 		sellValue: 5,
 		description: `An ornately carved crucifix. It has dried blood around the edges..`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return crucifix
@@ -39088,7 +40772,7 @@ function brightYellowFlower() {
 		sellValue: 0,
 		description: `A bright yellow flower`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return brightYellowFlower
@@ -39111,7 +40795,7 @@ function sackOfGrain() {
 		sellValue: 0,
 		description: `A large sack of grain`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return sackOfGrain
@@ -39135,7 +40819,7 @@ function largeBone(level, isMonsterDrop) { //used in crafting to craft leather a
 		sellValue: 10,
 		description: `A large human bone`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return largeBone
@@ -39158,7 +40842,7 @@ function smallBone(level, isMonsterDrop) { //used in crafting to craft leather a
 		sellValue: 10,
 		description: `A small human bone`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return smallBone
@@ -39183,7 +40867,7 @@ function wormGuts(level, isMonsterDrop) { //used in crafting to craft leather ar
 		sellValue: 5,
 		description: `Mushy, stinky worm guts`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return wormGuts
@@ -39206,7 +40890,7 @@ function littleBoneToy(level, isMonsterDrop) { //used in crafting to craft leath
 		sellValue: 5,
 		description: `You can barely make out that it's a toy at all with how crudely it was crafted. Upon closer inspection, it looks to be made of small.. Human bones?`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return littleBoneToy
@@ -39229,7 +40913,7 @@ function dirtyRags(level, isMonsterDrop) { //used in crafting to craft leather a
 		sellValue: 5,
 		description: `These are dirty cloth rags look to be torn pieces of various clothing items`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return dirtyRags
@@ -39254,7 +40938,7 @@ function silverOre() { //used in crafting to craft leather armor
 		sellValue: 100,
 		description: `A small lump of silver ore`,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return silverOre
@@ -39282,7 +40966,7 @@ function luckyCoin() {
 		sellValue: 0,
 		description: `The gold coin has what looks to be a tree minted on one side, and a stag on the other. Both sides are smoothed down from years of being flipped and rubbed. `,
 		desc: function () {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return luckyCoin
@@ -39371,12 +41055,52 @@ function grassFiber() {
 		uses: ['quest, sell'],
 		description: `The remains of the Grassling coelesced to form this fiber. You don't have a use for this, but a tailor might have a use for this. Otherwise it can be sold.`,
 		desc: () => {
-			miscItemDescription(this)
+			allItemDescription(this)
 		},
 	}
 	return grassFiber
 }
-
+function pickaxe(monsterLevel) { //tier 0.5
+	let pickaxe = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Pickaxe',
+		refName: 'pickaxe',
+		picture: 'images/weapons/two handed axes/pickaxe/pickaxe.png',
+		color: 'green',
+		keywords: ['pickaxe'],
+		botDamage: randomNumberRange(1, 1),
+		topDamage: randomNumberRange(1, 1),
+		mods: {
+			slashingPen: 0,
+			piercingPen: 0,
+			weight: 10,
+		},
+		requirements: {},
+		type: {
+			weapon: true,
+			twoHanded: true,
+			sword: true,
+		},
+		enchantment: [],
+		skillUsed: 'twoHanded',
+		price: 250,
+		sellValue: 15,
+		description: `This is used for mining ore.`,
+		desc: function () {
+			itemDescription(this)
+		},
+		swing: (enemy, weapon) => oneHandedSwing1(enemy, weapon),
+		miss: (enemy, weapon) => oneHandedSwing1(enemy, weapon),
+	}
+	return pickaxe
+}
 
 
 //////////////////////////////////////////////////++WEAPONS++//////////////////////////////////////////////////
@@ -39409,10 +41133,11 @@ function trainingBow(monsterLevel) { //tier 1
 		topDamage: randomNumberRange(5, 5),
 		mods: {
 			piercingPen: 0,
-			slashingPen: 0,
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'Bow',
+			damageType: `Piercing`,
 			twoHanded: true,
 			weapon: true,
 			bow: true,
@@ -39491,10 +41216,6 @@ function shortbow(monsterLevel) { //tier 2
 		botDamage: randomNumberRange(5, 5),
 		topDamage: randomNumberRange(10, 10),
 		mods: {
-			str: 0,
-			agi: 0,
-			con: 0,
-			int: 0,
 			piercingPen: 1,
 			weight: 3,
 		},
@@ -40043,6 +41764,10 @@ function dirk(monsterLevel) { //tier 2
 				}
 			}
 		},
+		picture: {
+			right: "images/weapons/daggers/dirk/dirk right.png",
+			left: "images/weapons/daggers/dirk/dirk left.png",
+		},
 		roomId: currentArea.id,
 		name: 'Dirk',
 		color: 'green',
@@ -40243,6 +41968,7 @@ function muddyShortsword(monsterLevel) { //tier 0.5
 	}
 	return muddyShortsword
 }
+
 function trainingShortsword(monsterLevel) { //tier 1
 	let trainingShortsword = {
 		id: () => {
@@ -40267,17 +41993,22 @@ function trainingShortsword(monsterLevel) { //tier 1
 			piercingPen: 0,
 			weight: 5,
 		},
-		requirements: {},
+		requirements: {
+		},
 		type: {
 			weapon: true,
+			skillUsed: 'One Handed',
+			damageType: `Slashing/piercing`,
 			oneHanded: true,
 			sword: true,
+			slashing: true,
+			piercing: true,
 		},
 		enchantment: [],
 		skillUsed: 'oneHanded',
 		price: 25,
 		sellValue: 7,
-		description: `Almost the length of a dagger, and easy enough to wield for the most unexperienced.`,
+		description: `Almost the length of a dagger, and easy enough to wield for the unexperienced.`,
 		desc: function () {
 			itemDescription(this)
 		},
@@ -40313,6 +42044,8 @@ function rustySword(monsterLevel) { //tier 1.5
 		requirements: {
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			oneHanded: true,
 			sword: true,
@@ -40354,6 +42087,8 @@ function shortsword(monsterLevel) { //tier 2
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			oneHanded: true,
 			sword: true,
@@ -40396,6 +42131,8 @@ function broadSword(monsterLevel) { //tier 3
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			oneHanded: true,
 			sword: true,
@@ -40438,6 +42175,8 @@ function gladius(monsterLevel) { //tier 4
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			oneHanded: true,
 			sword: true,
@@ -40479,6 +42218,8 @@ function sabre(monsterLevel) { //tier 5
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			oneHanded: true,
 			sword: true,
@@ -40521,6 +42262,8 @@ function handAxe(monsterLevel) { //tier 2
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing`,
 			weapon: true,
 			oneHanded: true,
 			axe: true,
@@ -40560,6 +42303,8 @@ function beardedAxe(monsterLevel) { //tier 3
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing`,
 			weapon: true,
 			oneHanded: true,
 			axe: true,
@@ -40598,6 +42343,8 @@ function serratedAxe(monsterLevel) { //tier 4
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Slashing`,
 			weapon: true,
 			oneHanded: true,
 			axe: true,
@@ -40640,6 +42387,8 @@ function boneClub(monsterLevel) { //tier 1.5
 			str: 2,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			oneHanded: true,
 			club: true,
@@ -40679,6 +42428,8 @@ function mace(monsterLevel) { //tier 2
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			oneHanded: true,
 			mace: true,
@@ -40718,6 +42469,8 @@ function stoutedMace(monsterLevel) { //tier 3
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			oneHanded: true,
 			mace: true,
@@ -40756,6 +42509,8 @@ function flangedMace(monsterLevel) { //tier 4
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'One Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			oneHanded: true,
 			mace: true,
@@ -40807,6 +42562,8 @@ function trainingTwoHandedSword(monsterLevel) {//tier 1
 			str: 1,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing/piercing`,
 			skillUsed: `Two Handed`,
 			weapon: true,
 			twoHanded: true,
@@ -40847,6 +42604,8 @@ function largeBoneClub(monsterLevel) { //tier 1.5
 			str: 3,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Blunt`,
 			skillUsed: `Two Handed`,
 			weapon: true,
 			twoHanded: true,
@@ -40888,7 +42647,8 @@ function boneTippedSpear(monsterLevel) { //tier 1.5
 			str: 3,
 		},
 		type: {
-			skillUsed: `Two Handed`,
+			skillUsed: 'Two Handed',
+			damageType: `Piercing`,
 			weapon: true,
 			twoHanded: true,
 			spear: true,
@@ -40930,7 +42690,8 @@ function longsword(monsterLevel) { //tier 2
 		requirements: {
 		},
 		type: {
-			skillUsed: `Two Handed`,
+			skillUsed: 'Two Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			twoHanded: true,
 			sword: true,
@@ -40972,7 +42733,8 @@ function poleAxe(monsterLevel) { //tier 2
 		requirements: {
 		},
 		type: {
-			skillUsed: `Two Handed`,
+			skillUsed: 'Two Handed',
+			damageType: `Slashing`,
 			weapon: true,
 			twoHanded: true,
 			axe: true,
@@ -41014,7 +42776,8 @@ function sledgehammer(monsterLevel) { //tier 2
 		requirements: {
 		},
 		type: {
-			skillUsed: `Two Handed`,
+			skillUsed: 'Two Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			twoHanded: true,
 			mace: true,
@@ -41054,6 +42817,8 @@ function claymore(monsterLevel) { //tier 3
 			weight: 20,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			twoHanded: true,
 			sword: true,
@@ -41091,6 +42856,8 @@ function beardedPoleAxe(monsterLevel) { //tier 3
 			weight: 20,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing`,
 			weapon: true,
 			twoHanded: true,
 			axe: true,
@@ -41128,6 +42895,8 @@ function maul(monsterLevel) { //tier 3
 			weight: 30,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			twoHanded: true,
 			mace: true,
@@ -41167,6 +42936,8 @@ function bastardSword(monsterLevel) { //tier 4
 			weight: 15,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			twoHanded: true,
 			sword: true,
@@ -41204,6 +42975,8 @@ function serratedPoleaxe(monsterLevel) { //tier 4
 			weight: 15,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing`,
 			weapon: true,
 			twoHanded: true,
 			axe: true,
@@ -41241,6 +43014,8 @@ function battleAxe(monsterLevel) { //tier 5
 			weight: 15,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing`,
 			weapon: true,
 			twoHanded: true,
 			axe: true,
@@ -41278,6 +43053,8 @@ function flangedMaul(monsterLevel) { //tier 4
 			weight: 15,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			twoHanded: true,
 			mace: true,
@@ -41315,6 +43092,8 @@ function warHammer(monsterLevel) { //tier 5
 			weight: 15,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Blunt`,
 			weapon: true,
 			twoHanded: true,
 			mace: true,
@@ -41358,6 +43137,8 @@ function greatsword(monsterLevel) { //tier 5
 			weight: 30,
 		},
 		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing/piercing`,
 			weapon: true,
 			twoHanded: true,
 			sword: true,
@@ -41408,6 +43189,7 @@ function trainingStaff(monsterLevel) { //tier 1
 			weight: 1,
 		},
 		type: {
+			skillUsed: 'Two Handed',
 			weapon: true,
 			twoHanded: true,
 			staff: true,
@@ -41448,6 +43230,7 @@ function woodenStaff(monsterLevel) { //tier 2
 			weight: 5,
 		},
 		type: {
+			skillUsed: 'Two Handed',
 			weapon: true,
 			twoHanded: true,
 			staff: true,
@@ -41487,6 +43270,7 @@ function powerStaff(monsterLevel) { //tier 3
 		},
 		requirements: {},
 		type: {
+			skillUsed: 'Two Handed',
 			weapon: true,
 			twoHanded: true,
 			staff: true,
@@ -41525,6 +43309,7 @@ function runeStaff(monsterLevel) { //tier 4
 		},
 		requirements: {},
 		type: {
+			skillUsed: 'Two Handed',
 			weapon: true,
 			twoHanded: true,
 			staff: true,
@@ -41577,16 +43362,19 @@ function ringmailHelm() { //tier 3
 		keywords: ['ringmail', 'helm', 'ringmail helm'],
 		mods: {
 			weight: 10,
-			armor: 10,
+			slashingArmor: 4,
+			piercingArmor: 4,
+			bluntArmor: 4,
 		},
 		type: {
 			armor: true, //isArmor: 'true'
 			helm: true, //slot: 'legs'
 			plate: true, //material: 'plate'
+			armorType: 'Plate'
 		},
 		price: 1000,
 		sellValue: 500,
-		description: `Helmet`,
+		description: `Plate Helmet`,
 		slot: 'head',
 		desc: function () {
 			itemDescription(this)
@@ -41610,12 +43398,14 @@ function ringmailHauberk(monsterLevel) {
 		keywords: ['ringmail', 'hauberk', 'ringmail hauberk'],
 		mods: {
 			weight: 15,
-			armor: 15,
-		},
+			slashingArmor: 4,
+			piercingArmor: 4,
+			bluntArmor: 4,		},
 		type: {
 			armor: true, //isArmor: 'true'
 			chest: true, //slot: 'legs'
 			plate: true, //material: 'plate'
+			armorType: 'Plate'
 		},
 		price: 1000,
 		sellValue: 500,
@@ -41642,12 +43432,14 @@ function mailShoulderdrapes() {
 		keywords: ['mail', 'shoulderdrapes', 'mail shoulderdrapes'],
 		mods: {
 			weight: 10,
-			armor: 10,
-		},
+			slashingArmor: 4,
+			piercingArmor: 4,
+			bluntArmor: 4,		},
 		type: {
 			armor: true, //isArmor: 'true'
 			shoulders: true, //slot: 'legs'
 			plate: true, //material: 'plate'
+			armorType: 'Plate'
 		},
 		price: 1000,
 		sellValue: 500,
@@ -41674,12 +43466,15 @@ function ringmailLeggings(monsterLevel) {
 		keywords: ['ringmail', 'leggings', 'ringmail leggings'],
 		mods: {
 			weight: 5,
-			armor: 5,
-		},
+			slashingArmor: 4,
+			piercingArmor: 4,
+			bluntArmor: 4,		},
 		type: {
 			armor: true, //isArmor: 'true'
 			legs: true, //slot: 'legs'
 			plate: true, //material: 'plate'
+			armorType: 'Plate'
+
 		},
 		price: 1000,
 		sellValue: 500,
@@ -41706,8 +43501,9 @@ function ringmailGloves(monsterLevel) {
 		keywords: ['ringmail', 'gloves', 'ringmail gloves'],
 		mods: {
 			weight: 5,
-			armor: 5,
-		},
+			slashingArmor: 4,
+			piercingArmor: 4,
+			bluntArmor: 4,		},
 		requirements: {
 			guild: 'Warrior',
 		},
@@ -41715,6 +43511,7 @@ function ringmailGloves(monsterLevel) {
 			armor: true,
 			feet: true,
 			plate: true,
+			armorType: 'Plate'
 		},
 		price: 1000,
 		sellValue: 500,
@@ -41741,7 +43538,9 @@ function ringmailStompers(monsterLevel) {
 		keywords: ['ringmail', 'stompers', 'ringmail stompers'],
 		mods: {
 			weight: 5,
-			armor: 5,
+			slashingArmor: 4,
+			piercingArmor: 4,
+			bluntArmor: 4,		
 		},
 		requirements: {
 			guild: 'Warrior',
@@ -41750,6 +43549,7 @@ function ringmailStompers(monsterLevel) {
 			armor: true,
 			feet: true,
 			plate: true,
+			armorType: 'Plate'
 		},
 		price: 1000,
 		sellValue: 500,
@@ -41787,7 +43587,6 @@ function clothCap(monsterLevel) { //tier 2
 		keywords: ['cloth cap', 'cloth', 'cap'],
 		mods: {
 			weight: 1,
-			armor: 1,
 			wis: 1,
 			spellPower: 1,
 		},
@@ -41798,6 +43597,7 @@ function clothCap(monsterLevel) { //tier 2
 			armor: true,
 			head: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 50,
 		sellValue: 125,
@@ -41824,7 +43624,6 @@ function silkHat(monsterLevel) { //tier 3
 		keywords: ['silk hat', 'cloth', 'hat'],
 		mods: {
 			weight: 1,
-			armor: 1,
 			wis: 1,
 			spellPower: 1,
 		},
@@ -41835,6 +43634,7 @@ function silkHat(monsterLevel) { //tier 3
 			armor: true,
 			head: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 120,
 		sellValue: 125,
@@ -41861,8 +43661,7 @@ function apprenticeRobes(monsterLevel) { //tier 2
 		color: 'green',
 		keywords: ['apprentice', 'robes', 'apprentice robes'],
 		mods: {
-			weight: 0,
-			armor: 1,
+			weight: 1,
 			wis: 1,
 			spellPower: 1,
 		},
@@ -41870,6 +43669,7 @@ function apprenticeRobes(monsterLevel) { //tier 2
 			armor: true,
 			chest: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 80,
 		sellValue: 8,
@@ -41895,7 +43695,7 @@ function silkVestments(monsterLevel) { //tier 3
 		color: 'green',
 		keywords: ['silk', 'vestments', 'silk vestments'],
 		mods: {
-			weight: 0,
+			weight: 1,
 			armor: 1,
 			wis: 1,
 			spellPower: 1,
@@ -41904,6 +43704,7 @@ function silkVestments(monsterLevel) { //tier 3
 			armor: true,
 			chest: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 240,
 		sellValue: 24,
@@ -41930,7 +43731,6 @@ function clothMantle(monsterLevel) { //tier 2
 		keywords: ['cloth', 'mantle', 'cloth mantle'],
 		mods: {
 			weight: 1,
-			armor: 1,
 			wis: 1,
 			spellPower: 5,
 		},
@@ -41938,6 +43738,7 @@ function clothMantle(monsterLevel) { //tier 2
 			armor: true,
 			shoulders: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 50,
 		sellValue: 5,
@@ -41964,7 +43765,6 @@ function silkShoulders(monsterLevel) { //tier 3
 		keywords: ['silk', 'shoulders', 'silk shoulders'],
 		mods: {
 			weight: 1,
-			armor: 1,
 			wis: 1,
 			spellPower: 5,
 		},
@@ -41972,6 +43772,7 @@ function silkShoulders(monsterLevel) { //tier 3
 			armor: true,
 			shoulders: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 150,
 		sellValue: 15,
@@ -41999,13 +43800,13 @@ function clothPants(monsterLevel) { //tier 2
 		keywords: ['cloth', 'pants', 'cloth pants'],
 		mods: {
 			weight: 1,
-			armor: 1,
 			spellPower: 2,
 		},
 		type: {
 			armor: true,
 			legs: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 70,
 		sellValue: 7,
@@ -42032,13 +43833,13 @@ function silkTrousers(monsterLevel) { //tier 3
 		keywords: ['silk', 'trousers', 'silk trousers'],
 		mods: {
 			weight: 1,
-			armor: 1,
 			spellPower: 2,
 		},
 		type: {
 			armor: true,
 			legs: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 210,
 		sellValue: 21,
@@ -42066,7 +43867,6 @@ function clothGloves(monsterLevel) { //tier 2
 		keywords: ['cloth', 'gloves', 'cloth gloves'],
 		mods: {
 			weight: 1,
-			armor: 1,
 			wis: 1,
 			spellPower: 1,
 		},
@@ -42074,6 +43874,7 @@ function clothGloves(monsterLevel) { //tier 2
 			armor: true,
 			hands: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 50,
 		sellValue: 5,
@@ -42108,6 +43909,7 @@ function silkGloves(monsterLevel) { //tier 3
 			armor: true,
 			hands: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 150,
 		sellValue: 15,
@@ -42142,6 +43944,7 @@ function sandals(monsterLevel) { //tier 2
 			armor: true,
 			feet: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 50,
 		sellValue: 5,
@@ -42176,6 +43979,7 @@ function silkFootwraps(monsterLevel) { //tier 3
 			armor: true,
 			feet: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 150,
 		sellValue: 15,
@@ -42202,7 +44006,7 @@ function cultRobes(monsterLevel) { //tier 2.5
 		color: 'green',
 		keywords: ['cult', 'robes', 'cult robes'],
 		mods: {
-			weight: 0,
+			weight: 1,
 			armor: 1,
 			wis: 1,
 			spellPower: 1,
@@ -42211,6 +44015,7 @@ function cultRobes(monsterLevel) { //tier 2.5
 			armor: true,
 			chest: true,
 			cloth: true,
+			armorType: 'Cloth',
 		},
 		price: 250,
 		sellValue: 125,
@@ -42248,12 +44053,15 @@ function mailArmor() {
 		keywords: ['chain', 'mail', 'armor', 'chain mail', 'mail armor', 'chain mail armor'],
 		mods: {
 			weight: 5,
-			armor: 5,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			chest: true,
 			mail: true,
+			armorType: 'Mail',
 		},
 		price: 80,
 		sellValue: 10,
@@ -42280,12 +44088,15 @@ function mailHelm() {
 		keywords: ['mail', 'helm', 'mail helm'],
 		mods: {
 			weight: 5,
-			armor: 5,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			helm: true,
 			mail: true,
+			armorType: 'Mail',
 		},
 		price: 80,
 		sellValue: 10,
@@ -42312,12 +44123,15 @@ function mailGloves() {
 		keywords: ['mail', 'gloves', 'mail gloves'],
 		mods: {
 			weight: 5,
-			armor: 5,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			hands: true,
 			mail: true,
+			armorType: 'Mail',
 		},
 		price: 50,
 		sellValue: 7,
@@ -42344,12 +44158,15 @@ function mailBoots() {
 		keywords: ['rusty mail boots', 'rusty mail', 'mail boots', 'rusty', 'mail', 'boots'],
 		mods: {
 			weight: 5,
-			armor: 5,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			feet: true,
 			mail: true,
+			armorType: 'Mail',
 		},
 		price: 50,
 		sellValue: 7,
@@ -42386,13 +44203,16 @@ function muddyGloves(monsterLevel) {  //tier 0.5
 		keywords: ['muddy', 'gloves', 'muddy gloves'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
-			armorType: 'Hand Protection',
+			material: 'Leather',
 			armor: true,
 			hands: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 0,
 		sellValue: 5,
@@ -42420,12 +44240,15 @@ function shoddyJerkin(monsterLevel) { //tier 1
 		keywords: ['shoddy', 'jerkin', ' shoddy jerkin'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,		
 		},
 		type: {
 			armor: true,
 			body: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 250,
 		sellValue: 125,
@@ -42453,7 +44276,9 @@ function waterloggedBoots(monsterLevel) { //tier 1
 		keywords: ['waterlogged', 'boots', 'waterlogged boots'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		requirements: {
 		},
@@ -42461,6 +44286,7 @@ function waterloggedBoots(monsterLevel) { //tier 1
 			armor: true,
 			feet: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 0,
 		sellValue: 5,
@@ -42488,12 +44314,15 @@ function grasswovenHat(monsterLevel) { //tier 0.5
 		keywords: ['grasswoven', 'hat', 'grasswoven hat'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			head: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 0,
 		sellValue: 5,
@@ -42520,12 +44349,15 @@ function leatherCap(monsterLevel) { //tier 2
 		keywords: ['leather', 'cap', 'leather cap'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			head: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 60,
 		sellValue: 6,
@@ -42553,12 +44385,15 @@ function studdedLeatherHelm(monsterLevel) { //tier 3
 		keywords: ['leather', 'helm', 'leather helm', 'studded leather', 'studded leather helm'],
 		mods: {
 			weight: 1,
-			armor: 2,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			head: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 180,
 		sellValue: 18,
@@ -42586,12 +44421,15 @@ function leatherTunic(monsterLevel) { //tier 2
 		keywords: ['leather', 'tunic', 'leather tunic'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			chest: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 80,
 		sellValue: 8,
@@ -42618,12 +44456,15 @@ function studdedLeatherJerkin(monsterLevel) { //tier 3
 		keywords: ['leather', 'jerkin', 'leather jerkin', 'studded leather jerkin'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			chest: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 240,
 		sellValue: 24,
@@ -42651,12 +44492,15 @@ function shoulderguards(monsterLevel) { //tier 2
 		keywords: ['shoulderguards'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			shoulders: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 50,
 		sellValue: 5,
@@ -42684,12 +44528,15 @@ function studdedShoulderguards(monsterLevel) { //tier 3
 		keywords: ['studded', 'shoulderguards', 'studded shoulderguards'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			shoulders: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 150,
 		sellValue: 15,
@@ -42717,12 +44564,15 @@ function leatherPants(monsterLevel) { //tier 2
 		keywords: ['leather ', 'pants', 'leather pants'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			legs: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 70,
 		sellValue: 7,
@@ -42749,12 +44599,15 @@ function studdedTrousers(monsterLevel) { //tier 3
 		keywords: ['studded', 'trousers', 'studded trousers'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			armor: true,
 			legs: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 210,
 		sellValue: 21,
@@ -42782,13 +44635,16 @@ function leatherGloves(monsterLevel) { //tier 2
 		keywords: ['leather', 'gloves', 'leather gloves'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			skillUsed: 'Hand Protection',
 			armor: true,
 			hands: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 50,
 		sellValue: 5,
@@ -42815,13 +44671,16 @@ function studdedLeatherGloves(monsterLevel) { //tier 3
 		keywords: ['leather', 'gloves', 'leather gloves', 'studded leather gloves'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		type: {
 			skillUsed: 'Hand Protection',
 			armor: true,
 			hands: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 200,
 		sellValue: 100,
@@ -42849,7 +44708,9 @@ function leatherBoots(monsterLevel) { //tier 2
 		keywords: ['leather', 'boots', 'leather boots'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		requirements: {
 		},
@@ -42857,6 +44718,7 @@ function leatherBoots(monsterLevel) { //tier 2
 			armor: true,
 			feet: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 50,
 		sellValue: 100,
@@ -42883,7 +44745,9 @@ function studdedLeatherBoots(monsterLevel) { //tier 3
 		keywords: ['leather', 'boots', 'leather boots', 'studded leather boots'],
 		mods: {
 			weight: 1,
-			armor: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		requirements: {
 		},
@@ -42891,6 +44755,7 @@ function studdedLeatherBoots(monsterLevel) { //tier 3
 			armor: true,
 			feet: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 200,
 		sellValue: 100,
@@ -42917,9 +44782,10 @@ function ratSkullHelm(monsterLevel) {  //tier 2.5
 		color: 'green',
 		keywords: ['rat', 'skull', 'helm', 'rat skull', 'skull helm', 'rat skull helm'],
 		mods: {
-			weight: 2,
-			armor: 4,
-			dodge: 0,
+			weight: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		requirements: {
 		},
@@ -42927,6 +44793,7 @@ function ratSkullHelm(monsterLevel) {  //tier 2.5
 			armor: true,
 			head: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 250,
 		sellValue: 125,
@@ -42953,9 +44820,10 @@ function ratHideTunic(monsterLevel) {  //tier 2.5
 		color: 'green',
 		keywords: ['rat', 'hide', 'tunic', 'rat hide', 'hide tunic', 'rat hide tunic'],
 		mods: {
-			weight: 3,
-			armor: 5,
-			dodge: 0,
+			weight: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		requirements: {
 		},
@@ -42963,6 +44831,7 @@ function ratHideTunic(monsterLevel) {  //tier 2.5
 			armor: true,
 			chest: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 250,
 		sellValue: 125,
@@ -42989,9 +44858,10 @@ function ratHidePants(monsterLevel) {  //tier 2.5
 		color: 'green',
 		keywords: ['rat', 'hide', 'pants', 'rat hide', 'hide pants', 'rat hide pants'],
 		mods: {
-			weight: 3,
-			armor: 5,
-			dodge: 0,
+			weight: 1,
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
 		},
 		requirements: {
 		},
@@ -42999,6 +44869,7 @@ function ratHidePants(monsterLevel) {  //tier 2.5
 			armor: true,
 			legs: true,
 			leather: true,
+			armorType: 'Leather'
 		},
 		price: 250,
 		sellValue: 125,
@@ -43042,10 +44913,14 @@ function trainingShield(monsterLevel) {
 		color: 'green',
 		keywords: ['training shield', 'training', 'shield'],
 		mods: {
-			armor: 3,
+			slashingArmor: 1,
+			piercingArmor: 1,
+			bluntArmor: 1,
+			weight: 5,
 		},
 		requirements: {},
 		type: {
+			skillUsed: 'Shields',
 			armor: true,
 			shield: true,
 			plate: true,
@@ -43075,8 +44950,10 @@ function squiresShield(monsterLevel) {
 		color: 'green',
 		keywords: ["squire's", 'shield', "squire's shield", 'squire shield'],
 		mods: {
-			armor: 6,
-		},
+			slashingArmor: 2,
+			piercingArmor: 2,
+			bluntArmor: 2,
+			weight: 5,		},
 		requirements: {},
 		type: {
 			armor: true,
@@ -43094,8 +44971,6 @@ function squiresShield(monsterLevel) {
 	return squiresShield
 }
 function bronzeShield(monsterLevel) {
-	let itemPrice = 100
-	let sellValue = monsterLevel != undefined ? Math.ceil(itemPrice * 0.25) + monsterLevel * 2 : Math.ceil(itemPrice * 0.25)
 	let bronzeShield = {
 		id: () => {
 			for (let i = 0; i < 50; i++) {
@@ -43109,8 +44984,10 @@ function bronzeShield(monsterLevel) {
 		color: 'green',
 		keywords: ['bronze', 'shield', 'bronze shield'],
 		mods: {
-			armor: 12,
-		},
+			slashingArmor: 4,
+			piercingArmor: 4,
+			bluntArmor: 4,
+			weight: 5,		},
 		requirements: {
 			oneHanded: 3,
 		},
@@ -43144,7 +45021,10 @@ function galvadianKiteShield(monsterLevel) {
 		color: 'green',
 		keywords: ['galvadian', 'kite', 'shield', 'galvadian kite', 'kite shield', 'galvadian kite shield'],
 		mods: {
-			armor: 23,
+			slashingArmor: 6,
+			piercingArmor: 6,
+			bluntArmor: 6,
+			weight: 15,		
 		},
 		type: {
 			armor: true,
@@ -43179,9 +45059,8 @@ function koboldToothNecklace() {
 		color: 'green',
 		keywords: ['kobold', 'tooth', 'necklace', 'kobold tooth', 'tooth necklace', 'kobold tooth necklace'],
 		mods: {
-			str: 2,
-			dex: 2,
-			armor: 1,
+			str: 1,
+			dex: 1,
 		},
 		requirements: {
 		},
@@ -43241,8 +45120,6 @@ function oldRing(monsterLevel) {
 //////////////////////////////////////////////////++CONSUMABLES++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++CONSUMABLES++//////////////////////////////////////////////////
 function smallPotion(monsterLevel) {
-	let itemPrice = 100
-	let sellValue = monsterLevel != undefined ? Math.ceil(itemPrice * 0.25) + monsterLevel * 2 : Math.ceil(itemPrice * 0.25)
 	let smallPotion = {
 		id: function () {
 			for (let i = 0; i < 50; i++) {
@@ -43252,12 +45129,13 @@ function smallPotion(monsterLevel) {
 			}
 		},
 		roomId: currentArea.id,
-		name: 'small potion',
+		name: 'Small Potion',
 		color: 'green',
-		keywords: ['small', 'potion', 'small potion', 'small pot'],
+		keywords: ['small', 'potion', 'small potion', 'small pot', 'pot'],
 		type: {
 			consumable: true,
 			drink: true,
+			potionType: 'Health Potion',
 		},
 		property: function () {
 			var currentHealth = player.health
@@ -43549,10 +45427,8 @@ function trainingDummy(area) {
 		wis: () => 0 + this.level,
 		con: () => 1 + this.level,
 		desc: function () {
-			quickMessage(`This training dummy will not fight back`)
-			quickMessage(`${this.armor}`)
-			quickMessage(`${this.health}`)
-			quickMessage(`${this.experience} - experience`)
+			let description = `This Training Dummy looks indestructible`
+			enemyDescription(this, description)
 		},
 		hostile: false,
 		combat: false,
@@ -43564,9 +45440,9 @@ function trainingDummy(area) {
 		factor: 1,
 		experience: () => 1,
 		armor: 0,
-		slashingArmor: 10,
-		piercingArmor: 10,
-		bluntArmor: 10,
+		slashingArmor: 30,
+		piercingArmor: 30,
+		bluntArmor: 30,
 		fireResist: 10,
 		iceResist: 10,
 		lightningResist: 10,
@@ -43842,22 +45718,493 @@ function trainingDummy4(area) {
 	}
 	return trainingDummy4
 }
+function trainingDummy5(area) {
+	let trainingDummy5 = {
+		color: `purple`,
+		x: 0,
+		y: 6,
+		z: -2,
+		level: 1,
+		str: () => 0 + this.level,
+		dex: () => 0 + this.level,
+		agi: () => 0 + this.level,
+		int: () => 0 + this.level,
+		wis: () => 0 + this.level,
+		con: () => 1 + this.level,
+		desc: function () {
+			quickMessage(`This training dummy will not fight back`)
+			quickMessage(`${this.armor}`)
+			quickMessage(`${this.health}`)
+			quickMessage(`${this.experience} - experience`)
+		},
+		hostile: false,
+		combat: false,
+		health: 900000000,
+		maxHealth: 900000000,
+		enemyAttackPower: () => this.str + this.dex,
+		accuracy: 1,
+		dodge: 1,
+		factor: 1,
+		experience: () => 1,
+		armor: 1,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		statusEffects: {
 
+		},
+		roomId: trainingHallsCombatRoom1.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Training Dummy 5',
+		keywords: ['training', 'training dummy', 'dummy'],
+		abilityName: '',
+		abilityDamage: Math.floor(Math.random() * 3 + 1),
+		itemDrops: [],
+		gold: function () {
+			let goldRandom = randomSingleNumber(100)
+			if (goldRandom <= 52) {
+				gold = randomNumberRange(1, 4)
+				return gold
+			} else if (goldRandom <= 77 && goldRandom >= 53) {
+				gold = randomNumberRange(4, 6)
+				return gold
+			} else if (goldRandom <= 92 && goldRandom >= 78) {
+				gold = randomNumberRange(6, 8)
+				return gold
+			} else if (goldRandom >= 79) {
+				gold = 8
+				return gold
+			}
+		},
+		itemDropsRoll: function () {},
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		deathPhrase: `Breaks and collapses to the ground `,
+		enemyBehavior: function () {
+			console.log('no behavior')
+		},
+	}
+	return trainingDummy5
+}
+function trainingDummy6(area) {
+	let trainingDummy6 = {
+		color: `purple`,
+		x: 0,
+		y: 6,
+		z: -2,
+		level: 1,
+		str: () => 0 + this.level,
+		dex: () => 0 + this.level,
+		agi: () => 0 + this.level,
+		int: () => 0 + this.level,
+		wis: () => 0 + this.level,
+		con: () => 1 + this.level,
+		desc: function () {
+			quickMessage(`This training dummy will not fight back`)
+			quickMessage(`${this.armor}`)
+			quickMessage(`${this.health}`)
+			quickMessage(`${this.experience} - experience`)
+		},
+		hostile: false,
+		combat: false,
+		health: 900000000,
+		maxHealth: 900000000,
+		enemyAttackPower: () => this.str + this.dex,
+		accuracy: 1,
+		dodge: 1,
+		factor: 1,
+		experience: () => 1,
+		armor: 1,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		statusEffects: {
+
+		},
+		roomId: trainingHallsCombatRoom1.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Training Dummy 6',
+		keywords: ['training', 'training dummy', 'dummy'],
+		abilityName: '',
+		abilityDamage: Math.floor(Math.random() * 3 + 1),
+		itemDrops: [],
+		gold: function () {
+			let goldRandom = randomSingleNumber(100)
+			if (goldRandom <= 52) {
+				gold = randomNumberRange(1, 4)
+				return gold
+			} else if (goldRandom <= 77 && goldRandom >= 53) {
+				gold = randomNumberRange(4, 6)
+				return gold
+			} else if (goldRandom <= 92 && goldRandom >= 78) {
+				gold = randomNumberRange(6, 8)
+				return gold
+			} else if (goldRandom >= 79) {
+				gold = 8
+				return gold
+			}
+		},
+		itemDropsRoll: function () {},
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		deathPhrase: `Breaks and collapses to the ground `,
+		enemyBehavior: function () {
+			console.log('no behavior')
+		},
+	}
+	return trainingDummy6
+}
+function trainingDummy7(area) {
+	let trainingDummy7 = {
+		color: `purple`,
+		x: 0,
+		y: 6,
+		z: -2,
+		level: 1,
+		str: () => 0 + this.level,
+		dex: () => 0 + this.level,
+		agi: () => 0 + this.level,
+		int: () => 0 + this.level,
+		wis: () => 0 + this.level,
+		con: () => 1 + this.level,
+		desc: function () {
+			quickMessage(`This training dummy will not fight back`)
+			quickMessage(`${this.armor}`)
+			quickMessage(`${this.health}`)
+			quickMessage(`${this.experience} - experience`)
+		},
+		hostile: false,
+		combat: false,
+		health: 900000000,
+		maxHealth: 900000000,
+		enemyAttackPower: () => this.str + this.dex,
+		accuracy: 1,
+		dodge: 1,
+		factor: 1,
+		experience: () => 1,
+		armor: 1,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		statusEffects: {
+
+		},
+		roomId: trainingHallsCombatRoom1.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Training Dummy 7',
+		keywords: ['training', 'training dummy', 'dummy'],
+		abilityName: '',
+		abilityDamage: Math.floor(Math.random() * 3 + 1),
+		itemDrops: [],
+		gold: function () {
+			let goldRandom = randomSingleNumber(100)
+			if (goldRandom <= 52) {
+				gold = randomNumberRange(1, 4)
+				return gold
+			} else if (goldRandom <= 77 && goldRandom >= 53) {
+				gold = randomNumberRange(4, 6)
+				return gold
+			} else if (goldRandom <= 92 && goldRandom >= 78) {
+				gold = randomNumberRange(6, 8)
+				return gold
+			} else if (goldRandom >= 79) {
+				gold = 8
+				return gold
+			}
+		},
+		itemDropsRoll: function () {},
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		deathPhrase: `Breaks and collapses to the ground `,
+		enemyBehavior: function () {
+			console.log('no behavior')
+		},
+	}
+	return trainingDummy7
+}
+function trainingDummy8(area) {
+	let trainingDummy8 = {
+		color: `purple`,
+		x: 0,
+		y: 6,
+		z: -2,
+		level: 1,
+		str: () => 0 + this.level,
+		dex: () => 0 + this.level,
+		agi: () => 0 + this.level,
+		int: () => 0 + this.level,
+		wis: () => 0 + this.level,
+		con: () => 1 + this.level,
+		desc: function () {
+			quickMessage(`This training dummy will not fight back`)
+			quickMessage(`${this.armor}`)
+			quickMessage(`${this.health}`)
+			quickMessage(`${this.experience} - experience`)
+		},
+		hostile: false,
+		combat: false,
+		health: 900000000,
+		maxHealth: 900000000,
+		enemyAttackPower: () => this.str + this.dex,
+		accuracy: 1,
+		dodge: 1,
+		factor: 1,
+		experience: () => 1,
+		armor: 1,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		statusEffects: {
+
+		},
+		roomId: trainingHallsCombatRoom1.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Training Dummy 8',
+		keywords: ['training', 'training dummy', 'dummy'],
+		abilityName: '',
+		abilityDamage: Math.floor(Math.random() * 3 + 1),
+		itemDrops: [],
+		gold: function () {
+			let goldRandom = randomSingleNumber(100)
+			if (goldRandom <= 52) {
+				gold = randomNumberRange(1, 4)
+				return gold
+			} else if (goldRandom <= 77 && goldRandom >= 53) {
+				gold = randomNumberRange(4, 6)
+				return gold
+			} else if (goldRandom <= 92 && goldRandom >= 78) {
+				gold = randomNumberRange(6, 8)
+				return gold
+			} else if (goldRandom >= 79) {
+				gold = 8
+				return gold
+			}
+		},
+		itemDropsRoll: function () {},
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		deathPhrase: `Breaks and collapses to the ground `,
+		enemyBehavior: function () {
+			console.log('no behavior')
+		},
+	}
+	return trainingDummy8
+}
+function trainingDummy9(area) {
+	let trainingDummy9 = {
+		color: `purple`,
+		x: 0,
+		y: 6,
+		z: -2,
+		level: 1,
+		str: () => 0 + this.level,
+		dex: () => 0 + this.level,
+		agi: () => 0 + this.level,
+		int: () => 0 + this.level,
+		wis: () => 0 + this.level,
+		con: () => 1 + this.level,
+		desc: function () {
+			quickMessage(`This training dummy will not fight back`)
+			quickMessage(`${this.armor}`)
+			quickMessage(`${this.health}`)
+			quickMessage(`${this.experience} - experience`)
+		},
+		hostile: false,
+		combat: false,
+		health: 900000000,
+		maxHealth: 900000000,
+		enemyAttackPower: () => this.str + this.dex,
+		accuracy: 1,
+		dodge: 1,
+		factor: 1,
+		experience: () => 1,
+		armor: 1,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		statusEffects: {
+
+		},
+		roomId: trainingHallsCombatRoom1.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Training Dummy 9',
+		keywords: ['training', 'training dummy', 'dummy'],
+		abilityName: '',
+		abilityDamage: Math.floor(Math.random() * 3 + 1),
+		itemDrops: [],
+		gold: function () {
+			let goldRandom = randomSingleNumber(100)
+			if (goldRandom <= 52) {
+				gold = randomNumberRange(1, 4)
+				return gold
+			} else if (goldRandom <= 77 && goldRandom >= 53) {
+				gold = randomNumberRange(4, 6)
+				return gold
+			} else if (goldRandom <= 92 && goldRandom >= 78) {
+				gold = randomNumberRange(6, 8)
+				return gold
+			} else if (goldRandom >= 79) {
+				gold = 8
+				return gold
+			}
+		},
+		itemDropsRoll: function () {},
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		deathPhrase: `Breaks and collapses to the ground `,
+		enemyBehavior: function () {
+			console.log('no behavior')
+		},
+	}
+	return trainingDummy9
+}
+function trainingDummy10(area) {
+	let trainingDummy10 = {
+		color: `purple`,
+		x: 0,
+		y: 6,
+		z: -2,
+		level: 1,
+		str: () => 0 + this.level,
+		dex: () => 0 + this.level,
+		agi: () => 0 + this.level,
+		int: () => 0 + this.level,
+		wis: () => 0 + this.level,
+		con: () => 1 + this.level,
+		desc: function () {
+			quickMessage(`This training dummy will not fight back`)
+			quickMessage(`${this.armor}`)
+			quickMessage(`${this.health}`)
+			quickMessage(`${this.experience} - experience`)
+		},
+		hostile: false,
+		combat: false,
+		health: 900000000,
+		maxHealth: 900000000,
+		enemyAttackPower: () => this.str + this.dex,
+		accuracy: 1,
+		dodge: 1,
+		factor: 1,
+		experience: () => 1,
+		armor: 1,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		statusEffects: {
+
+		},
+		roomId: trainingHallsCombatRoom1.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Training Dummy 10',
+		keywords: ['training', 'training dummy', 'dummy'],
+		abilityName: '',
+		abilityDamage: Math.floor(Math.random() * 3 + 1),
+		itemDrops: [],
+		gold: function () {
+			let goldRandom = randomSingleNumber(100)
+			if (goldRandom <= 52) {
+				gold = randomNumberRange(1, 4)
+				return gold
+			} else if (goldRandom <= 77 && goldRandom >= 53) {
+				gold = randomNumberRange(4, 6)
+				return gold
+			} else if (goldRandom <= 92 && goldRandom >= 78) {
+				gold = randomNumberRange(6, 8)
+				return gold
+			} else if (goldRandom >= 79) {
+				gold = 8
+				return gold
+			}
+		},
+		itemDropsRoll: function () {},
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		deathPhrase: `Breaks and collapses to the ground `,
+		enemyBehavior: function () {
+			console.log('no behavior')
+		},
+	}
+	return trainingDummy10
+}
+
+function contagionEnemyDies(enemy) {
+	if (enemy?.debuffs?.poison) {
+		let allEnemiesInRoom = getAllEnemiesInRoom()
+		let targetEnemyIndex = allEnemiesInRoom.indexOf(enemy)
+		allEnemiesInRoom.splice(targetEnemyIndex, 1)
+		let debuffToApply = {...enemy.debuffs.poison}
+		debuffToApply.stacks -= 1
+		for (let i = 0; i < allEnemiesInRoom.length; i++) {
+			applyDebuff(allEnemiesInRoom[i], debuffToApply)
+		}
+	}
+}
+
+function enemyDeathConditionals(enemy) {
+	contagionEnemyDies(enemy)
+}
 
 function enemyDeath(enemy) {
-	console.log(enemy)
-	if (player.killList[enemy.refName] == undefined) {
-		player.killList[enemy.refName] = 1
-	} else {
-		player.killList[enemy.refName]++
-	}
 	if (enemy.health <= 0) {
-		console.log(enemy)
+		enemyDeathConditionals(enemy)
+		if (player.killList[enemy.refName] == undefined) {
+			player.killList[enemy.refName] = 1
+		} else {
+			player.killList[enemy.refName]++
+		}
+		//turn all this text into its own function
 		const line1 = document.createElement('div')
 		const line2 = document.createElement('div')
 		const line3 = document.createElement('div')
 		line3.classList.add('item-drops-margin')
-		//enemy.
 		customizeEachWord(`The `, 'white', line1)
 		customizeEachWord(`${enemy.name} `, 'red', line1)
 		customizeEachWord(`${enemy.deathPhrase} `, 'white', line1)
@@ -43905,9 +46252,11 @@ function enemyDeath(enemy) {
 		}
 		clearInterval(enemy.enemyBehaviorInterval)
 		const removeThisMonster = pushMonster.indexOf(enemy)
+		const removeThisRoomEnemy = roomEnemies.indexOf(enemy)
 		playerGainKillExperience(enemy.experience)
 		enemy.itemDrops.forEach(item => item.name)
 		pushMonster.splice(removeThisMonster, 1)
+		roomEnemies.splice(removeThisRoomEnemy, 1)
 		enemy.itemDrops.forEach(droppedItem => (droppedItem.roomId = currentArea.id))
 		enemy.itemDrops.forEach(addItem => pushItem.push(addItem)) //add to combatCheck?
 		currentArea.gold = currentArea.gold + enemy.gold
@@ -43919,19 +46268,23 @@ function enemyDeath(enemy) {
 function masterMonster(area) {
 	let masterMonster = {
 		color: `red`,
-		entersTheRoomPhrase: `scampers in!`,
-		advancePhrase: `scurries toward you..`,
-		deathPhrase: `lets out a final "squeek!" before it flops over dead `,
+		entersTheRoomPhrase: `masters in!`,
+		advancePhrase: `advances toward you..`,
+		deathPhrase: `lets out a final "masters!" before it flops over dead `,
 		entersExitsRoomPhrase: `hobbles`,
+		strikePhrase: 'bites at you and hits!',
+		missPhrase: 'bites at you and misses!',
+		rangedAttackPhrase: 'leaps across the room and bites your neck!',
+		rangedMissPhrase: 'leaps at you and misses!',
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['slashing', 'piercing', 'blunt'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 0,
-			ranged: 0,
-			meleeAbility: 100,
-			rangedAbility: 0,
+			melee: 25,
+			ranged: 25,
+			meleeAbility: 25,
+			rangedAbility: 25,
 		},
 		slashingArmor: 0,
 		piercingArmor: 0,
@@ -43939,23 +46292,18 @@ function masterMonster(area) {
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Rat',
-		refName: 'rat',
-		keywords: ['rat'],
+		name: 'Master Monster',
+		refName: 'master',
+		keywords: ['master'],
 		health: () => 20 + (this.level * this.con),
 		maxHealth: () => 20 + (this.level * this.con),
 		enemyAttackPower: () => 20,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => 5,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
 		gold: function () {
-			const goldAmount = {
-				probability1: 0,
-				probability2: 1,
-				probability3: 2
-			}
-			return enemyGoldDrops(goldAmount)
+			randomNumberRange(100, 1000)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [ratTail]
@@ -44001,10 +46349,10 @@ function masterMonster(area) {
 		damageCalculation: function() {
 			return randomNumberRange(1, 2)
 		},
-			hitChance: function(enemy) {
-			let enemyHitChance =  calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
+		hitChance: function(enemy) {
+		let enemyHitChance =  calculateEnemyHitChance(enemy)
+		let hitRoll = Math.floor(Math.random() * 100) + 1
+		return enemyHitChance >= hitRoll
 		},
 		enemyMoveSpeed: 2000,
 		rangedAbilityCalculation: {
@@ -44013,81 +46361,98 @@ function masterMonster(area) {
 				ability2: 50,
 			},
 			ability1: {
-				damage: function() {return randomNumberRange(10, 20)},
-				abilityPhrase: function() {
-					let line1 = lineFunc()
-					customizeEachWord(`RANGED PHYSICAL ABILITY USED HERE`, 'white', line1)
-				},
-				windUpPhrase: function() {
-					let line1 = lineFunc()
-					customizeEachWord(`GATHERING STRENGTH FOR A RANGED PHYSICAL ABILITY [5 SECONDS UNTIL CAST]`, 'white', line1)
-				},
+				name: 'Ability 1',
+				color: 'purple',
 				damageType: 'physical', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
 				penetrationTypes: ['slashing', 'piercing'],
 				combatType: 'ranged',
 				castTime: 5000,
-			},
-			ability2: {
-				damage: function() {return randomNumberRange(10, 20)},
+				damage: function() {return randomNumberRange(5, 5)},
 				abilityPhrase: function() {
 					let line1 = lineFunc()
-					customizeEachWord(`RANGED MAGIC ABILITY USED HERE`, 'white', line1)
+					customizeEachWord(`RANGED ABILITY 1 USED HERE`, 'white', line1)
 				},
 				windUpPhrase: function() {
 					let line1 = lineFunc()
-					customizeEachWord(`GATHERING STRENGTH FOR A RANGED MAGIC ABILITY [1 SECOND UNTIL CAST]`, 'white', line1)
+					customizeEachWord(`GATHERING STRENGTH FOR A RANGED ABILITY 1`, 'white', line1)
 				},
+				flavorTextMiss: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`${enemy.name} `, enemy.color, line1)
+					customizeEachWord(`does something wild, and its wacky stuper, it swings at you and [RANGED]`, 'white', line1)
+					customizeEachWord(`misses!`, 'red', line1)
+				},
+			},
+			ability2: {
+				name: 'Ability 2',
+				color: 'pink',
 				damageType: 'fire', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
 				combatType: 'ranged',
 				castTime: 1000,
+				damage: function() {return randomNumberRange(6, 6)},
+				abilityPhrase: function() {
+					let line1 = lineFunc()
+					customizeEachWord(`RANGED ABILITY 2 USED HERE`, 'white', line1)
+				},
+				windUpPhrase: function() {
+					let line1 = lineFunc()
+					customizeEachWord(`GATHERING STRENGTH FOR RANGED ABILITY 2`, 'white', line1)
+				},
 			}
 		},
 		meleeAbilityCalculation: {
 			abilityUseChance: {
-				ability1: 100,
-				ability2: 0,
+				ability1: 50,
+				ability2: 50,
 			},
 			ability1: {
-				damage: function() {return randomNumberRange(30, 30)},
-				abilityPhrase: function() {
-					let line1 = lineFunc()
-					customizeEachWord(`MELEE PHYSICAL ABILITY USED HERE`, 'white', line1)
-				},
-				windUpPhrase: function() {
-					let line1 = lineFunc()
-					customizeEachWord(`GATHERING STRENGTH FOR A MELEE PHYSICAL ABILITY [2 SECOND UNTIL CAST]`, 'white', line1)
-				},
-				damageType: 'physical', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
+				name: 'Melee Ability 1: Master Attack!',
+				color: 'brown',
+				damageType: 'physical', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRE, WATER, ICE LIGHTNING, ETC
 				penetrationTypes: ['slashing', 'piercing'],
 				combatType: 'melee',
 				castTime: 2000,
-			},
-			ability2: {
-				damage: function() {return randomNumberRange(30, 30)},
+				damage: function() {return randomNumberRange(7, 7)},
 				abilityPhrase: function() {
 					let line1 = lineFunc()
-					customizeEachWord(`MELEE MAGIC ABILITY USED HERE`, 'white', line1)
+					customizeEachWord(`MELEE ABILITY 1 USED HERE`, 'white', line1)
 				},
 				windUpPhrase: function() {
 					let line1 = lineFunc()
-					customizeEachWord(`GATHERING STRENGTH FOR A MELEE MAGIC ABILITY [5 SECONDS UNTIL CAST]`, 'white', line1)
+					customizeEachWord(`GATHERING STRENGTH FOR A MELEE ABILITY 1`, 'white', line1)
 				},
+				flavorTextMiss: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`${enemy.name} `, enemy.color, line1)
+					customizeEachWord(`does something wild, and its wacky stuper, it swings at you and [MELEE] `, 'white', line1)
+					customizeEachWord(`misses!`, 'red', line1)
+				},
+			},
+			ability2: {
+				name: 'Melee Ability 2: Master Attack 2!',
+				color: 'grey',
 				damageType: 'fire', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
 				combatType: 'melee',
 				castTime: 5000,
+				damage: function() {return randomNumberRange(8, 8)},
+				abilityPhrase: function() {
+					let line1 = lineFunc()
+					customizeEachWord(`MELEE ABILITY 2 USED HERE`, 'white', line1)
+				},
+				windUpPhrase: function() {
+					let line1 = lineFunc()
+					customizeEachWord(`GATHERING STRENGTH FOR MELEE ABILITY 2`, 'white', line1)
+				},
+
 			}
 		},
 		desc: function () {
-			let description = `A little aggressive field rat. It squeeks often.`
+			let description = `A little aggressive Master Monster. It squeeks often.`
 			enemyDescription(this, description)
 		},
 		death: function (enemy) {
 			enemyDeath(enemy)
 		},
-		strikePhrase: 'bites at you and hits!',
-		missPhrase: 'bites at you and misses!',
-		rangedAttackPhrase: 'leaps across the room and bites your neck!',
-		rangedMissPhrase: 'leaps at you and misses!',
 		id: function () {
 			for (let i = 0; i < 50; i++) {
 				if (!pushMonster[i]) {
@@ -44161,7 +46526,7 @@ function rat(area) {
 		health: () => 13 + (this.level * this.con),
 		maxHealth: () => 13 + (this.level * this.con),
 		enemyAttackPower: () => 1,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -44348,11 +46713,15 @@ function mudling(area) {
 		entersTheRoomPhrase: `plops in!`,
 		advancePhrase: `flops toward you..`,
 		deathPhrase: `sinks into a lifeless puddle`,
+		strikePhrase: 'plops at you and hits!',
+		missPhrase: 'plops at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
 		entersExitsRoomPhrase: `plops`,
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
@@ -44371,7 +46740,7 @@ function mudling(area) {
 		health: () => 40,
 		maxHealth: () => 40,
 		enemyAttackPower: () => 20,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		damageCalculation: function() {
@@ -44393,13 +46762,6 @@ function mudling(area) {
 		itemDropsRoll: function () {
 			const itemDrops =  [mudBall, muddyGloves]
 			const probability = [30, 100]
-			if (player.playerClass.name == 'Fighter' || player.playerClass.name == 'Knight') {
-				itemDrops.push(muddyShortsword)
-				probability.push(100)
-			} else if (player.guild == 'Sinistral') {
-				itemDrops.push(muddyDagger)
-				probability.push(100)
-			}
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
@@ -44441,57 +46803,9 @@ function mudling(area) {
 		hitChance: function(enemy) {
 			let enemyHitChance =  calculateEnemyHitChance(enemy)
 			let hitRoll = Math.floor(Math.random() * 100) + 1
-			quickMessage(`Original Hit Chance: ${enemyHitChance}`)
 			return enemyHitChance >= hitRoll
 		},
 		enemyMoveSpeed: 6000,
-		rangedAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 50,
-				ability2: 50,
-			},
-			ability1: {
-				damage: function() {return randomNumberRange(10, 20)},
-				abilityPhrase: 'RANGED PHYSICAL ABILITY',
-				windUpPhrase: 'The enemy begins gathering strength for a RANGED PHYSICAL ABILITY (5 seconds)', 
-				damageType: 'physical',
-				penetrationTypes: ['slashing', 'piercing'],
-				combatType: 'ranged',
-				castTime: 5000,
-			},
-			ability2: {
-				damage: function() {return randomNumberRange(10, 20)},
-				abilityPhrase: 'RANGED MAGIC ABILITY',
-				windUpPhrase: 'The enemy begins gathering strength for a RANGED MAGIC ABILITY (1 second)', 
-				damageType: 'fire',
-				combatType: 'ranged',
-				castTime: 1000,
-			}
-		},
-		meleeAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				damage: function() {return randomNumberRange(1, 2)},
-				abilityPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`With a gurgling lurch forward, the `, 'white', line1)
-					customizeEachWord(`Mudling `, 'red', line1)
-					customizeEachWord(`slaps you!`, 'white', line1)
-				}, 
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Mudling `, 'red', line1)
-					customizeEachWord(`looks to be preparing for something...`, 'white', line1)
-				}, 
-				damageType: 'physical',
-				penetrationTypes: [],
-				combatType: 'melee',
-				castTime: 3000,
-			},
-		},
 		desc: function () {
 			let description = `The Mudling looks to be a low form of earth elemental`
 			enemyDescription(this, description)
@@ -44499,10 +46813,6 @@ function mudling(area) {
 		death: function (enemy) {
 			enemyDeath(enemy)
 		},
-		strikePhrase: 'plops at you and hits!',
-		missPhrase: 'plops at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
 		id: function () {
 			for (let i = 0; i < 50; i++) {
 				if (!pushMonster[i]) {
@@ -44555,7 +46865,7 @@ function mudlet(area) {
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 50,
 			ranged: 0,
@@ -44571,35 +46881,19 @@ function mudlet(area) {
 		name: 'Mudlet',
 		refName: 'mudlet',
 		keywords: ['mudlet'],
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
+		health: () => 30 + (this.level * this.con),
+		maxHealth: () => 30 + (this.level * this.con),
 		enemyAttackPower: () => 20,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
 		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 0,
-			// 	probability2: 1,
-			// 	probability3: 2,
-			// 	probability4: 3,
-			// 	probability5: 4,
-			// 	probability6: 5,
-			// }
-			// return enemyGoldDrops(goldAmount)
 			return randomNumberRange(8, 15)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [mudBall, muddyGloves]
 			const probability = [50, 100]
-			if (player.playerClass.name == 'Fighter' || player.playerClass.name == 'Knight') {
-				itemDrops.push(muddyShortsword)
-				probability.push(100)
-			} else if (player.guild == 'Sinistral') {
-				itemDrops.push(muddyDagger)
-				probability.push(100)
-			}
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
@@ -44639,7 +46933,7 @@ function mudlet(area) {
 			return attackType
 		},
 		damageCalculation: function() {
-			return randomNumberRange(3, 4)
+			return randomNumberRange(5, 6)
 		},
 		hitChance: function(enemy) {
 		let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -44652,7 +46946,13 @@ function mudlet(area) {
 				ability1: 100,
 			},
 			ability1: {
-				damage: function() {return randomNumberRange(3, 4)},
+				name: 'Gurgle Slap',
+				color: 'brown',
+				damageType: 'physical',
+				penetrationTypes: ['blunt'],
+				combatType: 'melee',
+				castTime: 3000,
+				damage: function() {return randomNumberRange(7, 8)},
 				abilityPhrase: function(enemy) {
 					let line1 = lineFunc()
 					customizeEachWord(`With a gurgling lurch forward, the `, 'white', line1)
@@ -44664,11 +46964,16 @@ function mudlet(area) {
 					customizeEachWord(`The `, 'white', line1)
 					customizeEachWord(`Mudlet `, 'red', line1)
 					customizeEachWord(`looks to be preparing for something...`, 'white', line1)
-				}, 
-				damageType: 'physical',
-				penetrationTypes: [],
-				combatType: 'melee',
-				castTime: 3000,
+				},
+				flavorTextMiss: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`${enemy.name} `, enemy.color, line1)
+					customizeEachWord(`lunges forward with a `, 'white', line1)
+					customizeEachWord(`Gurgling Lurch `, this.color, line1)
+					customizeEachWord(`and `, 'white', line1)
+					customizeEachWord(`misses`, 'red', line1)
+					customizeEachWord(`!`, 'white', line1)
+				},
 			},
 		},
 		desc: function () {
@@ -44753,7 +47058,7 @@ function grassling(area) {
 		health: () => 40,
 		maxHealth: () => 40,
 		enemyAttackPower: () => 20,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		damageCalculation: function() {
@@ -44819,56 +47124,6 @@ function grassling(area) {
 		return enemyHitChance >= hitRoll
 		},
 		enemyMoveSpeed: 6000,
-		rangedAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				name: 'Stinging Wind',
-				color: 'light-green',
-				damage: function() {return randomNumberRange(1, 1)},
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
-				}, 
-				abilityPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`whips its body toward you, sending a blade of wind at you!`, 'white', line1)
-				}, 
-				damageType: 'air',
-				penetrationTypes: ['slashing', 'piercing'],
-				combatType: 'ranged',
-				castTime: 4000,
-			},
-		},
-		meleeAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				damage: function() {return randomNumberRange(1, 10)},
-				abilityPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`With a gurgling lurch forward, the `, 'white', line1)
-					customizeEachWord(`Mudling `, 'red', line1)
-					customizeEachWord(`slaps you!`, 'white', line1)
-				}, 
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Mudling `, 'red', line1)
-					customizeEachWord(`looks to be preparing for something...`, 'white', line1)
-				}, 
-				damageType: 'physical',
-				penetrationTypes: [],
-				combatType: 'melee',
-				castTime: 3000,
-			},
-		},
 		desc: function () {
 			let description = `The Grassling looks to be a low form of air elemental`
 			enemyDescription(this, description)
@@ -44932,7 +47187,7 @@ function grasslet(area) {
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 0,
 			ranged: 0,
@@ -44951,7 +47206,7 @@ function grasslet(area) {
 		health: () => 20 + (this.level * this.con),
 		maxHealth: () => 20 + (this.level * this.con),
 		enemyAttackPower: () => 20,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -45023,24 +47278,30 @@ function grasslet(area) {
 			},
 			ability1: {
 				name: 'Stinging Wind',
-				color: 'light-green',
-				damage: function() {return randomNumberRange(3, 6)},
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grasslet `, 'red', line1)
-					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
-				}, 
+				color: 'wind',
+				damageType: 'wind', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
+				// penetrationTypes: ['slashing', 'piercing'],
+				combatType: 'ranged',
+				castTime: 5000,
+				damage: function() {return randomNumberRange(5, 5)},
 				abilityPhrase: function(enemy) {
 					let line1 = lineFunc()
 					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grasslet `, 'red', line1)
+					customizeEachWord(`Grassling `, 'red', line1)
 					customizeEachWord(`whips its body toward you, sending a blade of wind at you!`, 'white', line1)
 				}, 
-				damageType: 'air',
-				penetrationTypes: ['slashing', 'piercing'],
-				combatType: 'ranged',
-				castTime: 4000,
+				windUpPhrase: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`The `, 'white', line1)
+					customizeEachWord(`Grassling `, 'red', line1)
+					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
+				}, 
+				flavorTextMiss: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`${enemy.name} `, enemy.color, line1)
+					customizeEachWord(`whips its body at you and`, 'white', line1)
+					customizeEachWord(`misses!`, 'red', line1)
+				},
 			},
 		},
 		desc: function () {
@@ -45105,7 +47366,7 @@ function waterling(area) {
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
@@ -45124,7 +47385,7 @@ function waterling(area) {
 		health: () => 40,
 		maxHealth: () => 40,
 		enemyAttackPower: () => 20,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		damageCalculation: function() {
@@ -45190,56 +47451,6 @@ function waterling(area) {
 		return enemyHitChance >= hitRoll
 		},
 		enemyMoveSpeed: 6000,
-		rangedAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				name: 'Stinging Wind',
-				color: 'light-green',
-				damage: function() {return randomNumberRange(10, 20)},
-				abilityPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`whips its body toward you, sending a blade of wind at you!`, 'white', line1)
-				}, 
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
-				}, 
-				damageType: 'air',
-				penetrationTypes: ['slashing', 'piercing'],
-				combatType: 'ranged',
-				castTime: 5000,
-			},
-		},
-		meleeAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				damage: function() {return randomNumberRange(1, 10)},
-				abilityPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`With a gurgling lurch forward, the `, 'white', line1)
-					customizeEachWord(`Mudling `, 'red', line1)
-					customizeEachWord(`slaps you!`, 'white', line1)
-				}, 
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Mudling `, 'red', line1)
-					customizeEachWord(`looks to be preparing for something...`, 'white', line1)
-				}, 
-				damageType: 'physical',
-				penetrationTypes: [],
-				combatType: 'melee',
-				castTime: 3000,
-			},
-		},
 		desc: function () {
 			let description = `The Waterling looks to be a low form of water elemental`
 			enemyDescription(this, description)
@@ -45302,7 +47513,7 @@ function waterlet(area) {
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 0,
 			ranged: 100,
@@ -45321,7 +47532,7 @@ function waterlet(area) {
 		health: () => 20 + (this.level * this.con),
 		maxHealth: () => 20 + (this.level * this.con),
 		enemyAttackPower: () => 20,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -45379,7 +47590,7 @@ function waterlet(area) {
 			return attackType
 		},
 		damageCalculation: function() {
-			return randomNumberRange(3, 4)
+			return randomNumberRange(4, 5)
 		},
 		hitChance: function(enemy) {
 		let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -45407,7 +47618,7 @@ function waterlet(area) {
 					customizeEachWord(`Grassling `, 'red', line1)
 					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
 				}, 
-				damageType: 'air',
+				damageType: 'wind',
 				penetrationTypes: ['slashing', 'piercing'],
 				combatType: 'ranged',
 				castTime: 5000,
@@ -45512,13 +47723,13 @@ function lesserMudElemental(area) {
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Lessser Mud Elem.',
+		name: 'Lessser Mud Ele',
 		refName: 'lesserMudElemental',
-		keywords: ['lesserMudElemental'],
+		keywords: ['lesser', 'mud', 'elemental', 'lesser mud elemental'],
 		health: () => 30 + (this.level * this.con),
 		maxHealth: () => 30 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -45537,13 +47748,6 @@ function lesserMudElemental(area) {
 		itemDropsRoll: function () {
 			const itemDrops =  [mudBall, muddyGloves]
 			const probability = [100]
-			if (player.playerClass.name == 'Fighter' || player.playerClass.name == 'Knight') {
-				itemDrops.push(muddyShortsword)
-				probability.push(100)
-			} else if (player.guild == 'Sinistral') {
-				itemDrops.push(muddyDagger)
-				probability.push(100)
-			}
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		level: () => {
@@ -45583,7 +47787,7 @@ function lesserMudElemental(area) {
 			return attackType
 		},
 		damageCalculation: function() {
-			return randomNumberRange(3, 4)
+			return randomNumberRange(7, 9)
 		},
 		hitChance: function(enemy) {
 		let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -45611,7 +47815,7 @@ function lesserMudElemental(area) {
 					customizeEachWord(`Grassling `, 'red', line1)
 					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
 				}, 
-				damageType: 'air',
+				damageType: 'wind',
 				penetrationTypes: ['slashing', 'piercing'],
 				combatType: 'ranged',
 				castTime: 5000,
@@ -45705,7 +47909,7 @@ function lesserWaterElemental(area) {
 		hostile: true,
 		combat: false,
 		armor: 5,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 0,
 			ranged: 100,
@@ -45718,13 +47922,13 @@ function lesserWaterElemental(area) {
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Lsr Water Elemental',
+		name: 'Lesser Water Ele',
 		refName: 'lesserWaterElemental',
 		keywords: ['lesser', 'water', 'elemental', 'lesser water elemental', 'water elemental', 'lesser water'],
 		health: () => 30 + (this.level * this.con),
 		maxHealth: () => 30 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -45782,7 +47986,7 @@ function lesserWaterElemental(area) {
 			return attackType
 		},
 		damageCalculation: function() {
-			return randomNumberRange(3, 4)
+			return randomNumberRange(7, 9)
 		},
 		hitChance: function(enemy) {
 		let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -45855,7 +48059,7 @@ function lesserGrassElemental(area) {
 		hostile: true,
 		combat: false,
 		armor: 5,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 0,
 			ranged: 50,
@@ -45868,13 +48072,13 @@ function lesserGrassElemental(area) {
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Lsr Grass Elemental',
+		name: 'Lesser Grass Elemental',
 		refName: 'lesserGrassElemental',
-		keywords: ['lesserGrassElemental'],
+		keywords: ['lesser', 'grass', 'elemental', 'lesser grass elemental'],
 		health: () => 30 + (this.level * this.con),
 		maxHealth: () => 30 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -45960,7 +48164,7 @@ function lesserGrassElemental(area) {
 					customizeEachWord(`Lesser Grass Elemental `, 'red', line1)
 					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
 				}, 
-				damageType: 'air',
+				damageType: 'wind',
 				penetrationTypes: ['slashing', 'piercing'],
 				combatType: 'ranged',
 				castTime: 5000,
@@ -46020,155 +48224,10 @@ function lesserGrassElemental(area) {
 	return lesserGrassElemental
 }
 
-function skeleton(area) {
-	let skeleton = {
-		color: `red`,
-		picture: "images/monsters/undead/skeletons/skeleton/skeleton.png",
-		entersTheRoomPhrase: `clacks in!`,
-		advancePhrase: `creeps toward you..`,
-		deathPhrase: `lets out a hoarse scream as the magic leaves its bones`,
-		entersExitsRoomPhrase: `creeps`,
-		hostile: true,
-		combat: false,
-		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Skeleton',
-		refName: 'skeleton',
-		keywords: ['skeleton'],
-		health: () => 80 + (this.level * this.con),
-		maxHealth: () => 80 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(20, 35),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [smallBone, largeBone, muddyGloves, crackedBone]
-			const probability = [10, 10, 10, 10]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(5, 8)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(8, 15)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A skeleton animated by magic`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'swings its bony arm at you!',
-		missPhrase: 'swings its bony arm at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 100, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 5000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return skeleton
-}
 function koboldChild(area) {
 	let koboldChild = {
 		color: `red`,
-		picture: "images/monsters/skeleton1.jpg",
+		picture: "images/monsters/kobolds/kobold child/kobold child.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a high pitched cry as it dies!`,
@@ -46176,7 +48235,7 @@ function koboldChild(area) {
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
@@ -46195,7 +48254,7 @@ function koboldChild(area) {
 		health: () => (this.level * this.con),
 		maxHealth: () => (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -46265,8 +48324,8 @@ function koboldChild(area) {
 		death: function (enemy) {
 			enemyDeath(enemy)
 		},
-		strikePhrase: 'swings its bony arm at you!',
-		missPhrase: 'swings its bony arm at you and misses!',
+		strikePhrase: 'swings at you with a stick!',
+		missPhrase: 'swings a stick at you and misses!',
 		rangedAttackPhrase: '',
 		rangedMissPhrase: '',
 		id: function () {
@@ -46313,7 +48372,7 @@ function koboldChild(area) {
 function koboldScoundrel(area) {
 	let koboldScoundrel = {
 		color: `red`,
-		picture: "images/monsters/skeleton1.jpg",
+		picture: "images/monsters/kobolds/kobold scoundrel/kobold scoundrel.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a soft howl as it dies`,
@@ -46321,7 +48380,7 @@ function koboldScoundrel(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
@@ -46340,7 +48399,7 @@ function koboldScoundrel(area) {
 		health: () => 40 + (this.level * this.con),
 		maxHealth: () => 40 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -46410,7 +48469,7 @@ function koboldScoundrel(area) {
 		death: function (enemy) {
 			enemyDeath(enemy)
 		},
-		strikePhrase: 'swings its bony arm at you!',
+		strikePhrase: 'jabs at you with a broken spear!',
 		missPhrase: 'swings its bony arm at you and misses!',
 		rangedAttackPhrase: '',
 		rangedMissPhrase: '',
@@ -46457,10 +48516,10 @@ function koboldScoundrel(area) {
 }
 
 
-function koboldSpearman(area) {
-	let koboldSpearman = {
+function koboldSpearthrower(area) {
+	let koboldSpearthrower = {
 		color: `red`,
-		picture: "images/monsters/skeleton1.jpg",
+		picture: "images/monsters/kobolds/kobold spearthrower/kobold spearthrower.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a whimpy howl as it dies`,
@@ -46468,7 +48527,7 @@ function koboldSpearman(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 50,
 			ranged: 0,
@@ -46481,13 +48540,13 @@ function koboldSpearman(area) {
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Kobold Spearman',
-		refName: 'koboldSpearman',
-		keywords: ['kobold', 'spearman', 'kobold spearman'],
+		name: 'Kobold Spearthrower',
+		refName: 'koboldSpearthrower',
+		keywords: ['kobold', 'thrower', 'kobold thrower'],
 		health: () => 40 + (this.level * this.con),
 		maxHealth: () => 40 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -46557,17 +48616,17 @@ function koboldSpearman(area) {
 				windUpPhrase: function(enemy) {
 					let line1 = lineFunc()
 					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Kobold Spearman `, 'red', line1)
+					customizeEachWord(`Kobold Spearthrower `, 'red', line1)
 					customizeEachWord(`postures to take aim at you!`, 'white', line1)
 				}, 
 				abilityPhrase: function(enemy) {
 					let line1 = lineFunc()
 					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Kobold Spearman `, 'red', line1)
+					customizeEachWord(`Kobold Spearthrower `, 'red', line1)
 					customizeEachWord(`launches a spear at you!`, 'white', line1)
 				}, 
 				damageType: 'physical',
-				penetrationTypes: ['slashing', 'piercing'],
+				penetrationTypes: ['piercing'],
 				combatType: 'ranged',
 				castTime: 4000,
 			},
@@ -46575,7 +48634,7 @@ function koboldSpearman(area) {
 		meleeAbilityCalculation: {
 		},
 		desc: function () {
-			let description = `A Kobold Spearman`
+			let description = `A Kobold Spearthrower`
 			enemyDescription(this, description)
 		},
 		death: function (enemy) {
@@ -46624,12 +48683,12 @@ function koboldSpearman(area) {
 			monsterBehavior(this)
 		},
 	}
-	return koboldSpearman
+	return koboldSpearthrower
 }
 function koboldArcher(area) {
 	let koboldArcher = {
 		color: `red`,
-		picture: "images/monsters/skeleton1.jpg",
+		picture: "images/monsters/kobolds/kobold archer/kobold archer.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a whimpy howl as it dies`,
@@ -46637,7 +48696,7 @@ function koboldArcher(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 0,
 			ranged: 100,
@@ -46656,7 +48715,7 @@ function koboldArcher(area) {
 		health: () => 40 + (this.level * this.con),
 		maxHealth: () => 40 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -46806,7 +48865,7 @@ function koboldDigger(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
@@ -46822,10 +48881,10 @@ function koboldDigger(area) {
 		name: 'Kobold Digger',
 		refName: 'koboldDigger',
 		keywords: ['kobold', 'digger', 'kobold digger'],
-		health: () => 40 + (this.level * this.con),
-		maxHealth: () => 40 + (this.level * this.con),
+		health: () => 80 + (this.level * this.con),
+		maxHealth: () => 80 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -46836,8 +48895,8 @@ function koboldDigger(area) {
 			return enemyGoldDrops(goldAmount)
 		},
 		itemDropsRoll: function () {
-			const itemDrops =  [rustySword, leatherGrips, dirtyRags, halfEatenFish, copperOre]
-			const probability = [10, 10, 5, 5, 20, 20, 5]
+			const itemDrops =  [dirtyRags, halfEatenFish, copperOre, pickaxe]
+			const probability = [20, 20, 5, 25]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
@@ -46877,7 +48936,7 @@ function koboldDigger(area) {
 			return attackType
 		},
 		damageCalculation: function() {
-			return randomNumberRange(10, 15)
+			return randomNumberRange(12, 18)
 		},
 			hitChance: function(enemy) {
 			let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -46967,7 +49026,7 @@ function koboldDigger(area) {
 function koboldChief(area) {
 	let koboldChief = {
 		color: `red`,
-		picture: "images/monsters/skeleton1.jpg",
+		picture: "images/monsters/kobolds/kobold chief/kobold chief.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a whimpy howl as it dies`,
@@ -46975,16 +49034,16 @@ function koboldChief(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 75,
 			ranged: 0,
 			meleeAbility: 25,
 			rangedAbility: 0,
 		},
-		slashingArmor: 10,
-		piercingArmor: 10,
-		bluntArmor: 10,
+		slashingArmor: 15,
+		piercingArmor: 15,
+		bluntArmor: 15,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -46994,7 +49053,7 @@ function koboldChief(area) {
 		health: () => 50 + (this.level * this.con),
 		maxHealth: () => 50 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -47159,7 +49218,7 @@ function outlaw(area) {
 		health: () => 40 + (this.level * this.con),
 		maxHealth: () => 40 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -47317,7 +49376,7 @@ function wildBoar(area) {
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [rawBoarMeat, lightHide]
-			const probability = [20, 10]
+			const probability = [40, 20]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
@@ -47462,7 +49521,7 @@ function stag(area) {
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [stagAntlers, lightHide]
-			const probability = [20, 10]
+			const probability = [40, 20]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
@@ -47584,9 +49643,9 @@ function impling(area) {
 			meleeAbility: 0,
 			rangedAbility: 100,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		slashingArmor: 5,
+		piercingArmor: 5,
+		bluntArmor: 5,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -47664,19 +49723,21 @@ function impling(area) {
 				windUpPhrase: function() {
 					let line1 = lineFunc()
 					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Impling `, 'green', line1)
+					customizeEachWord(`Impling `, 'red', line1)
 					customizeEachWord(`begins chanting strange words of magic..`, 'white', line1)
 				},
 				abilityPhrase: function() {
 					let line1 = lineFunc()
-					customizeEachWord(`With outstretched fingers aimed at you, the `, 'white', line1)
+					customizeEachWord(`With outstretched fingers, the `, 'white', line1)
 					customizeEachWord(`Impling `, 'red', line1)
 					customizeEachWord(`shoots out a small streak of `, 'white', line1)
-					customizeEachWord(`fire`, 'fire', line1)
-					customizeEachWord(`!`, 'white', line1)
+					customizeEachWord(`fire `, 'fire', line1)
+					customizeEachWord(`at you!`, 'white', line1)
 
 				},
+				name: 'Fireball',
 				damageType: 'fire', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
+				color: 'fire',
 				penetrationTypes: [],
 				combatType: 'ranged',
 				castTime: 3000,
@@ -47737,55 +49798,56 @@ function impling(area) {
 	return impling
 }
 
-
-
-function giantRat(area) {
-	let giantRat = {
+function skeleton(area) {
+	let skeleton = {
 		color: `red`,
-		picture: "images/monsters/animals/giant rat/giant rat.png",
-		entersTheRoomPhrase: `squeeks in!`,
-		advancePhrase: `scurries toward you..`,
-		deathPhrase: `wimpers as it flops over dead`,
-		entersExitsRoomPhrase: `scurries`,
+		picture: "images/monsters/undead/skeletons/skeleton/skeleton.png",
+		entersTheRoomPhrase: `clacks in!`,
+		advancePhrase: `creeps toward you..`,
+		deathPhrase: `lets out a hoarse scream as the magic leaves its bones`,
+		entersExitsRoomPhrase: `creeps`,
 		hostile: true,
 		combat: false,
-		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		armor: 0,
+		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		slashingArmor: 5,
+		piercingArmor: 15,
+		bluntArmor: 5,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Giant Rat',
-		refName: 'giantRat',
-		keywords: ['giant', 'rat', 'giant rat'],
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
+		name: 'Skeleton',
+		refName: 'skeleton',
+		keywords: ['skeleton'],
+		health: () => 100 + (this.level * this.con),
+		maxHealth: () => 100 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
 		gold: function () {
-			return randomNumberRange(10, 15)
+			const goldAmount = {
+				probability1: randomNumberRange(20, 35),
+			}
+			return enemyGoldDrops(goldAmount)
 		},
 		itemDropsRoll: function () {
-			const itemDrops =  [ratTail, ratSkin, lightHide]
-			const probability = [20, 20, 20]
+			const itemDrops =  [smallBone, largeBone, muddyGloves, crackedBone]
+			const probability = [10, 10, 10, 10]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
 		level: () => {
-			let level = randomNumberRange(5, 10)
+			let level = randomNumberRange(5, 8)
 			return level
 		},
 		str: () => 1 + this.level,
@@ -47818,7 +49880,155 @@ function giantRat(area) {
 			return attackType
 		},
 		damageCalculation: function() {
-			return randomNumberRange(3, 9)
+			return randomNumberRange(10, 18)
+		},
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A skeleton animated by magic`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'swings its bony arm at you!',
+		missPhrase: 'swings its bony arm at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 100, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 5000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return skeleton
+}
+
+function giantRat(area) {
+	let giantRat = {
+		color: `red`,
+		picture: "images/monsters/animals/giant rat/giant rat.png",
+		entersTheRoomPhrase: `squeeks in!`,
+		advancePhrase: `scurries toward you..`,
+		deathPhrase: `wimpers as it flops over dead`,
+		entersExitsRoomPhrase: `scurries`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+		damageTypes: ['slashing'],		
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		strikePhrase: 'bares its fangs at you and bites!',
+		missPhrase: 'bites at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		slashingArmor: 5,
+		piercingArmor: 5,
+		bluntArmor: 5,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Giant Rat',
+		refName: 'giantRat',
+		keywords: ['giant', 'rat', 'giant rat'],
+		level: () => {
+			let level = randomNumberRange(5, 10)
+			return level
+		},
+		health: () => 50 + (this.level * this.con),
+		maxHealth: () => 50 + (this.level * this.con),
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		itemDrops: [],
+		gold: function () {
+			return randomNumberRange(10, 15)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [ratTail, ratSkin, lightHide]
+			const probability = [20, 20, 20]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+
+		str: () => 1 + this.level,
+		dex: () => 1 + this.level,
+		agi: () => 1 + this.level,
+		int: () => 1 + this.level,
+		wis: () => 1 + this.level,
+		con: () => 5 + this.level,
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+		damageCalculation: function() {
+			return randomNumberRange(8, 12)
 		},
 			hitChance: function(enemy) {
 			let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -47836,10 +50046,6 @@ function giantRat(area) {
 		death: function (enemy) {
 			enemyDeath(enemy)
 		},
-		strikePhrase: 'swings its bony arm at you!',
-		missPhrase: 'swings its bony arm at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
 		id: function () {
 			for (let i = 0; i < 50; i++) {
 				if (!pushMonster[i]) {
@@ -47891,27 +50097,27 @@ function graveWorm(area) {
 		entersExitsRoomPhrase: `writhes`,
 		hostile: true,
 		combat: false,
-		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		armor: 0,
+		damageTypes: ['piercing'],		
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		slashingArmor: 1,
+		piercingArmor: 1,
+		bluntArmor: 1,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
 		name: 'Grave Worm',
 		refName: 'graveWorm',
 		keywords: ['grave', 'worm', 'grave worm'],
-		health: () => 10 + (this.level * this.con),
-		maxHealth: () => 10 + (this.level * this.con),
+		health: () => 40 + (this.level * this.con),
+		maxHealth: () => 40 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -48019,7 +50225,7 @@ function graveWorm(area) {
 		enemyBehaviorInterval: undefined,
 		behaviorInterval: false,
 		mainInterval: 1000, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 3000,
+		enemyMoveSpeed: 4000,
 		enemyBehavior: function () {
 			despawnAfter5Minutes(this)
 			monsterBehavior(this)
@@ -48037,29 +50243,36 @@ function cultist(area) {
 		entersExitsRoomPhrase: `strides`,
 		hostile: true,
 		combat: false,
-		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		armor: 0,
+		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
 			ranged: 0,
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		slashingArmor: 10,
+		piercingArmor: 10,
+		bluntArmor: 10,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
 		name: 'Cultist',
 		refName: 'cultist',
 		keywords: ['cultist'],
-		health: () => 40 + (this.level * this.con),
-		maxHealth: () => 40 + (this.level * this.con),
+		level: () => {
+			let level = randomNumberRange(6, 7)
+			return level
+		},
+		health: () => 100 + (this.level * this.con),
+		maxHealth: () => 100 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(8, 16)
+		},
 		itemDrops: [],
 		gold: function () {
 			return randomNumberRange(15, 40)
@@ -48076,10 +50289,7 @@ function cultist(area) {
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(6, 7)
-			return level
-		},
+
 		str: () => 1 + this.level,
 		dex: () => 1 + this.level,
 		agi: () => 1 + this.level,
@@ -48109,10 +50319,7 @@ function cultist(area) {
 			console.log(attackType, ' ATTACK TYPE')
 			return attackType
 		},
-		damageCalculation: function() {
-			return randomNumberRange(8, 15)
-		},
-			hitChance: function(enemy) {
+		hitChance: function(enemy) {
 			let enemyHitChance = calculateEnemyHitChance(enemy)
 			let hitRoll = Math.floor(Math.random() * 100) + 1
 			return enemyHitChance >= hitRoll
@@ -48191,9 +50398,9 @@ function bandit(area) {
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		slashingArmor: 10,
+		piercingArmor: 10,
+		bluntArmor: 10,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -48203,7 +50410,7 @@ function bandit(area) {
 		health: () => 30 + (this.level * this.con),
 		maxHealth: () => 30 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 10,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -48332,9 +50539,9 @@ function outlaw(area) {
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		slashingArmor: 15,
+		piercingArmor: 15,
+		bluntArmor: 15,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -48344,7 +50551,7 @@ function outlaw(area) {
 		health: () => 20 + (this.level * this.con),
 		maxHealth: () => 20 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 10,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -48489,8 +50696,8 @@ function strikePhraseFunc(enemyName, enemyColor, enemyDamage, damageType, armorB
 	if (damageType != undefined) {
 		customizeEachWord(`${damageType} `, damageType, line2)
 	}
-	customizeEachWord(`damage `, 'yellow', line2)
-	customizeEachWord(`(your armor blocks `, 'white', line2)
+	customizeEachWord(`damage. `, 'yellow', line2)
+	customizeEachWord(`(Your armor blocks `, 'white', line2)
 	customizeEachWord(`${armorBlockAmount}`, 'light-blue', line2)
 	customizeEachWord(`)`, 'white', line2)
 	blankSpace()
@@ -48498,10 +50705,14 @@ function strikePhraseFunc(enemyName, enemyColor, enemyDamage, damageType, armorB
 }
 function strikeMissPhraseFunc(enemyName, enemyColor, enemyMissPhrase) {
 	let line1 = document.createElement('div')
-	blankSpace()
 	customizeEachWord(`${enemyName} `, enemyColor, line1)
 	customizeEachWord(`${enemyMissPhrase}`, 'white', line1)
-	blankSpace()
+	updateScroll()
+}
+function enemyAbilityMissPhraseFunc(enemy) {
+	let line1 = document.createElement('div')
+	customizeEachWord(`${enemy.name} `, enemy.color, line1)
+	customizeEachWord(`${enemyMissPhrase}`, 'white', line1)
 	updateScroll()
 }
 function rangedAttackPhraseFunc(enemyName, enemyColor, enemyDamage, damageType, armorBlockAmount, phrase) {
@@ -48515,7 +50726,7 @@ function rangedAttackPhraseFunc(enemyName, enemyColor, enemyDamage, damageType, 
 	if (damageType != undefined) {
 		customizeEachWord(`${damageType} `, damageType, line2)
 	}
-	customizeEachWord(`damage `, 'yellow', line2)
+	customizeEachWord(`damage. `, 'yellow', line2)
 	customizeEachWord(`(your armor blocks `, 'white', line2)
 	customizeEachWord(`${armorBlockAmount}`, 'light-blue', line2)
 	customizeEachWord(`)`, 'white', line2)
@@ -48524,10 +50735,8 @@ function rangedAttackPhraseFunc(enemyName, enemyColor, enemyDamage, damageType, 
 }
 function rangedMissPhraseFunc(enemyName, enemyColor, enemyMissPhrase) {
 	let line1 = document.createElement('div')
-	blankSpace()
 	customizeEachWord(`${enemyName} `, enemyColor, line1)
 	customizeEachWord(`${enemyMissPhrase}`, 'white', line1)
-	blankSpace()
 	updateScroll()
 }
 function rangedAbilityPhraseFunc(ability) {
@@ -48536,20 +50745,20 @@ function rangedAbilityPhraseFunc(ability) {
 	blankSpace()
 	ability.abilityPhrase()
 	customizeEachWord(`${ability.name} `, ability.color, line1)
-	customizeEachWord(`hits you for `, 'white', line1)
+	customizeEachWord(`hits you for `, 'yellow', line1)
 	customizeEachWord(`${ability.totalDamage} `, 'light-blue', line1)
 	if (ability.penetrationType) {
 		customizeEachWord(`${ability.penetrationType} `, `${ability.penetrationType}`, line1)
 	}
 	if (ability.damageType != 'physical') {
 		customizeEachWord(`${ability.damageType} `, ability.damageType, line1)
-		customizeEachWord(`damage `, 'yellow', line1)
-		customizeEachWord(`(you resist `, 'white', line1)
+		customizeEachWord(`damage. `, 'yellow', line1)
+		customizeEachWord(`(You resist `, 'white', line1)
 		customizeEachWord(`${ability.mitigationAmount}`, 'light-blue', line1)
 		customizeEachWord(`)`, 'white', line1)
 	} else {
-		customizeEachWord(`damage `, 'yellow', line1)
-		customizeEachWord(`(your armor blocks `, 'white', line1)
+		customizeEachWord(`damage. `, 'yellow', line1)
+		customizeEachWord(`(Your armor blocks `, 'white', line1)
 		customizeEachWord(`${ability.mitigationAmount}`, 'light-blue', line1)
 		customizeEachWord(`)`, 'white', line1)
 		}
@@ -48562,19 +50771,23 @@ function meleeAbilityPhraseFunc(ability, enemyName, enemyColor) {
 	let line2 = document.createElement('div')
 	blankSpace()
 	ability.abilityPhrase()
-	customizeEachWord(`You are hit for `, 'yellow', line2)
-	customizeEachWord(`${ability.totalDamage} `, 'light-blue', line2)
+	customizeEachWord(`${ability.name} `, ability.color, line1)
+	customizeEachWord(`hits you for `, 'yellow', line1)
+	customizeEachWord(`${ability.totalDamage} `, 'light-blue', line1)
+	if (ability.penetrationType) {
+		customizeEachWord(`${ability.penetrationType} `, `${ability.penetrationType}`, line1)
+	}
 	if (ability.damageType != 'physical') {
-		customizeEachWord(`${ability.damageType} `, ability.damageType, line2)
-		customizeEachWord(`damage `, 'yellow', line2)
-		customizeEachWord(`(you resist `, 'white', line2)
-		customizeEachWord(`${ability.mitigationAmount}`, 'light-blue', line2)
-		customizeEachWord(`)`, 'white', line2)
+		customizeEachWord(`${ability.damageType} `, ability.damageType, line1)
+		customizeEachWord(`damage. `, 'yellow', line1)
+		customizeEachWord(`(You resist `, 'white', line1)
+		customizeEachWord(`${ability.mitigationAmount}`, 'light-blue', line1)
+		customizeEachWord(`)`, 'white', line1)
 	} else {
-		customizeEachWord(`damage `, 'yellow', line2)
-		customizeEachWord(`(your armor blocks `, 'white', line2)
-		customizeEachWord(`${ability.mitigationAmount}`, 'light-blue', line2)
-		customizeEachWord(`)`, 'white', line2)
+		customizeEachWord(`damage. `, 'yellow', line1)
+		customizeEachWord(`(Your armor blocks `, 'white', line1)
+		customizeEachWord(`${ability.mitigationAmount}`, 'light-blue', line1)
+		customizeEachWord(`)`, 'white', line1)
 		}
 		blankSpace()
 		updateScroll()
@@ -48749,16 +50962,18 @@ async function monsterBehavior(enemy) {
 				player.sideStep.flavorText(enemy)
 				player.quickshot.strike(enemy)
 			} else {
-			  await engagePlayer(enemy)
-			  await waitForNextAction(timerToUse)
-			  if (currentAttackType == 'melee' && enemy.isAlive() && !enemy.isStunned && enemy.combat) {
+			await engagePlayer(enemy)
+			await waitForNextAction(timerToUse)
+			if (currentAttackType == 'melee' && enemy.isAlive() && !enemy.isStunned && enemy.combat) {
 				await enemySwing(enemy)
 					enemy.capturedAttackTimer = undefined
 				} else if (currentAttackType == 'meleeAbility'&& enemy.isAlive() && enemy.combat) {
 					await enemyMeleeAbility(enemy)
 					enemy.capturedAttackTimer = undefined
-				} else if (!enemy.combat) {
+				} else if (!enemy.combat && coordinatesMatch(enemy, player) && shouldEngage) {
 					await engagePlayer(enemy)
+				} else {
+					enemy.enemyMove(enemy)
 				}
 			}
 
@@ -48796,6 +51011,7 @@ async function shouldEnemyMove(enemy) {
 }
 
 async function engagePlayer(enemy) {
+	if (!player.isAlive) {return}
 	let line1 = lineFunc()
 	customizeEachWord(`The `, 'white', line1)
 	customizeEachWord(`${enemy.name} `, 'red', line1)
@@ -48807,6 +51023,7 @@ async function engagePlayer(enemy) {
 function calculateEnemyHitChance(enemy) {
 	let playerValues = player.dodge
 	let enemyValues = enemy.level + enemy.accuracy + 75
+	console.log(enemyValues - playerValues, ' ENEMY HIT CHANCE')
 	return enemyValues - playerValues
 }
 
@@ -48861,7 +51078,7 @@ async function enemySwing(enemy) { //CALCULATE ENEMY ATTACK FUNCTION IS USED
 			// enemy.strikePhrase(swingObject.totalDamage, swingObject.damageType, swingObject.mitigationAmount)
 			console.log(swingObject)
 			strikePhraseFunc(enemy.name, enemy.color, swingObject.totalDamage, swingObject.damageType, swingObject.mitigationAmount, enemy.strikePhrase)
-			playerTakesDamage(swingObject.totalDamage)
+			applyDamageToPlayer(swingObject.totalDamage)
 			if (player.hardenedSkin.level > 0) {player.hardenedSkin.activate(enemy)}
 		} else {
 			return
@@ -48890,7 +51107,7 @@ async function enemyRangedAttack(enemy) { //CALCULATE ENEMY ATTACK FUNCTION IS U
 	} else if (swingObject.wasBlocked == false) {
 		if (enemy.health > 0) {
 			rangedAttackPhraseFunc(enemy.name, enemy.color, swingObject.totalDamage, swingObject.damageType, swingObject.mitigationAmount, enemy.rangedAttackPhrase)
-			playerTakesDamage(swingObject.totalDamage)
+			applyDamageToPlayer(swingObject.totalDamage)
 		} else {
 			return
 		}
@@ -48907,14 +51124,22 @@ async function enemyRangedAttack(enemy) { //CALCULATE ENEMY ATTACK FUNCTION IS U
 
 async function enemyRangedAbility(enemy) { //CALCULATE
 	let abilityObject = calculateEnemyRangedAbility(enemy)
-	console.log(abilityObject, ' ABILITY OJECT')
-	if (!player.isAlive || !coordinatesMatch(player, enemy)) {return}
+	if (!player.isAlive || !coordinatesMatch(player, enemy)) {
+		enemy.enemyMove(enemy)
+		return
+	}
 	abilityObject.windUpPhrase()
 	await waitForNextAction(abilityObject.castTime)
-	if (!player.isAlive || !coordinatesMatch(player, enemy)) {return}
-	if (enemy.health > 0) {
+	if (!player.isAlive || !coordinatesMatch(player, enemy)) {
+		enemy.enemyMove(enemy)
+		return
+	}
+	console.log(abilityObject)
+	if (abilityObject.enemyHits == false) {
+		abilityObject.flavorTextMiss(enemy)
+	} else if (enemy.health > 0) {
 		rangedAbilityPhraseFunc(abilityObject, enemy.color, enemy.name)
-		playerTakesDamage(abilityObject.totalDamage)
+		applyDamageToPlayer(abilityObject.totalDamage)
 	}
 	displayPlayerHealthFunc()
 	updatePlayerStats()
@@ -48925,24 +51150,24 @@ async function enemyRangedAbility(enemy) { //CALCULATE
 async function enemyMeleeAbility(enemy) { //CALCULATE PHYSICAL ABILITY
 	let abilityObject = calculateEnemyMeleeAbility(enemy)
 	if (!player.isAlive || !coordinatesMatch(player, enemy) || !enemy.combat) {
-		let test = enemyIsOneRoomFromPlayer(enemy)
+		// let test = enemyIsOneRoomFromPlayer(enemy)
 		enemy.enemyMove(enemy)
 		return
 	}
 	abilityObject.windUpPhrase()
 	await waitForNextAction(abilityObject.castTime)
 	if (!player.isAlive || !coordinatesMatch(player, enemy) || !enemy.combat) {
-		let test = enemyIsOneRoomFromPlayer(enemy)
+		// let test = enemyIsOneRoomFromPlayer(enemy)
 		enemy.enemyMove(enemy)
 		return
 	}
-	if (enemy.health > 0) {
+	console.log(abilityObject)
+	if (abilityObject.enemyHits == false) {
+		abilityObject.flavorTextMiss(enemy)
+	} else if (enemy.health > 0) {
 		meleeAbilityPhraseFunc(abilityObject, enemy.name, enemy.color)
-		playerTakesDamage(abilityObject.totalDamage)
-
-	} else {
-		return
-	}
+		applyDamageToPlayer(abilityObject.totalDamage)
+	} 
 	displayPlayerHealthFunc()
 	updatePlayerStats()
 	enemyLocation()
@@ -48964,11 +51189,13 @@ function calculateEnemyAttack(enemy) {
 		wasBlocked: false,
 	}
 	if (damageObject.damageType !== undefined) {
-		const damageWithoutArmorPenalty = Math.floor(damageObject.enemyRawDamage * (10 / (10 + damageObject.playerPenArmor)))
-		damageObject.totalDamage = damageWithoutArmorPenalty <= 0 ? 0 : damageWithoutArmorPenalty
+		const damageWithoutArmorPenalty = (damageObject.enemyRawDamage - damageObject.playerPenArmor) * (1000 / (1000 + damageObject.playerPenArmor)) <= 0 ? 0 : (damageObject.enemyRawDamage - damageObject.playerPenArmor) * (1000 / (1000 + damageObject.playerPenArmor))
+		damageObject.totalDamage = Math.floor(damageWithoutArmorPenalty) <= 0 ? 0 : Math.floor(damageWithoutArmorPenalty)
 	  } else {
-		const damageWithoutArmorPenalty = Math.floor(damageObject.enemyRawDamage * (10 / (10 + damageObject.playerArmor)))
-		damageObject.totalDamage = damageWithoutArmorPenalty <= 0 ? 0 : damageWithoutArmorPenalty
+		const damageWithoutArmorPenalty = (damageObject.enemyRawDamage - damageObject.playerArmor) * (1000 / (1000 + damageObject.playerArmor)) <= 0 ? 0 : (damageObject.enemyRawDamage - damageObject.playerArmor) * (1000 / (1000 + damageObject.playerArmor))
+		// const damageAfterMitigation = (damageBeforeMitigation - armorAfterPen) * (1000 / (1000 + armorAfterPen)) <= 0 ? 0 : (damageBeforeMitigation - armorAfterPen) * (1000 / (1000 + armorAfterPen))
+
+		damageObject.totalDamage = Math.floor(damageWithoutArmorPenalty) <= 0 ? 0 : Math.floor(damageWithoutArmorPenalty)
 	  }
 	damageObject.mitigationAmount = Math.floor(damageObject.enemyRawDamage - damageObject.totalDamage)
 	let doesPlayerHaveShield = pushItem.some(item => item.type.shield == true && (item.roomId == 'right hand' || item.roomId == 'left hand'))
@@ -48983,6 +51210,9 @@ function calculateEnemyRangedAbility(enemy) {
 	let enemyAbilityObject = enemy.rangedAbilityCalculation
 	let chosenAbilityName = determineEnemyAbility(enemyAbilityObject) //this will be a string like ability1, ability2, ability3, etc
 	let chosenAbility = enemyAbilityObject[chosenAbilityName]
+	if (chosenAbility.damageType == 'fire') {
+		
+	}
 	if (chosenAbility.damageType != 'physical') {
 		chosenAbility.rawDamage = chosenAbility.damage()
 		chosenAbility.totalDamage = Math.floor(chosenAbility.rawDamage * (1 - player.magicResist[chosenAbility.damageType] * 0.01))
@@ -48990,7 +51220,7 @@ function calculateEnemyRangedAbility(enemy) {
 		return chosenAbility
 	} else {
 		const penetrationType = chosenAbility.penetrationTypes[randomNumberRange(0, chosenAbility.penetrationTypes.length - 1)] != undefined ? chosenAbility.penetrationTypes[randomNumberRange(0, chosenAbility.penetrationTypes.length - 1)] : undefined
-		chosenAbility.enemyHits = enemy.hitChance()
+		chosenAbility.enemyHits = enemy.hitChance(enemy)
 		chosenAbility.rawDamage = chosenAbility.damage()
 		chosenAbility.penetrationType = penetrationType
 		chosenAbility.playerPenArmor = penetrationType == 'slashing' ? player.slashingArmor : penetrationType == 'piercing' ? player.piercingArmor : penetrationType == 'blunt' ? player.bluntArmor : undefined
@@ -49017,7 +51247,7 @@ function calculateEnemyMeleeAbility(enemy) {
 		return chosenAbility
 	} else {
 		const penetrationType = chosenAbility.penetrationTypes[randomNumberRange(0, chosenAbility.penetrationTypes.length - 1)] != undefined ? chosenAbility.penetrationTypes[randomNumberRange(0, chosenAbility.penetrationTypes.length - 1)] : undefined
-		chosenAbility.enemyHits = enemy.hitChance()
+		chosenAbility.enemyHits = enemy.hitChance(enemy)
 		chosenAbility.rawDamage = chosenAbility.damage()
 		chosenAbility.penetrationType = penetrationType
 		chosenAbility.playerPenArmor = penetrationType == 'slashing' ? player.slashingArmor : penetrationType == 'piercing' ? player.piercingArmor : penetrationType == 'blunt' ? player.bluntArmor : undefined
@@ -49055,154 +51285,6 @@ async function waitForNextAction(delayInMilliseconds) {
   }
 
 
-
-function koboldSpearThrower(area) {
-	let koboldSpearThrower = {
-		color: `red`,
-		x: function () {
-			return currentArea.x
-		},
-		y: function () {
-			return currentArea.y
-		},
-		z: function () {
-			return currentArea.z
-		},
-		level: () => {
-			let level = randomNumberRange(10, 10)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 10 + this.level,
-		entersTheRoomPhrase: `scampers in!`,
-		advancePhrase: `Shouldn't advance you because it's ranged`,
-		desc: function () {
-			let description = `The Kobold Spearthrower bounces back and forth yipping`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		deathPhrase: `'s yelp is cut short as it drops to the ground dead'`,
-		strikePhrase: function (enemyDamage) {
-			let line1 = document.createElement('div')
-			let line2 = document.createElement('div')
-			blankSpace()
-			customizeEachWord(`${this.name} `, 'red', line1)
-			customizeEachWord(`rares back before launching a spear at you!`, 'white', line1)
-			customizeEachWord(`You are hit for `, 'yellow', line2)
-			customizeEachWord(`${enemyDamage} `, 'light-blue', line2)
-			customizeEachWord(`damage `, 'yellow', line2)
-			customizeEachWord(`(your armor blocks `, 'white', line2)
-			customizeEachWord(`${playerBlockedDamage})`, 'light-blue', line2)
-			blankSpace()
-			updateScroll()
-		},
-		missPhrase: function () {
-			let line1 = document.createElement('div')
-			blankSpace()
-			customizeEachWord(`${this.name} `, 'red', line1)
-			customizeEachWord(`throws a spear at you and misses!`, 'white', line1)
-			blankSpace()
-			updateScroll()
-		},
-		entersExitsRoomPhrase: `darts in`,
-		hostile: true,
-		combat: false,
-		health: () => this.con * 5,
-		maxHealth: () => this.con * 5,
-		enemyAttackPower: () => 6,
-		accuracy: () => this.str + this.agi + this.dex,
-		dodge: () => 15,
-		factor: 1,
-		experience: () => this.level + 5,
-		armor: 5,
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {
-			
-		},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Kobold Spearthrower',
-		refName: 'kobold_spearthrower',
-		keywords: ['kobold', 'spearthrower', 'kobold spearthrower'],
-		abilityName: 'Blob Toss',
-		abilityUseChance: 50,
-		// useAbility: function () {
-		// 	let line1 = document.createElement('div')
-		// 	let line2 = document.createElement('div')
-		// 	let line3 = document.createElement('div')
-		// 	let roll = randomNumberRange(1, 100)
-		// 	if (roll <= 50) {
-		// 		let enemyAbilityRawDamage = Math.floor(7 + this.level)
-		// 		let enemyActualDamage = Math.floor(enemyAbilityRawDamage * (10 / (10 + player.armor))) <= 0 ? 0 : Math.floor(enemyAbilityRawDamage * (10 / (10 + player.armor)))
-		// 		let blockedDamage = enemyAbilityRawDamage - enemyActualDamage
-		// 		customizeEachWord(`${this.name} `, 'red', line1)
-		// 		customizeEachWord(`gets aggressive and begins snarling at you!`, 'white', line1)
-		// 		let ability1Timeout = setTimeout(() => {
-		// 			if (this.health > 0 && coordinatesMatch(this, player)) {
-		// 				blankSpace()
-		// 				customizeEachWord(`${this.name} `, 'red', line2)
-		// 				customizeEachWord(`lets out an angry "squeek!" as it leaps at you!`, 'white', line2)
-		// 				customizeEachWord(`Rat Bite `, 'orange', line3)
-		// 				customizeEachWord(`hits you for `, 'yellow', line3)
-		// 				customizeEachWord(`${enemyActualDamage} `, 'light-blue', line3)
-		// 				customizeEachWord(`damage`, 'yellow', line3)
-		// 				customizeEachWord(`(your armor blocks `, 'white', line3)
-		// 				customizeEachWord(`${blockedDamage}`, 'light-blue', line3)
-		// 				customizeEachWord(`)`, 'white', line3)
-		// 				blankSpace()
-		// 				player.health = player.health - enemyActualDamage
-		// 				displayPlayerHealthFunc()
-		// 				updatePlayerStats()
-		// 			} else {
-		// 				clearTimeout(ability1Timeout)
-		// 			}
-		// 			clearInterval(this.enemyBehaviorInterval)
-		// 			this.enemyBehavior()
-		// 		}, 4000)
-		// 	}
-		// },
-		abilityDamage: function () {},
-		itemDrops: [],
-		gold: function () {
-			return randomNumberRange(5, 12)
-		},
-		itemDropsRoll: function () {},
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: function () {
-			if (this.moveSwitch == 0) {
-				enemyMoveOneRoom(this)
-				// enemyAlwaysFindsPlayer(this)
-			} else if (this.moveSwitch == 1) {
-				enemyMovesRandomly(this)
-			} else if (this.moveSwitch == 2) {
-				// enemyAlwaysFindsPlayer(this)
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 4000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			rangedEnemyBehaviorNormal(this)
-		},
-	}
-	return koboldSpearThrower
-}
 
 function coordinatesMatch(a, b) {
 	return a.x === b.x && a.y === b.y && a.z === b.z
@@ -49251,8 +51333,8 @@ function goblin(area) {
 			customizeEachWord(`swings its weapon at you!`, 'white', line1)
 			customizeEachWord(`You are hit for `, 'yellow', line2)
 			customizeEachWord(`${enemyDamage} `, 'light-blue', line2)
-			customizeEachWord(`damage `, 'yellow', line2)
-			customizeEachWord(`(your armor blocks `, 'white', line2)
+			customizeEachWord(`damage. `, 'yellow', line2)
+			customizeEachWord(`(Your armor blocks `, 'white', line2)
 			customizeEachWord(`${playerBlockedDamage})`, 'light-blue', line2)
 			blankSpace()
 			updateScroll()
@@ -49270,7 +51352,7 @@ function goblin(area) {
 		health: () => this.con * 5,
 		maxHealth: () => this.con * 5,
 		enemyAttackPower: () => this.str + goblinLevel,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 5,
 		factor: 1,
 		experience: () => this.level,
@@ -49406,8 +51488,8 @@ function kobold(area) {
 			customizeEachWord(`swings its weapon at you!`, 'white', line1)
 			customizeEachWord(`You are hit for `, 'yellow', line2)
 			customizeEachWord(`${enemyDamage} `, 'light-blue', line2)
-			customizeEachWord(`damage `, 'yellow', line2)
-			customizeEachWord(`(your armor blocks `, 'white', line2)
+			customizeEachWord(`damage. `, 'yellow', line2)
+			customizeEachWord(`(Your armor blocks `, 'white', line2)
 			customizeEachWord(`${playerBlockedDamage})`, 'light-blue', line2)
 			blankSpace()
 			updateScroll()
@@ -49425,7 +51507,7 @@ function kobold(area) {
 		health: () => this.con * 5,
 		maxHealth: () => this.con * 5,
 		enemyAttackPower: () => this.str + koboldLevel,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 5,
 		factor: 1,
 		experience: () => this.level,
@@ -49561,8 +51643,8 @@ function orc(area) {
 			customizeEachWord(`swings its weapon at you!`, 'white', line1)
 			customizeEachWord(`You are hit for `, 'yellow', line2)
 			customizeEachWord(`${enemyDamage} `, 'light-blue', line2)
-			customizeEachWord(`damage `, 'yellow', line2)
-			customizeEachWord(`(your armor blocks `, 'white', line2)
+			customizeEachWord(`damage. `, 'yellow', line2)
+			customizeEachWord(`(Your armor blocks `, 'white', line2)
 			customizeEachWord(`${playerBlockedDamage})`, 'light-blue', line2)
 			blankSpace()
 			updateScroll()
@@ -49580,7 +51662,7 @@ function orc(area) {
 		health: () => this.con * 5,
 		maxHealth: () => this.con * 5,
 		enemyAttackPower: () => this.str + orcLevel,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 5,
 		factor: 1,
 		experience: () => this.level,
@@ -49738,8 +51820,8 @@ function blob(area) {
 			customizeEachWord(`spits at you and hits!`, 'white', line1)
 			customizeEachWord(`You are hit for `, 'yellow', line2)
 			customizeEachWord(`${enemyDamage} `, 'light-blue', line2)
-			customizeEachWord(`damage `, 'yellow', line2)
-			customizeEachWord(`(your armor blocks `, 'white', line2)
+			customizeEachWord(`damage. `, 'yellow', line2)
+			customizeEachWord(`(Your armor blocks `, 'white', line2)
 			customizeEachWord(`${playerBlockedDamage})`, 'light-blue', line2)
 			blankSpace()
 			updateScroll()
@@ -49756,7 +51838,7 @@ function blob(area) {
 		health: () => this.con * 5,
 		maxHealth: () => this.con * 5,
 		enemyAttackPower: () => 2 + blobLevel,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 5,
 		factor: 1,
 		experience: () => this.level,
@@ -49949,7 +52031,7 @@ function sideStepRoll(enemy) {
 }
 
 function cleaveAbility(targetedMonster) {
-	let allMonstersInRoom = getAllMonstersInRoom()
+	let allMonstersInRoom = getAllEnemiesInRoom()
 	let targetedMonsterIndex = allMonstersInRoom.indexOf(targetedMonster)
 	let previousMonster = allMonstersInRoom[targetedMonsterIndex - 1]
 	let previousPreviousMonster = allMonstersInRoom[targetedMonsterIndex - 2]
@@ -50015,14 +52097,40 @@ function displayDeathMessage() {
 
 function playerDeath() {
 	displayDeathMessage()
-	quickMessage(`You have been slain!`)
+	deathResetUI()
 	player.isAlive = false
 	player.combat = false
 	for (let i = 0; i < pushMonster.length; i++) {
 		pushMonster[i].combat = false
 	}
 }
-function playerTakesDamage(damage) {
+function deathResetUI() {
+	player.spellsConjured = []
+	const conjureBar1 = document.querySelector('.bar-1')
+	const conjureBar2 = document.querySelector('.bar-2')
+	const conjureBar3 = document.querySelector('.bar-3')
+	let cbArray1 = Array.from(conjureBar1.classList)
+	let cbArray2 = Array.from(conjureBar2.classList)
+	let cbArray3 = Array.from(conjureBar3.classList)
+	conjureBar1.classList = cbArray1[0]
+	conjureBar2.classList = cbArray2[0]
+	conjureBar3.classList = cbArray3[0]
+
+	conjureBar1.style.width = ''	
+	conjureBar2.style.width = ''	
+	conjureBar3.style.width = ''
+
+	player.warriorAbilityQueue = false
+	for (let spell in player) {
+		if (player[spell].chambered) {
+			player[spell].chambered = false
+		}
+	}
+}
+
+
+function applyDamageToPlayer(damage) {
+	damage = Math.floor(damage)
 	player.health = player.health - damage
 	updatePlayerStats()
 	displayPlayerHealthFunc()
@@ -50053,41 +52161,37 @@ function enemyMoveOneRoom(enemy) {
 		enemy.moveSwitch = 0 //Switches to always finding player
 	} else if (coordinatesMatch(enemy, player) == false && player.isStealthed == false) {
 		if (enemy.y == player.y - 1 && enemy.x == player.x - 1 && enemy.z == player.z && currentArea.hostile == true) {
-			if (canMonsterExit.search('southwest') != -1) {
+			if (canMonsterExit.search('northeast') != -1) {
 				enemy.y = enemy.y + 1
 				enemy.x = enemy.x + 1
 				direction = 'southwest'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
 			}
 		} else if (enemy.y == player.y + 1 && enemy.x == player.x - 1 && enemy.z == player.z && currentArea.hostile == true) {
-			if (canMonsterExit.search('northwest') != -1) {
+			if (canMonsterExit.search('southeast') != -1) {
 				enemy.y = enemy.y - 1
 				enemy.x = enemy.x + 1
 				direction = 'northwest'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
 			}
 		} else if (enemy.y == player.y + 1 && enemy.x == player.x + 1 && enemy.z == player.z && currentArea.hostile == true) {
-			if (canMonsterExit.search('northeast') != -1) {
+			if (canMonsterExit.search('southwest') != -1) {
 				enemy.y = enemy.y - 1
 				enemy.x = enemy.x - 1
 				direction = 'northeast'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
 			}
-		} else if (enemy.y == player.y - 1 && enemy.x == player.x - 1 && enemy.z == player.z && currentArea.hostile == true) {
-			if (canMonsterExit.search('southeast') != -1) {
+		} else if (enemy.y == player.y - 1 && enemy.x == player.x + 1 && enemy.z == player.z && currentArea.hostile == true) {
+			if (canMonsterExit.search('northwest') != -1) {
 				enemy.y = enemy.y + 1
 				enemy.x = enemy.x - 1
 				direction = 'southeast'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
@@ -50097,7 +52201,6 @@ function enemyMoveOneRoom(enemy) {
 				console.log(enemy, ' THIS THIS THIS THIS THIS')
 				enemy.y = enemy.y - 1
 				direction = 'north'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
@@ -50106,7 +52209,6 @@ function enemyMoveOneRoom(enemy) {
 			if (canMonsterExit.search('west') != -1) {
 				enemy.x = enemy.x - 1
 				direction = 'east'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
@@ -50117,7 +52219,6 @@ function enemyMoveOneRoom(enemy) {
 			if (canMonsterExit.search('north') != -1) {
 				enemy.y = enemy.y + 1
 				direction = 'south'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
@@ -50126,7 +52227,6 @@ function enemyMoveOneRoom(enemy) {
 			if (canMonsterExit.search('east') != -1) {
 				enemy.x = enemy.x + 1
 				direction = 'west'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${direction}`, 'white', line)
 				updateScroll()
@@ -50135,7 +52235,6 @@ function enemyMoveOneRoom(enemy) {
 			if (canMonsterExit.search('up') != -1) {
 				enemy.z = enemy.z + 1
 				direction = 'below'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from ${direction}`, 'white', line)
 				updateScroll()
@@ -50144,20 +52243,15 @@ function enemyMoveOneRoom(enemy) {
 			if (canMonsterExit.search('down') != -1) {
 				enemy.z = enemy.z - 1
 				direction = 'above'
-				customizeEachWord(`A `, 'white', line)
 				customizeEachWord(`${enemy.name} `, 'red', line)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from ${direction}`, 'white', line)
 				updateScroll()
 			}
 		} else {
-			console.log(3)
-			console.log(enemy.isAlive(), ' enemy.isAlive()')
-			console.log(enemy, ' ENEMY OBJECT')
 			let canMonsterExitSplit = canMonsterExit.split(' ')
 			let numberOfDirectionsToMove = canMonsterExitSplit.length
 			let randomIndexChosen = randomNumberRange(0, numberOfDirectionsToMove)
 			let randomlyChosenDirection = canMonsterExitSplit[randomIndexChosen]
-			console.log(randomlyChosenDirection, ' RANDOMLY CHOSEN DIRECTION')
 			let coordinateXToTest = 0
 			let coordinateYToTest = 0
 			let coordinateZToTest = 0
@@ -50196,7 +52290,6 @@ function enemyMoveOneRoom(enemy) {
 			}
 		}
 	} else {
-		console.log(4)
 		let canMonsterExitSplit = canMonsterExit.split(' ')
 		let numberOfDirectionsToMove = canMonsterExitSplit.length - 1
 		let randomIndexChosen = randomNumberRange(0, numberOfDirectionsToMove)
@@ -50263,7 +52356,6 @@ function enemyMoveOneRoom(enemy) {
 		})
 		if (newAreaForMonsterToMove.hostile == true) {
 			let line1 = document.createElement('div')
-			console.log(5)
 			if (enemy.x == player.x && enemy.y == player.y && enemy.z == player.z) {
 				customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
 				customizeEachWord(` moves to the ${randomlyChosenDirection}`, 'white', line1)
@@ -50607,7 +52699,7 @@ function enemyTracksPlayerBy1Room() {
 	let canMonsterExit = enemyArea.descriptions.zoneExits
 	let line = document.createElement('div')
 	if (this.y == player.y && this.x == player.x && this.z == player.z) {
-	} else if (enemyArea.isPlayerHere == false) {
+	} else if (!coordinatesMatch(player, enemy)) {
 		if (this.y == player.y - 1 && this.x == player.x - 1 && this.z == player.z && currentArea.hostile == true) {
 			if (canMonsterExit.search('southwest') != -1) {
 				this.y = this.y + 1
@@ -50793,8 +52885,8 @@ function shackledGoblin(area) {
 			customizeEachWord(`claws at you!`, 'white', line1)
 			customizeEachWord(`You are hit for `, 'yellow', line2)
 			customizeEachWord(`${enemyDamage} `, 'light-blue', line2)
-			customizeEachWord(`damage `, 'yellow', line2)
-			customizeEachWord(`(your armor blocks `, 'white', line2)
+			customizeEachWord(`damage. `, 'yellow', line2)
+			customizeEachWord(`(Your armor blocks `, 'white', line2)
 			customizeEachWord(`${playerBlockedDamage})`, 'light-blue', line2)
 			blankSpace()
 			updateScroll()
@@ -50812,7 +52904,7 @@ function shackledGoblin(area) {
 		health: () => this.con * 5,
 		maxHealth: () => this.con * 5,
 		enemyAttackPower: () => this.str + shackledGoblinLevel,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 5,
 		factor: 1,
 		experience: () => this.level,
@@ -50962,7 +53054,7 @@ function woundedGoblinScout(area) {
 		health: () => 12,
 		maxHealth: () => 12,
 		enemyAttackPower: () => this.str,
-		accuracy: () => this.str + this.agi + this.dex,
+		accuracy: () => this.dex,
 		dodge: () => 5,
 		hitChance: function () {
 			return 80
@@ -50975,10 +53067,10 @@ function woundedGoblinScout(area) {
 			rangedAbility: 0,
 		},
 		experience: () => 5,
-		armor: 1,
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		armor: 0,
+		slashingArmor: 1,
+		piercingArmor: 1,
+		bluntArmor: 1,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -51224,15 +53316,9 @@ function monsterGen(enemy) {
 }
 
 function updateMonsterBox() {
-	let allMonsterNamePlates = document.querySelectorAll('.monster-name')
-	let allMonsterPictureBox = document.querySelectorAll('.monster-picture')
-	let allMonsterHealthBars = document.querySelectorAll('.enemy-health-bar')
-	let allMonsterStatusEffectsContainer = document.querySelectorAll('.monster-status-effects-container')
-	let allMonsterStatusEffects = document.querySelectorAll('#monster-status-effects')
-
-	let allEnemiesInRoom = getAllMonstersInRoom();
+	updateRoomEnemies()
+	let allEnemiesInRoom = roomEnemies
 	let allMonsterBoxes = document.querySelectorAll('.monster-nameplate');
-	
 	allMonsterBoxes.forEach((monsterBox, index) => {
 		let enemy = allEnemiesInRoom[index];
 		if (enemy) {
@@ -51240,7 +53326,6 @@ function updateMonsterBox() {
 			let monsterPicture = monsterBox.querySelector('.monster-picture');
 			let monsterHealthBar = monsterBox.querySelector('.enemy-health-bar');
 			let monsterStatusEffects = monsterBox.querySelectorAll('#monster-status-effects');
-	
 			// Reset debuff slots
 			monsterStatusEffects.forEach(debuffSlot => {
 				debuffSlot.classList.remove(...debuffSlot.classList);
@@ -51272,7 +53357,7 @@ function updateMonsterBox() {
 	
 
 	
-	// let allEnemiesInRoom = getAllMonstersInRoom()
+	// let allEnemiesInRoom = getAllEnemiesInRoom()
 	// let allMonsterBoxes = document.querySelectorAll('.monster-nameplate')
 	// for (let i = 0; i < allMonsterBoxes.length; i++) {
 	// 	let monsterName = allMonsterBoxes[i].querySelector('.monster-name')
@@ -51465,6 +53550,11 @@ class Monster {
 	}
 }
 
+//QUEST ITEMS/SELLABLES/CRAFTING MATERIALS
+//FOOD
+//WEAPON GEN
+//ARMOR GEN
+
 function questItemGen(item) {
 	this.id = item.id()
 	this.roomId = item.roomId
@@ -51540,7 +53630,6 @@ function foodGen(food) {
 	this.sellValue = food.sellValue
 	pushItem.push(new Food(this.id, this.roomId, this.name, this.refName, this.color, this.keywords, this.type, this.cookable, this.cookedVersion, this.cookPhrase, this.buff, this.desc, this.price, this.sellValue))
 } 
-
 class Food {
 	constructor(id, roomId, name, refName, color, keywords, type, cookable, cookedVersion, cookPhrase, buff, desc, price, sellValue) {
 		this.id = id
@@ -51559,6 +53648,9 @@ class Food {
 		this.sellValue = sellValue
 	}
 }
+
+
+
 
 function weaponGen(item) {
 	this.id = item.id()
@@ -51705,6 +53797,9 @@ class Consumable {
 		this.bluntArmorUp = bluntArmorUp
 	}
 }
+
+
+
 
 function spawnObject(secondCommand) {
 	if (secondCommand == 'hellguardian') {
@@ -52402,6 +54497,8 @@ function combineClassAndRaceValues() {
 	player.unarmed.level = preClass.unarmed + preRace.unarmed
 	player.bows.level = preClass.bows + preRace.bows
 	player.shields.level = preClass.shields + preRace.shields
+
+	player.stealth.level = preClass.stealth + preRace.stealth
 	player.lockpicking.level = preClass.lockpicking + preRace.lockpicking
 	player.tactics.level = preClass.tactics + preRace.tactics
 	player.vigilance.level = preClass.vigilance + preRace.vigilance
@@ -52410,11 +54507,12 @@ function combineClassAndRaceValues() {
 	player.toughness.level = preClass.toughness + preRace.toughness
 	player.dodging.level = preClass.dodging + preRace.dodging
 	player.ridingSkill.level = preClass.ridingSkill + preRace.ridingSkill
-	player.rest.level = preClass.rest + preRace.rest
+	player.rest.level = preClass.rest + preRace.rest + 1
 	player.perception.level = preClass.perception + preRace.perception
 	player.athletics.level = preClass.athletics + preRace.athletics
 	player.vigor.level = preClass.vigor + preRace.vigor
 	player.devotion.level = preClass.devotion + preRace.devotion
+
 	player.fireflames.level = preClass.fireflames + preRace.fireflames
 	player.frostfreeze.level = preClass.frostfreeze + preRace.frostfreeze
 	player.flashbolt.level = preClass.flashbolt + preRace.flashbolt
@@ -52487,6 +54585,8 @@ function startBerserker(event) {
 	if (player.playerClass.name != 'Berserker') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Berserker'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52494,13 +54594,15 @@ function startBerserker(event) {
 		cooldownBar.classList.add('warrior-resource-bar')
 		resourceBar.className = ''
 		resourceBar.classList.add('warrior-resource-bar')
-		applyBerserkerClassDescription()
+
 		player.playerClass = berserkerClass
 		player.guild = 'Warrior'
 		player.classFlatHealthBonus = 10
 		player.classHealthMultiplier = 3.0
 		player.classFlatManaBonus = 1.0
 		player.classManaMultiplier = 1.0
+		player.might = 5
+		player.maxMight = 5
 
 		preClass.maxHealth = 5
 		preClass.maxMana = 5
@@ -52512,7 +54614,7 @@ function startBerserker(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
-
+		applyBerserkerClassDescription()
 		preClass.twoHanded = 1
 
 		player.advanceTimer = 2
@@ -52537,6 +54639,8 @@ function startFighter(event) {
 	if (player.playerClass.name != 'Fighter') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Fighter'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52545,13 +54649,14 @@ function startFighter(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('warrior-resource-bar')
 
-		applyFighterClassDescription()
 		player.playerClass = fighterClass
 		player.guild = 'Warrior'
 		player.classFlatHealthBonus = 10
 		player.classHealthMultiplier = 3.0
 		player.classFlatManaBonus = 1.0
 		player.classManaMultiplier = 1.0
+		player.might = 10
+		player.maxMight = 10
 
 		preClass.maxHealth = 5
 		preClass.maxMana = 5
@@ -52563,6 +54668,7 @@ function startFighter(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyFighterClassDescription()
 
 		preClass.oneHanded = 1
 
@@ -52589,6 +54695,8 @@ function startKnight(event) {
 	if (player.playerClass.name != 'Knight') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Knight'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52604,6 +54712,8 @@ function startKnight(event) {
 		player.classHealthMultiplier = 3.0
 		player.classFlatManaBonus = 1.0
 		player.classManaMultiplier = 1.0
+		player.might = 5
+		player.maxMight = 5
 
 		preClass.maxHealth = 5
 		preClass.maxMana = 5
@@ -52615,6 +54725,7 @@ function startKnight(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyKnightClassDescription()
 
 		preClass.oneHanded = 1
 		preClass.shields = 1
@@ -52632,10 +54743,10 @@ function startKnight(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-		pack('right')
-		pack('left')
-		unpack('sword')
-		unpack('shield')
+		// pack('right')
+		// pack('left')
+		// unpack('sword')
+		// unpack('shield')
 	}
 }
 
@@ -52643,6 +54754,8 @@ function startThief(event) {
 	if (player.playerClass.name != 'Thief') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Thief'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52651,7 +54764,6 @@ function startThief(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('sinistral-resource-bar')
 
-		applyThiefClassDescription()
 		player.playerClass = thiefClass
 		player.guild = 'Sinistral'
 		player.classFlatHealthBonus = 5
@@ -52669,6 +54781,7 @@ function startThief(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyThiefClassDescription()
 
 		preClass.daggers = 1
 		preClass.dodging = 1
@@ -52697,6 +54810,8 @@ function startAssassin(event) {
 	if (player.playerClass.name != 'Assassin') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Assassin'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52705,7 +54820,6 @@ function startAssassin(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('sinistral-resource-bar')
 
-		applyAssassinClassDescription()
 		player.playerClass = assassinClass
 		player.guild = 'Sinistral'
 		player.classFlatHealthBonus = 5
@@ -52723,6 +54837,7 @@ function startAssassin(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyAssassinClassDescription()
 
 		preClass.daggers = 1
 		preClass.dodging = 1
@@ -52751,6 +54866,8 @@ function startShadowblade(event) {
 	if (player.playerClass.name != 'Shadowblade') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Shadowblade'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52759,7 +54876,6 @@ function startShadowblade(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('sinistral-resource-bar')
 
-		applyShadowbladeClassDescription()
 		player.playerClass = shadowbladeClass
 		player.guild = 'Sinistral'
 		player.classFlatHealthBonus = 5
@@ -52777,6 +54893,7 @@ function startShadowblade(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyShadowbladeClassDescription()
 
 		preClass.daggers = 1
 		preClass.dodging = 1
@@ -52796,10 +54913,10 @@ function startShadowblade(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		pack('right')
-		pack('left')
-		unpack('dagger')
-		unpack('dagger')
+		// pack('right')
+		// pack('left')
+		// unpack('dagger')
+		// unpack('dagger')
 	}
 }
 
@@ -52807,6 +54924,8 @@ function startMartialMonk(event) {
 	if (player.playerClass.name != 'Martial Monk') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Martial Monk'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52815,7 +54934,6 @@ function startMartialMonk(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('monk-resource-bar')
 
-		applyMartialMonkClassDescription()
 		player.playerClass = martialMonkClass
 		player.guild = 'Monk'
 		player.classFlatHealthBonus = 10
@@ -52833,6 +54951,7 @@ function startMartialMonk(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyMartialMonkClassDescription()
 
 		preClass.unarmed = 1
 		preClass.dodging = 1
@@ -52860,6 +54979,8 @@ function startMysticMonk(event) {
 	if (player.playerClass.name != 'Mystic Monk') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Mystic Monk'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52868,7 +54989,6 @@ function startMysticMonk(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('monk-resource-bar')
 
-		applyMysticMonkClassDescription()
 		player.playerClass = mysticMonkClass
 		player.guild = 'Monk'
 		player.classFlatHealthBonus = 10
@@ -52886,6 +55006,7 @@ function startMysticMonk(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyMysticMonkClassDescription()
 
 		preClass.unarmed = 1
 		preClass.dodging = 1
@@ -52913,6 +55034,8 @@ function startElementalMonk(event) {
 	if (player.playerClass.name != 'Elemental Monk') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Elemental Monk'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52921,7 +55044,6 @@ function startElementalMonk(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('monk-resource-bar')
 
-		applyElementalMonkClassDescription()
 		player.playerClass = elementalMonkClass
 		player.guild = 'Monk'
 		player.classFlatHealthBonus = 10
@@ -52939,6 +55061,7 @@ function startElementalMonk(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyElementalMonkClassDescription()
 
 		preClass.unarmed = 1
 		preClass.dodging = 1
@@ -52958,8 +55081,8 @@ function startElementalMonk(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		pack('right')
-		pack('left')
+		// pack('right')
+		// pack('left')
 	}
 }
 
@@ -52967,6 +55090,8 @@ function startPyromancer(event) {
 	if (player.playerClass.name != 'Pyromancer') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Pyromancer'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -52974,7 +55099,6 @@ function startPyromancer(event) {
 		cooldownBar.classList.add('pyromancer-resource-bar')
 		resourceText.textContent = ''
 		resourceBar.classList.add('pyromancer-resource-bar')
-		applyPyromancerClassDescription()
 		player.playerClass = pyromancerClass
 		player.guild = 'Mage'
 		player.classFlatHealthBonus = 0
@@ -52991,6 +55115,7 @@ function startPyromancer(event) {
 		preClass.int = 2
 		preClass.wis = 2
 		preClass.mys = 1
+		applyPyromancerClassDescription()
 
 		player.advanceTimer = 2
 		player.retreatTimer = 2
@@ -53018,6 +55143,8 @@ function startCryoMage(event) {
 	if (player.playerClass.name != 'Cryo Mage') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Cryo Mage'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -53025,7 +55152,6 @@ function startCryoMage(event) {
 		cooldownBar.classList.add('cryo-mage-resource-bar')
 		resourceBar.className = ''
 		resourceBar.classList.add('cryo-mage-resource-bar')
-		applyCryoMageClassDescription()
 		player.playerClass = cryoMageClass
 		player.guild = 'Mage'
 		player.classFlatHealthBonus = 0
@@ -53042,6 +55168,7 @@ function startCryoMage(event) {
 		preClass.int = 2
 		preClass.wis = 2
 		preClass.mys = 1
+		applyCryoMageClassDescription()
 
 		player.advanceTimer = 2
 		player.retreatTimer = 2
@@ -53067,6 +55194,8 @@ function startLightningMagus(event) {
 	if (player.playerClass.name != 'Lightning Magus') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Lightning Magus'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -53074,7 +55203,6 @@ function startLightningMagus(event) {
 		cooldownBar.classList.add('lightning-magus-resource-bar')
 		resourceBar.className = ''
 		resourceBar.classList.add('lightning-magus-resource-bar')
-		applyLightningMagusClassDescription()
 		player.playerClass = lightningMagusClass
 		player.guild = 'Mage'
 		player.classFlatHealthBonus = 0
@@ -53091,6 +55219,7 @@ function startLightningMagus(event) {
 		preClass.int = 2
 		preClass.wis = 2
 		preClass.mys = 1
+		applyLightningMagusClassDescription()
 
 		player.advanceTimer = 2
 		player.retreatTimer = 2
@@ -53117,6 +55246,8 @@ function startRanger(event) {
 	if (player.playerClass.name != 'Ranger') {
 		removeStartingClassSkills()
 		updatePlayerStats()
+		let playerClass = document.getElementById('playerClass')
+		playerClass.textContent = 'Ranger'
 		if (cooldownBar.classList.length > 1) {
 			let lastClass = cooldownBar.classList[cooldownBar.classList.length - 1]
 			cooldownBar.classList.remove(lastClass)
@@ -53125,7 +55256,6 @@ function startRanger(event) {
 		resourceBar.className = ''
 		resourceBar.classList.add('ranger-resource-bar')
 
-		applyRangerClassDescription()
 		player.playerClass = rangerClass
 		player.guild = 'Ranger'
 		player.classFlatHealthBonus = 10
@@ -53143,6 +55273,7 @@ function startRanger(event) {
 		preClass.int = 1
 		preClass.wis = 1
 		preClass.mys = 1
+		applyRangerClassDescription()
 
 		preClass.bows = 1
 
@@ -53160,9 +55291,9 @@ function startRanger(event) {
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
-		// pack('right')
-		// pack('left')
-		// unpack('bow')
+		pack('right')
+		pack('left')
+		unpack('bow')
 	}
 }
 
@@ -53180,17 +55311,19 @@ function startHuman(event) {
 	if (player.race != 'Human') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Human'
 		player.race = 'Human'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 1.0
-		preRace.maxHealth = 9
+		preRace.maxHealth = 10
 		preRace.maxMana = 10
 
-		preRace.str = 2
-		preRace.dex = 2
-		preRace.agi = 2
+		preRace.str = 1
+		preRace.dex = 1
+		preRace.agi = 1
 		applyHumanRaceDescription()
 
 
@@ -53205,16 +55338,19 @@ function startDwarf(event) {
 	if (player.race != 'Dwarf') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Dwarf'
 		player.race = 'Dwarf'
 		preRace.raceFlatHealthBonus = 10
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 1.0
-		preRace.maxHealth = 4
-		preRace.maxMana = 20
+		preRace.maxHealth = 10
+		preRace.maxMana = 5
 
 		preRace.str = 1
 		preRace.con = 2
+		
 		applyDwarfRaceDescription()
 
 		combineClassAndRaceValues()
@@ -53228,6 +55364,8 @@ function startElf(event) {
 	if (player.race != 'Elf') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Elf'
 		player.race = 'Elf'
 		preRace.raceFlatHealthBonus = 10
 		preRace.raceHealthMultiplier = 1.0
@@ -53236,7 +55374,10 @@ function startElf(event) {
 		preRace.maxHealth = 5
 		preRace.maxMana = 20
 
-		preRace.int = 1
+		preRace.int = 2
+		preRace.wis = 1
+		preRace.mys = 1
+
 		applyElfRaceDescription()
 		combineClassAndRaceValues()
 		updatePlayerStats()
@@ -53249,17 +55390,21 @@ function startHalfElf(event) {
 	if (player.race != 'Half-Elf') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Half-Elf'
 		player.race = 'Half-Elf'
 		preRace.raceFlatHealthBonus = 10
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 1.0
 		preRace.maxHealth = 5
-		preRace.maxMana = 20
+		preRace.maxMana = 10
 
-		preRace.mys = 10
+		preRace.dex = 1
+		preRace.agi = 1
+		preRace.mys = 1
 
-		applyElfRaceDescription()
+		applyHalfElfRaceDescription()
 		combineClassAndRaceValues()
 		updatePlayerStats()
 		player.health = player.maxHealth
@@ -53272,17 +55417,18 @@ function startHalfMinotaur() {
 	if (player.race != 'Half-Minotaur') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Half-Minotaur'
 		player.race = 'Half-Minotaur'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
-		preRace.maxHealth = 11
-		preRace.maxMana = 5
+		preRace.maxHealth = 10
+		preRace.maxMana = 1
 
 		preRace.str = 2
 		preRace.con = 1
-		preRace.twoHanded = 100
 
 		applyHalfMinotaurRaceDescription()
 		combineClassAndRaceValues()
@@ -53292,20 +55438,26 @@ function startHalfMinotaur() {
 		updatePlayerStats()
 	}
 }
-function startCentaur() {
-	if (player.race != 'Centaur') {
+function startTiefling() {
+	if (player.race != 'Tiefling') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
-		player.race = 'Centaur'
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Human'
+		player.race = 'Tiefling'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
 
+		preRace.str = 1
+		preRace.agi = 1
+		preRace.con = 1
+
 		preRace.maxHealth = 5
 		preRace.maxMana = 5
 
-		applyCentaurRaceDescription()
+		applyTieflingRaceDescription()
 		combineClassAndRaceValues()
 		updatePlayerStats()
 		player.health = player.maxHealth
@@ -53317,11 +55469,17 @@ function startCatline() {
 	if (player.race != 'Catline') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Catline'
 		player.race = 'Catline'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
+
+		preRace.dex = 1
+		preRace.agi = 1
+		preRace.mys = 1
 
 		preRace.maxHealth = 5
 		preRace.maxMana = 5
@@ -53338,14 +55496,20 @@ function startGnome() {
 	if (player.race != 'Gnome') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Gnome'
 		player.race = 'Gnome'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
 
+		preRace.int = 1
+		preRace.wis = 2
+		preRace.mys = 2
+
 		preRace.maxHealth = 5
-		preRace.maxMana = 5
+		preRace.maxMana = 20
 
 		applyGnomeRaceDescription()
 		combineClassAndRaceValues()
@@ -53359,11 +55523,16 @@ function startHalfling() {
 	if (player.race != 'Halfling') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Halfling'
 		player.race = 'Halfling'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
+
+		preRace.dex = 2
+		preRace.agi = 1
 
 		preRace.maxHealth = 5
 		preRace.maxMana = 5
@@ -53380,11 +55549,18 @@ function startFaerie() {
 	if (player.race != 'Faerie') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Faerie'
 		player.race = 'Faerie'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
+
+		preRace.agi = 1
+		preRace.int = 1
+		preRace.wis = 1
+		preRace.mys = 1
 
 		preRace.maxHealth = 5
 		preRace.maxMana = 5
@@ -53401,11 +55577,17 @@ function startDragonKin() {
 	if (player.race != 'Dragonkin') {
 		event.target.classList.add('class-race-select')
 		removeStartingRaceSkills()
+		let playerRace = document.getElementById('race')
+		playerRace.textContent = 'Dragonkin'
 		player.race = 'Dragonkin'
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
+
+		preRace.str = 2
+		preRace.int = 1
+		preRace.mys = 1
 
 		preRace.maxHealth = 5
 		preRace.maxMana = 5
@@ -53807,7 +55989,7 @@ function displayRaceSelection() {
 
 	//HUMAN
 	const humanSelectDiv = document.createElement('div')
-	const humanHeadingDiv = document.createElement('h2')
+	const humanHeadingDiv = document.createElement('div')
 	humanHeadingDiv.textContent = 'Human'
 	humanSelectDiv.classList.add('race-option', 'human')
 
@@ -53816,7 +55998,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(humanSelectDiv)
 	//DWARF
 	const dwarfSelectDiv = document.createElement('div')
-	const dwarfHeadingDiv = document.createElement('h2')
+	const dwarfHeadingDiv = document.createElement('div')
 	dwarfHeadingDiv.textContent = 'Dwarf'
 	dwarfSelectDiv.classList.add('race-option', 'dwarf')
 
@@ -53825,7 +56007,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(dwarfSelectDiv)
 	//ELF
 	const elfSelectDiv = document.createElement('div')
-	const elfHeadingDiv = document.createElement('h2')
+	const elfHeadingDiv = document.createElement('div')
 	elfHeadingDiv.textContent = 'Elf'
 	const elfP1 = document.createElement('p')
 	const elfP2 = document.createElement('p')
@@ -53840,7 +56022,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(elfSelectDiv)
 	//HALF-ELF
 	const halfElfSelectDiv = document.createElement('div')
-	const halfElfHeadingDiv = document.createElement('h2')
+	const halfElfHeadingDiv = document.createElement('div')
 	halfElfHeadingDiv.textContent = 'Half-Elf'
 	halfElfSelectDiv.classList.add('race-option', 'halfElf')
 
@@ -53849,7 +56031,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(halfElfSelectDiv)
 	//HALF-MINOTAUR
 	const halfMinotaurSelectDiv = document.createElement('div')
-	const halfMinotaurHeadingDiv = document.createElement('h2')
+	const halfMinotaurHeadingDiv = document.createElement('div')
 	halfMinotaurHeadingDiv.textContent = 'Half-Minotaur'
 	halfMinotaurSelectDiv.classList.add('race-option', 'halfMinotaur')
 
@@ -53857,17 +56039,17 @@ function displayRaceSelection() {
 	halfMinotaurSelectDiv.appendChild(halfMinotaurHeadingDiv)
 	raceContainer.appendChild(halfMinotaurSelectDiv)
 	//CENTAUR
-	const centaurSelectDiv = document.createElement('div')
-	const centaurHeadingDiv = document.createElement('h2')
-	centaurHeadingDiv.textContent = 'Centaur'
-	centaurSelectDiv.classList.add('race-option', 'centaur')
+	const tieflingSelectDiv = document.createElement('div')
+	const tieflingHeadingDiv = document.createElement('div')
+	tieflingHeadingDiv.textContent = 'Tiefling'
+	tieflingSelectDiv.classList.add('race-option', 'tiefling')
 
-	centaurSelectDiv.addEventListener('click', startCentaur)
-	centaurSelectDiv.appendChild(centaurHeadingDiv)
-	raceContainer.appendChild(centaurSelectDiv)
+	tieflingSelectDiv.addEventListener('click', startTiefling)
+	tieflingSelectDiv.appendChild(tieflingHeadingDiv)
+	raceContainer.appendChild(tieflingSelectDiv)
 	//CATLINE
 	const catlineSelectDiv = document.createElement('div')
-	const catlineHeadingDiv = document.createElement('h2')
+	const catlineHeadingDiv = document.createElement('div')
 	catlineHeadingDiv.textContent = 'Catline'
 	catlineSelectDiv.classList.add('race-option', 'catline')
 
@@ -53876,7 +56058,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(catlineSelectDiv)
 	//GNOME
 	const gnomeSelectDiv = document.createElement('div')
-	const gnomeHeadingDiv = document.createElement('h2')
+	const gnomeHeadingDiv = document.createElement('div')
 	gnomeHeadingDiv.textContent = 'Gnome'
 	gnomeSelectDiv.classList.add('race-option', 'gnome')
 
@@ -53885,7 +56067,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(gnomeSelectDiv)
 	//HALFLING
 	const halflingSelectDiv = document.createElement('div')
-	const halflingHeadingDiv = document.createElement('h2')
+	const halflingHeadingDiv = document.createElement('div')
 	halflingHeadingDiv.textContent = 'Halfling'
 	halflingSelectDiv.classList.add('race-option', 'halfling')
 
@@ -53894,7 +56076,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(halflingSelectDiv)
 	//FAERIE
 	const faerieSelectDiv = document.createElement('div')
-	const faerieHeadingDiv = document.createElement('h2')
+	const faerieHeadingDiv = document.createElement('div')
 	faerieHeadingDiv.textContent = 'Faerie'
 	faerieSelectDiv.classList.add('race-option', 'faerie')
 
@@ -53903,7 +56085,7 @@ function displayRaceSelection() {
 	raceContainer.appendChild(faerieSelectDiv)
 	//DRAGONKIN
 	const dragonKinSelectDiv = document.createElement('div')
-	const dragonKinHeadingDiv = document.createElement('h2')
+	const dragonKinHeadingDiv = document.createElement('div')
 	dragonKinHeadingDiv.textContent = 'DragonKin'
 	dragonKinSelectDiv.classList.add('race-option', 'dragonKin')
 
@@ -53913,21 +56095,21 @@ function displayRaceSelection() {
 	raceMainContainer.appendChild(raceDescriptionAndDetailsContainer)
 	//Placeholder 1
 	const placeholderSelectDiv = document.createElement('div')
-	const placeholderHeadingDiv = document.createElement('h2')
-	placeholderHeadingDiv.textContent = 'Placeholder'
+	const placeholderHeadingDiv = document.createElement('div')
+	placeholderHeadingDiv.textContent = ''
 	placeholderSelectDiv.classList.add('race-option')
 
-	placeholderSelectDiv.addEventListener('click', startDragonKin)
+	// placeholderSelectDiv.addEventListener('click', startDragonKin)
 	placeholderSelectDiv.appendChild(placeholderHeadingDiv)
 	raceContainer.appendChild(placeholderSelectDiv)
 	raceMainContainer.appendChild(raceDescriptionAndDetailsContainer)
 	//Placeholder 2
 	const placeholder2SelectDiv = document.createElement('div')
-	const placeholder2HeadingDiv = document.createElement('h2')
-	placeholder2HeadingDiv.textContent = 'Placeholder 2'
+	const placeholder2HeadingDiv = document.createElement('div')
+	placeholder2HeadingDiv.textContent = ''
 	placeholder2SelectDiv.classList.add('race-option')
 
-	placeholder2SelectDiv.addEventListener('click', startDragonKin)
+	// placeholder2SelectDiv.addEventListener('click', startDragonKin)
 	placeholder2SelectDiv.appendChild(placeholder2HeadingDiv)
 	raceContainer.appendChild(placeholder2SelectDiv)
 	raceMainContainer.appendChild(raceDescriptionAndDetailsContainer)
@@ -53969,6 +56151,7 @@ function displayClassDetails() {
 	const statsDetails4 = createDivElement(``, ['statsDetails4'])
 	const statsDetails5 = createDivElement(``, ['statsDetails5'])
 	const statsDetails6 = createDivElement(``, ['statsDetails6'])
+	const statsDetails7 = createDivElement(``, ['statsDetails7'])
 	const startingSkillsContainer = createDivElement(``, ['startingSkillsContainer'])
 	const startingSkillsHeading = createDivElement(``, ['startingSkillsHeading'])
 	const startingSkillsDetails1 = createDivElement(``, ['startingSkillsDetails1'])
@@ -53995,6 +56178,7 @@ function displayClassDetails() {
 	startingStatsContainer.appendChild(statsDetails4)
 	startingStatsContainer.appendChild(statsDetails5)
 	startingStatsContainer.appendChild(statsDetails6)
+	startingStatsContainer.appendChild(statsDetails7)
 	startingSkillsContainer.appendChild(startingSkillsHeading)
 	startingSkillsContainer.appendChild(startingSkillsDetails1)
 	startingSkillsContainer.appendChild(startingSkillsDetails2)
@@ -54080,7 +56264,15 @@ const monksGuildDescription = `The Monk's Guild consists of Martial Monks, Mysti
 const magesGuildDescription = `Mages include Pyromancers, Cryo Mages, and the Lightning Magus. They each have powerful spells that affect both single and multiple targets. The only problem they face is dealing with elemental resistant enemies, but that can be dealt with by spell penetration. Early on, Mages might wear some leather for the armor value, but eventually move on to only wearing cloth armor to enhance their spell casting.`
 const rangersGuildDescription = `The Ranger's Guild consists of only Ranger classes. They are unique in that they are the only class able to hit enemies without the need to engage combat. While they are also strong physically, they later learn how to use magic to enhance their combat capabilities, and even learn how to heal themselves.`
 function applyBerserkerClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `The Berserker uses two handed weapons to devastate their foes. They specialize in powerful, single strikes, and eventually learn how to hit multiple enemies with a single swing. Berserkers find their home in the Warrior's Guild.`
+
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Berserker`
 	const classDescription = document.querySelector('.classDescription')
@@ -54088,17 +56280,19 @@ function applyBerserkerClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Strength +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Constitution +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54127,6 +56321,13 @@ function applyBerserkerClassDescription() {
 	guildDescription.textContent = warriorsGuildDescription
 }
 function applyFighterClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `The Fighter prefers dual wielding one handed weapons. They specialize in multiple, single target strikes. At higher levels, they become masters of one on one combat. Fighters find their home in the Warrior's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Fighter`
@@ -54135,17 +56336,19 @@ function applyFighterClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Strength +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Dexterity +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54165,15 +56368,22 @@ function applyFighterClassDescription() {
 	const abilitiesDetails1 = document.querySelector('.abilitiesDetails1')
 	abilitiesDetails1.textContent = `Dualstrike`
 	const abilitiesDetails2 = document.querySelector('.abilitiesDetails2')
-	abilitiesDetails2.textContent = `Blood Blitz`
+	abilitiesDetails2.textContent = `Blade Blitz`
 	const abilitiesDetails3 = document.querySelector('.abilitiesDetails3')
-	abilitiesDetails3.textContent = `Gore`
+	abilitiesDetails3.textContent = `Shred`
 	const guildHeading = document.querySelector('.guildHeading')
 	guildHeading.textContent = `Warrior's Guild`
 	const guildDescription = document.querySelector('.guildDescription')
 	guildDescription.textContent = warriorsGuildDescription
 }
 function applyKnightClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Knights prefer fighting with a one handed weapon and shield. They are the most durable class, and are also able to deal significant damage of their own. At later levels, they excel at ataking on multiple enemies at once. Their skills and abilities allow them to get stronger as the fight continues.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Knight`
@@ -54182,17 +56392,19 @@ function applyKnightClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Strength +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Constitution +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54221,6 +56433,13 @@ function applyKnightClassDescription() {
 	guildDescription.textContent = warriorsGuildDescription
 }
 function applyAssassinClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Assassins thrive in the shadows, and use daggers as their weapon of choice. Their most lethal attack comes from their Ambush ability that can only be used when stealthed. Assassins follow the leadership of the Sinistral's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Assassin`
@@ -54229,17 +56448,19 @@ function applyAssassinClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Dexterity +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Agility +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54268,6 +56489,13 @@ function applyAssassinClassDescription() {
 	guildDescription.textContent = sinistralsGuildDescription
 }
 function applyThiefClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Thieves use daggers alongside their poison abilities. Applying poison to enemies, they are able to increase damage of their other abilties. Thieves follow the leadership of the Sinistral's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Thief`
@@ -54276,17 +56504,19 @@ function applyThiefClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Dexterity +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Agility +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54315,6 +56545,13 @@ function applyThiefClassDescription() {
 	guildDescription.textContent = sinistralsGuildDescription
 }
 function applyShadowbladeClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Shadowblades use daggers and can even use the shadows to deal additional damage when attacking. Shadowblades follow the leadership of the Sinistral's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Shadowblade`
@@ -54323,17 +56560,19 @@ function applyShadowbladeClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Dexterity +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Agility +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54362,6 +56601,13 @@ function applyShadowbladeClassDescription() {
 	guildDescription.textContent = sinistralsGuildDescription
 }
 function applyMartialMonkClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Martial Monks are devouts of unarmed combat, primarily using their physicality in battle. Using their fists, they perform combos that weaken their enemies and empower their own attacks. They prefer leather armor, but can make use of mail and plate if their strength allows. Martial Monks reside in the Monk's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Martial Monk`
@@ -54370,17 +56616,19 @@ function applyMartialMonkClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Strength +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Dexterity +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = `Agility +1`
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54409,6 +56657,13 @@ function applyMartialMonkClassDescription() {
 	guildDescription.textContent = monksGuildDescription
 }
 function applyMysticMonkClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Mystic Monks use both their physical and mystic prowess in combat by applying elemental Seals to the enemy, and then breaking them for powerful effects. Mystic Monks like to wear leather armor, and make use of cloth when it can improve their Mysticism. Mystic Monk's reside in the Monk's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Mystic Monk`
@@ -54417,17 +56672,19 @@ function applyMysticMonkClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Dexterity +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Agility +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = `Mysticism +1`
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54456,6 +56713,13 @@ function applyMysticMonkClassDescription() {
 	guildDescription.textContent = monksGuildDescription
 }
 function applyElementalMonkClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Elemental Monks use their fists as a delivery method for their elemental strikes. Their elemental strikes can be combined to create powerful effects. Elemental Monk's reside in the Monk's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Elemental Monk`
@@ -54464,17 +56728,19 @@ function applyElementalMonkClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Dexterity +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Mysticism +2`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54503,6 +56769,13 @@ function applyElementalMonkClassDescription() {
 	guildDescription.textContent = monksGuildDescription
 }
 function applyPyromancerClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Pyromancers use fire spells to blast their foes. They are are well equipped to deal with single or multiple enemies. Pyromancers are found in the Mage's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Pyromancer`
@@ -54511,17 +56784,19 @@ function applyPyromancerClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Intelligence +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Wisdom +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54550,6 +56825,13 @@ function applyPyromancerClassDescription() {
 	guildDescription.textContent = magesGuildDescription
 }
 function applyCryoMageClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `Cryo Mages use ice spells to blast their foes. They are are well equipped to deal with single or multiple enemies. Pyromancers are found in the Mage's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Cryo Mage`
@@ -54558,17 +56840,19 @@ function applyCryoMageClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Intelligence +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Wisdom +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54597,6 +56881,13 @@ function applyCryoMageClassDescription() {
 	guildDescription.textContent = magesGuildDescription
 }
 function applyLightningMagusClassDescription() {
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = `The Lightning Magus use lightning spells to blast their foes. They are are well equipped to deal with single or multiple enemies. Pyromancers are found in the Mage's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Lightning Magus`
@@ -54605,17 +56896,19 @@ function applyLightningMagusClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Intelligence +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Wisdom +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54643,7 +56936,14 @@ function applyLightningMagusClassDescription() {
 	const guildDescription = document.querySelector('.guildDescription')
 	guildDescription.textContent = magesGuildDescription
 }
-function applyRangerClassDescription() {
+function applyRangerClassDescription() {	
+	let strength = preClass.str > 1 ? `Strength: +${preClass.str - 1}` : ``
+	let dexterity = preClass.dex > 1 ? `Dexterity: +${preClass.dex - 1}` : ``
+	let agility = preClass.agi > 1 ? `Agility: +${preClass.agi - 1}` : ``
+	let intelligence = preClass.int > 1 ? `Intelligence: +${preClass.int - 1}` : ``
+	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
+	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
+	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
 	const descriptionText = rangersGuildDescription
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Ranger`
@@ -54652,17 +56952,19 @@ function applyRangerClassDescription() {
 	const statsHeading = document.querySelector('.statsHeading')
 	statsHeading.textContent = `Starting Stats`
 	const statsDetails1 = document.querySelector('.statsDetails1')
-	statsDetails1.textContent = `Strength +1`
+	statsDetails1.textContent = `${strength}`
 	const statsDetails2 = document.querySelector('.statsDetails2')
-	statsDetails2.textContent = `Agility +1`
+	statsDetails2.textContent = `${dexterity}`
 	const statsDetails3 = document.querySelector('.statsDetails3')
-	statsDetails3.textContent = ``
+	statsDetails3.textContent = `${agility}`
 	const statsDetails4 = document.querySelector('.statsDetails4')
-	statsDetails4.textContent = ``
+	statsDetails4.textContent = `${intelligence}`
 	const statsDetails5 = document.querySelector('.statsDetails5')
-	statsDetails5.textContent = ``
+	statsDetails5.textContent = `${wisdom}`
 	const statsDetails6 = document.querySelector('.statsDetails6')
-	statsDetails6.textContent = ``
+	statsDetails6.textContent = `${mysticism}`
+	const statsDetails7 = document.querySelector('.statsDetails7')
+	statsDetails7.textContent = `${constitution}`
 	const startingSkillsHeading = document.querySelector('.startingSkillsHeading')
 	startingSkillsHeading.textContent = `Starting Skills`
 	const startingSkillsDetails1 = document.querySelector('.startingSkillsDetails1')
@@ -54680,11 +56982,11 @@ function applyRangerClassDescription() {
 	const abilitiesHeading = document.querySelector('.abilitiesHeading')
 	abilitiesHeading.textContent = `Abilities`
 	const abilitiesDetails1 = document.querySelector('.abilitiesDetails1')
-	abilitiesDetails1.textContent = `Timed Shot`
+	abilitiesDetails1.textContent = `Piercing Arrow`
 	const abilitiesDetails2 = document.querySelector('.abilitiesDetails2')
 	abilitiesDetails2.textContent = `Rapid Fire`
 	const abilitiesDetails3 = document.querySelector('.abilitiesDetails3')
-	abilitiesDetails3.textContent = `Multi Shot`
+	abilitiesDetails3.textContent = `Hydra Arrow`
 	const guildHeading = document.querySelector('.guildHeading')
 	guildHeading.textContent = `Ranger's Guild`
 	const guildDescription = document.querySelector('.guildDescription')
@@ -54912,7 +57214,7 @@ function applyHalfMinotaurRaceDescription() {
 	const startingSkillsDetails6 = document.querySelector('.raceSkillsDetails6')
 	startingSkillsDetails6.textContent = ``
 }
-function applyCentaurRaceDescription() {
+function applyTieflingRaceDescription() {
 	let strength = preRace.str > 0 ? `Strength: +${preRace.str}` : ``
 	let dexterity = preRace.dex > 0 ? `Dexterity: +${preRace.dex}` : ``
 	let agility = preRace.agi > 0 ? `Agility: +${preRace.agi}` : ``
@@ -54923,7 +57225,7 @@ function applyCentaurRaceDescription() {
 
 	const descriptionText = ``
 	const raceHeading = document.querySelector('.raceDescriptionHeading')
-	raceHeading.textContent = `Centaur`
+	raceHeading.textContent = `Tiefling`
 	const raceDescription = document.querySelector('.raceDescription')
 	raceDescription.textContent = descriptionText
 	const statsHeading = document.querySelector('.raceStatsHeading')
@@ -55335,7 +57637,7 @@ function playerAbility1() {
 			venomBladeFunction()
 			break;
 		case 'Shadowblade':
-			shadowDaggersFunction()
+			shadowsurgeFunction()
 			break;
 		case 'Martial Monk':
 			catalystFunction()
@@ -55347,23 +57649,143 @@ function playerAbility1() {
 			blazingFistFunction()
 			break;
 		case 'Ranger':
-			timedShotFunction()
+			piercingArrowFunction()
 			break;
 		case 'Pyromancer':
 			spellFunction(player.fireflames)
+			break;
+		case 'Cryo Mage':
+			spellFunction(player.frostfreeze)
+			break;
+		case 'Lightning Magus':
+			spellFunction(player.flashbolt)
 			break;
 		default:
 		quickMessage(`nothing`)
 	}
 	updateMonsterBox()
 }
+function playerAbility1Shift() {
+	switch (player.playerClass.name) {
+		case 'Martial Monk':
+			tempestFunction()
+			break;
+		case 'Mystic Monk':
+			waterSealFunction()
+			break;
+		case 'Elemental Monk':
+			tidalFistFunction()
+			break;
+		default:
+		quickMessage(`nothing`)
+	}
+	updateMonsterBox()
+}
+function playerAbility1Alt() {
+	switch (player.playerClass.name) {
+		case 'Martial Monk':
+			tempestFunction()
+			break;
+		case 'Mystic Monk':
+			earthSealFunction()
+			break;
+		case 'Elemental Monk':
+			lightningFistFunction()
+			break;
+		default:
+		quickMessage(`nothing`)
+	}
+	updateMonsterBox()
+}
+function playerAbility1ShiftAndALt() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility2Shift() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility2Alt() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility2ShiftAndALt() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility3Shift() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility3Alt() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility3ShiftAndALt() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility4() {
+	switch (player.playerClass.name) {
+		case 'Shadowblade':
+			quickMessage('shadow nove used')
+			shadowNovaFunction()
+			break;
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility4Shift() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility4Alt() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+function playerAbility4ShiftAndALt() {
+	switch (player.playerClass.name) {
+		default:
+		quickMessage(`Nothing yet`)
+		break;
+	}
+}
+
 function playerAbility2() {
 	switch (player.playerClass.name) {
 		case 'Berserker':
 			cycloneFunction()
 			break;
 		case 'Fighter':
-			bladeBlitzFunction()
+			shredFunction()
 			break;
 		case 'Knight':
 			shieldSlamFunction()
@@ -55375,22 +57797,28 @@ function playerAbility2() {
 			contagionFunction()
 			break;
 		case 'Shadowblade':
-			shadowsurgeFunction()
+			shadowDaggersFunction()
 			break;
 		case 'Martial Monk':
-			tempestFunction()
+			callOfWindFunction()
 			break;
 		case 'Mystic Monk':
-			waterSealFunction()
+			mysticFistFunction()
 			break;
 		case 'Elemental Monk':
-			tidalFistFunction()
+			elementalTempestFunction()
 			break;
 		case 'Ranger':
 			rapidFireShotFunction()
 			break;
 		case 'Pyromancer':
 			spellFunction(player.inferno)
+			break;
+		case 'Cryo Mage':
+			spellFunction(player.blizzard)
+			break;
+		case 'Lightning Magus':
+			spellFunction(player.chainLightning)
 			break;
 		default:
 		quickMessage(`nothing`)
@@ -55403,7 +57831,7 @@ function playerAbility3() {
 			cataclysmFunction()
 			break;
 		case 'Fighter':
-			goreFunction()
+			bladeBlitzFunction()
 			break;
 		case 'Knight':
 			boomingMightFunction()
@@ -55418,19 +57846,25 @@ function playerAbility3() {
 			shadowVenomFunction()
 			break;
 		case 'Martial Monk':
-			catalystFunction()
+			knuckleBlitzFunction()
 			break;
 		case 'Mystic Monk':
-			earthSealFunction()
+			unleashedPowerFunction()
 			break;
 		case 'Elemental Monk':
-			lightningFistFunction()
+			transcendenceFunction()
 			break;
 		case 'Ranger':
-			multiShotFunction()
+			hydraArrowFunction()
 			break;
 		case 'Pyromancer':
-			meteor()
+			spellFunction(player.meteor)
+			break;
+		case 'Cryo Mage':
+			spellFunction(player.cryoclast)
+			break;
+		case 'Lightning Magus':
+			spellFunction(player.gigavolt)
 			break;
 		default:
 		quickMessage(`nothing`)
@@ -55441,24 +57875,12 @@ function playerAbility3() {
 function playerNormalAttack() {
 	switch (player.playerClass.name) {
 		case 'Berserker':
-			if (player.charge.level > 0) {
-				chargeFunction()
-			return
-			}
 			attack()
 			break;
 		case 'Fighter':
-			if (player.charge.level > 0) {
-				chargeFunction()
-				return
-			}
 			attack()
 			break;
 		case 'Knight':
-			if (player.charge.level > 0) {
-				chargeFunction()
-				return
-			}
 			attack()
 			break;
 		case 'Assassin':
@@ -55491,6 +57913,32 @@ function playerNormalAttack() {
 	updateMonsterBox()
 }
 
+function playerNormalAttackShift() {
+	switch (player.playerClass.name) {
+		case 'Berserker':
+			if (player.charge.level > 0) {
+				chargeFunction()
+				return
+			}
+			attack()
+			break;
+		case 'Fighter':
+			if (player.charge.level > 0) {
+				chargeFunction()
+				return
+			}
+			attack()
+			break;
+		case 'Knight':
+			if (player.charge.level > 0) {
+				chargeFunction()
+				return
+			}
+			attack()
+			break;
+		}
+}
+
 function warriorKeybinds() {}
 function rogueKeybinds() {}
 function rangerKeybinds() {}
@@ -55498,50 +57946,39 @@ function mageKeybinds() {}
 
 document.addEventListener('keydown', numPadFunctionality)
 function numPadFunctionality(event) {
-	console.log(event.shiftKey)
 	const isNumpadKey = event.location === 3
   	if (isNumpadKey && document.activeElement === commandLine) {
 	  event.preventDefault();
 	}
 	if (isNumpadKey) {
 		let eventKey = !isNaN(event.key) ? parseInt(event.key) : event.key
-		console.log(eventKey)
 		handleAction(eventKey, event)
 	}
 }
 function handleAction(action, event) {
-	console.log(event, 'EVENT')
-	console.log(action, 'ACTION')
-	console.log(event.shiftKey)
-	console.log(event.code)
-	if (event.shiftKey && action == '/') {
-		quickMessage(`ability using shift!!!`)
-	}
-	if (event.shiftKey && action == '*') {
-		quickMessage(`ability using shift!!!`)
-	}
-	if (event.shiftKey && action == '-') {
-		quickMessage(`ability using shift!!!`)
-	}
-	if (event.shiftKey && action == '+') {
-		quickMessage(`ability using shift!!!`)
-	}
-	if (event.key == 'Clear') {
-		quickMessage(`ability using shift!!!`)
-	}
+	if (event.altKey && event.shiftKey && action == '/') {playerAbility1ShiftAndAlt()}
+	else if (event.shiftKey && action == '/') {playerAbility1Shift()} 
+	else if (event.altKey && action == '/') {playerAbility1Alt()}
+	else if (action == '/') {playerAbility1()} 
+
+	else if (event.altKey && event.shiftKey && action == '*') {playerAbility2ShiftAndAlt()}
+	else if (event.shiftKey && action == '*') {playerAbility2Shift()} 
+	else if (event.altKey && action == '*') {playerAbility2Alt()} 
+	else if (action == '*') {playerAbility2()} 
+
+	else if (event.altKey && event.shiftKey && action == '-') {playerAbility3ShiftAndAlt()}
+	else if (event.shiftKey && action == '-') {playerAbility3Shift()} 
+	else if (event.altKey && action == '-') {playerAbility3Alt()} 
+	else if (action == '-') {playerAbility3()} 
+
+	else if (event.altKey && event.shiftKey && action == '+') {playerAbility4ShiftAndAlt()}
+	else if (event.shiftKey && action == '+') {playerAbility4Shift()} 
+	else if (event.altKey && action == '+') {playerAbility4Alt()} 
+	else if (action == '+') {playerAbility4()} 
+
+	else if (event.key == 'Clear') {playerNormalAttackShift()}
+
 	switch (action) {
-	case '/':
-		playerAbility1()
-		break;
-	case '*':
-		playerAbility2()
-		break;
-	case '-':
-		playerAbility3()
-		break;
-	case '+':
-		chargeFunction()
-		break;
 	case 7:
 		if (!player.combat && !player.stasis) {
 			handleInputs('nw')
@@ -55662,12 +58099,13 @@ function gameStart() {
 	pushMonster.push(trainingDummy2(currentArea))
 	pushMonster.push(trainingDummy3(currentArea))
 	pushMonster.push(trainingDummy4(currentArea))
-	pushMonster.push(trainingDummy(currentArea))
-	pushMonster.push(trainingDummy2(currentArea))
-	pushMonster.push(trainingDummy3(currentArea))
-	pushMonster.push(trainingDummy4(currentArea))
-	pushMonster.push(trainingDummy3(currentArea))
-	pushMonster.push(trainingDummy4(currentArea))
+	pushMonster.push(trainingDummy5(currentArea))
+	pushMonster.push(trainingDummy6(currentArea))
+	pushMonster.push(trainingDummy7(currentArea))
+	pushMonster.push(trainingDummy8(currentArea))
+	pushMonster.push(trainingDummy9(currentArea))
+	pushMonster.push(trainingDummy10(currentArea))
+
 	player.stasis = false
 	player.combat = false
 
@@ -55784,7 +58222,5 @@ function gameStart() {
 	updatePlayerStats()
 	// player.gold = 1000
 	recall(1, 6, -2)
-	startBerserker()
-
 }
 gameStart()
