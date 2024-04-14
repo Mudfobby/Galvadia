@@ -53,7 +53,6 @@ let blockedDamage
 // let playerBlockedDamage
 function blankSpace() {
 	if (masterArea.lastChild != undefined && masterArea.lastChild.classList.contains('hide')) {
-		console.log('DONT ADD A SPACE')
 	} else {
 		let space = document.createElement('div')
 		masterArea.appendChild(space)
@@ -114,8 +113,8 @@ function oneHandedSwing1(enemy, swingObject) {
 		if (swingObject.penetrationType) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
-		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
+		customizeEachWord('damage. ', 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -146,8 +145,8 @@ function bowSwing1(enemy, swingObject) {
 		if (swingObject.penetrationType) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
-		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
+		customizeEachWord('damage. ', 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -181,8 +180,8 @@ function daggerSwing1(enemy, swingObject) {
 		if (swingObject.penetrationType) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
-		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
+		customizeEachWord('damage. ', 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -216,8 +215,8 @@ function twoHandedSwing1(enemy, swingObject) {
 		if (swingObject.penetrationType) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
-		customizeEachWord('damage', 'green', line2)
-		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
+		customizeEachWord('damage. ', 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 	}
@@ -252,7 +251,7 @@ function unarmedSwing1(enemy, swingObject) {
 		if (swingObject.penetrationType) {
 			customizeEachWord(`${swingObject.penetrationType} `, swingObject.penetrationType, line2)
 		}
-		customizeEachWord('damage', 'green', line2)
+		customizeEachWord('damage.', 'green', line2)
 		customizeEachWord(` (Enemy's armor blocks `, 'white', line2)
 		customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
@@ -978,23 +977,17 @@ function allItemDescription(item) {
 		foodDiv.appendChild(foodNode)
 		mainDiv.appendChild(foodDiv)
 	}
+	if (item.type?.sell) {
+		const foodDiv = document.createElement('div')
+		const foodNode = document.createTextNode(`Use: Its only use is to be sold`)
+		foodDiv.appendChild(foodNode)
+		mainDiv.appendChild(foodDiv)
+	}
 	if (item.type?.crafting) {
 		const foodDiv = document.createElement('div')
 		const foodNode = document.createTextNode(`Type: Crafting Material`)
 		foodDiv.appendChild(foodNode)
 		mainDiv.appendChild(foodDiv)
-	}
-	if (item.type?.material) {
-		const damageTypeDiv = document.createElement('div')
-		const damageTypeNode = document.createTextNode(`Material: ${item.type.material}`)
-		damageTypeDiv.appendChild(damageTypeNode)
-		mainDiv.appendChild(damageTypeDiv)
-	}
-	if (item?.uses) {
-		const usesDiv = document.createElement('div')
-		const usesNode = document.createTextNode(`Uses: ${item.uses}`)
-		usesDiv.appendChild(usesNode)
-		mainDiv.appendChild(usesDiv)
 	}
 	if (item?.buff) {
 		if (item.buff?.healthBonus > 0) {
@@ -1636,6 +1629,12 @@ function handleInputs (commandLineInput) {
 		customizeEachWord(`] seconds`, 'white', line1)
 	} else {
 		switch (command) {
+			case 'roll':
+				evasiveRollFunction()
+				break;
+			case 'taunt':
+				tauntingShoutFunction()
+				break;
 			case 'spells':
 				playerSpellsList()
 				break;
@@ -1992,6 +1991,12 @@ function handleCombatInputs (commandLineInput) {
 		customizeEachWord(`] seconds`, 'white', line1)
 	} else {
 		switch (command) {
+			case 'roll':
+				evasiveRollFunction()
+				break;
+			case 'taunt':
+				tauntingShoutFunction()
+				break;
 			case 'spells':
 				playerSpellsList()
 			break;
@@ -2242,6 +2247,12 @@ function handleCombatStasisInputs(commandLineInput) {
 		customizeEachWord(`] seconds`, 'white', line1)
 	} else {
 		switch (command) {
+			case 'roll':
+				evasiveRollFunction()
+				break;
+			case 'taunt':
+				tauntingShoutFunction()
+				break;
 			case 'spells':
 				playerSpellsList()
 			break;
@@ -2519,6 +2530,8 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 2 : 
 		player.int = player.guild == 'Mage' ? 2 : 
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (secondCommand == '3') {
 		player.level = 3
@@ -2537,6 +2550,8 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 3 : 
 		player.int = player.guild == 'Mage' ? 3 : 
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (secondCommand == '4') {
 		player.level = 4
@@ -2555,9 +2570,10 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 4 : 
 		player.int = player.guild == 'Mage' ? 4 : 
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (secondCommand == '5') {
-		quickMessage(`5 was hit`)
 		player.level = 5
 		player.experience = 190
 		player.gold = 1000
@@ -2574,8 +2590,9 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 5 :
 		player.int = player.guild == 'Mage' ? 5 :
 		player.con = 1
-		quickMessage()
-	}
+		updatePlayerStats()
+		return
+		}
 	if (secondCommand == '6') {
 		player.level = 6
 		player.experience = 330
@@ -2593,6 +2610,8 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 6 : 
 		player.int = player.guild == 'Mage' ? 6 : 
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (secondCommand == '7') {
 		player.level = 7
@@ -2611,6 +2630,8 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 7 : 
 		player.int = player.guild == 'Mage' ? 7 :
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (secondCommand == '8') {
 		player.level = 8
@@ -2629,6 +2650,8 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 8 : 
 		player.int = player.guild == 'Mage' ? 8 : 
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (secondCommand == '9') {
 		player.level = 9
@@ -2647,6 +2670,8 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 9 : 
 		player.int = player.guild == 'Mage' ? 9 : 
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (secondCommand == '10') {
 		player.level = 10
@@ -2665,6 +2690,8 @@ function godMode(secondCommand) {
 		player.agi = player.guild == 'Ranger' ? 10 : 
 		player.int = player.guild == 'Mage' ? 10 :
 		player.con = 1
+		updatePlayerStats()
+		return
 	}
 	if (!secondCommand) {
 		player.level = 10
@@ -2683,7 +2710,10 @@ function godMode(secondCommand) {
 		player.dex = 10
 		player.agi = 10
 		player.int = 20
+		updatePlayerStats()
+		return
 	}
+	else {
 	player.might = 1000
 	player.adrenaline = 1000
 	player.focus = 1000
@@ -2692,6 +2722,7 @@ function godMode(secondCommand) {
 	player.mods.accuracy = 1000
 	updatePlayerStats()
 	quickMessage(`God mode activated`)
+	}
 }
 
 function combatCount(seconds) {
@@ -2800,10 +2831,16 @@ function rogueSinisterMarks() {
 //////////////////////////////////////////////////++COMBAT FUNCTIONS++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++COMBAT FUNCTIONS++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++COMBAT FUNCTIONS++//////////////////////////////////////////////////
+function tacticsBonus() {
+	if (player.tactics.level > 0) {
+		applyBuff(player.tactics.buff)
+	}
+}
 function advance() {
 	player.isStealthed = false
 	const targetedMonster = roomEnemies.find(enemy => enemy.x == player.x && enemy.y == player.y && enemy.z == player.z)
 	if (targetedMonster) {
+		tacticsBonus()
 		player.combat = true
 		targetedMonster.combat = player.combat
 		targetedMonster.hostile = true
@@ -4330,7 +4367,7 @@ function mineFunction(secondCommand) {
 
 
 async function gatherFunction(secondCommand) {
-	let allPlantTypes = ['cotton', 'orchid', 'lily', 'rose', 'ivy', 'sage', 'fern', 'daisy', 'thistle', 'lotus', 'poppy']
+	let allPlantTypes = ['clover', 'orchid', 'lily', 'rose', 'ivy', 'sage', 'fern', 'daisy', 'thistle', 'lotus', 'poppy']
 	let areaPlantTypes = []
 	for (let plantType in currentArea.interactables) {
 		if (allPlantTypes.includes(plantType)) {
@@ -4350,12 +4387,14 @@ async function gatherFunction(secondCommand) {
 	}
 	let line1 = lineFunc()
 	switch (secondCommand) {
-		case 'cotton':
+		case 'clover':
 			if (intelligenceCheck(2)) {
 				await dialogueWait(200)
 				blankSpace()
 				customizeEachWord(`You pick a blossom of `, 'white', line1)
-				customizeEachWord(`Cotton`, 'green', line1)
+				customizeEachWord(`Clover`, 'green', line1)
+				customizeEachWord(`and refine it into a `, 'white', line1)
+				customizeEachWord(`Thin Fiber`, 'green', line1)
 				blankSpace()
 				craftingMaterialGen(thinFiber(currentArea))
 				areaInteractableObject.empty = true
@@ -4364,7 +4403,7 @@ async function gatherFunction(secondCommand) {
 				await dialogueWait(200)
 				blankSpace()
 				customizeEachWord(`You feel as though you aren't smart enough to pick the `, 'white', line1)
-				customizeEachWord(`Cotton `, 'green', line1)
+				customizeEachWord(`Clover `, 'green', line1)
 				customizeEachWord(`without tearing it`, 'white', line1)
 				blankSpace()
 			}
@@ -5631,6 +5670,12 @@ function displayOnHitBonusSwing(enemy, swingObject) {
 	}
 }
 
+function baseWeightDamage() {
+	//using player.mods.weight because player.weight factors in strength which removes weight from player.weight
+	let playerWeight = player.mods.weight
+	let baseDamage = playerWeight * 0.5
+	return Math.ceil(baseDamage)
+}
 
 function baseAttackDamageRight() {
 	// THIS FUNCTION CALCULATES THE PLAYER'S BASE ATTACK DAMAGE FOR THE RIGHT WEAPON
@@ -5895,8 +5940,6 @@ function atIntoOnto(rightOrLeft) {
 }
 
 function applyDamageToEnemy(enemy, damage) {
-	console.log(enemy, ' ENEMY')
-	console.log(damage, ' DAMAGE')
 	if (enemy.health > 0 && player.health > 0 && damage) {
 		enemy.health = enemy.health - damage
 		if (enemy.health <= 0) {
@@ -6639,6 +6682,7 @@ let player = {
 		wis: 0,
 		mys: 0,
 		con: 0,
+		attackPower: 0,
 		spellPower: 0,
 		weaponSpeed: 0,
 		maxHealth: 0,
@@ -7140,7 +7184,7 @@ const vigor = {
 	level: 0,
 	name: 'Vigor',
 	type: 'skill',
-	color: 'skill',
+	color: 'green',
 	healthMultiplier: function() {
 		return Math.ceil(this.level * 0.25)
 	},
@@ -7149,6 +7193,13 @@ const vigor = {
 	},
 	pointsToUpgrade: function () {
 		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Vigor `, this.color, line1)
+		customizeEachWord(`increases the effectiveness of the Constitution attribute, gaining more hit points per point of Constitution.`, 'white', line1)
+		blankSpace()
 	},
 }
 player.vigor = { ...vigor }
@@ -7164,6 +7215,13 @@ const devotion = {
 	},
 	pointsToUpgrade: function () {
 		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Devotion `, this.color, line1)
+		customizeEachWord(`increases the effectiveness of the Wisdom attribute, gaining more mana per point of Wisdom.`, 'white', line1)
+		blankSpace()
 	},
 }
 player.devotion = { ...devotion }
@@ -7402,7 +7460,7 @@ const stealth = {
 				if (swingObject.penText) {
 					customizeEachWord(`${swingObject.penText} `, swingObject.penText, line2)
 				}				
-				customizeEachWord(`damage`, 'green', line2)
+				customizeEachWord(`damage. `, 'green', line2)
 				customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
 				customizeEachWord(`${swingObject.blockedDamage}`, 'light-blue', line2)
 				customizeEachWord(`)`, 'white', line2)
@@ -7522,7 +7580,16 @@ const supremeDodging = {
 		duration: 10000,
 		stacks: 1,
 		get dodge() {
-			return 	player.supremeDodging.level
+			if (player.supremeDodging.level == 1) {return 1}
+			if (player.supremeDodging.level == 2) {return 2}
+			if (player.supremeDodging.level == 3) {return 3}
+			if (player.supremeDodging.level == 4) {return 4}
+			if (player.supremeDodging.level == 5) {return 5}
+			if (player.supremeDodging.level == 6) {return 6}
+			if (player.supremeDodging.level == 7) {return 7}
+			if (player.supremeDodging.level == 8) {return 8}
+			if (player.supremeDodging.level == 9) {return 9}
+			if (player.supremeDodging.level == 10) {return 10}
 		},
 		maxStacks: function() {
 			return player.supremeDodging.level + 4
@@ -7539,7 +7606,7 @@ const supremeDodging = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`Each successful attack increases your chance to dodge for a duration. Chance to dodge per stack is ${this.buff.dodge}.`, 'white', line1)
+		customizeEachWord(`Each successful attack increases your chance to dodge by ${player.supremeDodging.buff.dodge} per stack.`, 'white', line1)
 		blankSpace()
 	},
 }
@@ -7757,46 +7824,7 @@ const preemptiveStrike = {
 	},
 }
 player.preemptiveStrike = { ...preemptiveStrike }
-const hardenedSkin = {
-	level: 0,
-	name: 'Hardened Skin',
-	refName: 'hardenedSkin',
-	cooldown: 0,
-	type: 'skill',
-	color: 'green',
-	activate: function(enemy) {
-		let buff = {
-			name: 'Hardened Skin',
-			refName: 'hardenedSkin',
-			duration: 30000,
-			armor: 1,
-			str: 10,
-			stacks: 1,
-			maxStacks: function() {
-				return 5
-			},
-		}
-		applyBuff(buff)
-	},
-	flavorText: function(enemy, damage) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		let line3 = lineFunc()
-		blankSpace()
-		customizeEachWord(`You predict the ${enemy.name}'s attack, and land your strike first!`, 'white', line1)
-		customizeEachWord(`Preemptive Strike hits for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`damage`, 'green', line2)
-		blankSpace()
-	},
-	goldToUpgrade: function () {
-		return 9 * this.level
-	},
-	pointsToUpgrade: function () {
-		return this.level + 1
-	},
-}
-player.hardenedSkin = { ...hardenedSkin }
+
 const lockpicking = {
 	level: 0,
 	name: 'Lockpicking',
@@ -7956,36 +7984,138 @@ const battleRage = {
 	cooldown: 0,
 	type: 'skill',
 	color: 'green',
+	activate: function() {
+		applyBuff(player.battleRage.buff)
+	},
+	buff: {
+		name: 'Battle Rage',
+		refName: 'battleRage',
+		get attackPower() {
+			if (player.battleRage.level == 1) {return 1}
+			if (player.battleRage.level == 2) {return 1}
+			if (player.battleRage.level == 3) {return 2}
+			if (player.battleRage.level == 4) {return 2}
+			if (player.battleRage.level == 5) {return 3}
+			if (player.battleRage.level == 6) {return 3}
+			if (player.battleRage.level == 7) {return 4}
+			if (player.battleRage.level == 8) {return 4}
+			if (player.battleRage.level == 9) {return 5}
+			if (player.battleRage.level >= 10) {return 5}
+		},
+		duration: 10000,
+		stacks: 1,
+		maxStacks: function() {
+			if (player.battleRage.level == 1) {return 3}
+			if (player.battleRage.level == 2) {return 4}
+			if (player.battleRage.level == 3) {return 4}
+			if (player.battleRage.level == 4) {return 5}
+			if (player.battleRage.level == 5) {return 5}
+			if (player.battleRage.level == 6) {return 6}
+			if (player.battleRage.level == 7) {return 6}
+			if (player.battleRage.level == 8) {return 7}
+			if (player.battleRage.level == 9) {return 7}
+			if (player.battleRage.level >= 10) {return 8}
+		},
+	},
 	goldToUpgrade: function () {
 		return 9 * this.level
 	},
 	pointsToUpgrade: function () {
 		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Each hit you take from an enemy's offensive attack increases your offense capabilities. Attack Power increased by ${player.battleRage.buff.attackPower} and stacks up to ${player.battleRage.buff.maxStacks()} times.`, 'white', line1)
+		blankSpace()
 	},
 }
 player.battleRage = { ...battleRage }
-const bloodthirst = {
-	level: 0,
-	name: `Bloodthirst`,
-	refName: 'bloodthirst',
-	cooldown: 0,
-	type: 'skill',
-	color: 'green',
-	goldToUpgrade: function () {
-		return 9 * this.level
-	},
-	pointsToUpgrade: function () {
-		return this.level + 1
-	},
-}
-player.bloodthirst = { ...bloodthirst }
-const defender = {
-	level: 0,
+const defender = { //DEFENSE RAISED BY LANDING ATTACKS
+	level: 1,
 	name: `Defender`,
 	refName: 'defender',
 	cooldown: 0,
 	type: 'skill',
 	color: 'green',
+	buff: {
+		name: 'Defender',
+		refName: 'defender',
+		duration: 10000,
+		stacks: 1,
+		slashingArmor: 1,
+		piercingArmor: 1,
+		bluntArmor: 1,
+		maxStacks: function() {
+			if (player.defender.level == 1) {return 1}
+			if (player.defender.level == 2) {return 2}
+			if (player.defender.level == 3) {return 3}
+			if (player.defender.level == 4) {return 4}
+			if (player.defender.level == 5) {return 5}
+			if (player.defender.level == 6) {return 6}
+			if (player.defender.level == 7) {return 7}
+			if (player.defender.level == 8) {return 8}
+			if (player.defender.level == 9) {return 9}
+			if (player.defender.level == 10) {return 10}
+		}
+
+	},
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Each regular attack you land increases your defenses. All armor types increased by ${player.defender.attackPower} and stacks up to ${player.battleRage.maxStacks()} times.`, 'white', line1)
+		blankSpace()
+	},
+}
+player.defender = { ...defender }
+
+const hardenedSkin = {//DEFENSE RAISED BY TAKING HITS
+	level: 0,
+	name: 'Hardened Skin',
+	refName: 'hardenedSkin',
+	cooldown: 0,
+	type: 'skill',
+	color: 'green',
+	activate: function() {
+		applyBuff(buff)
+	},
+	buff: {
+		name: 'Hardened Skin',
+		refName: 'hardenedSkin',
+		duration: 30000,
+		get slashingArmor() {
+			if (player.hardenedSkin.level == 1) {return 1}
+			if (player.hardenedSkin.level == 2) {return 1}
+			if (player.hardenedSkin.level == 3) {return 1}
+			if (player.hardenedSkin.level == 4) {return 1}
+			if (player.hardenedSkin.level >= 5) {return 1}
+		},
+		get slashingArmor() {
+			if (player.hardenedSkin.level == 1) {return 1}
+			if (player.hardenedSkin.level == 2) {return 1}
+			if (player.hardenedSkin.level == 3) {return 1}
+			if (player.hardenedSkin.level == 4) {return 1}
+			if (player.hardenedSkin.level >= 5) {return 1}
+		},		
+		get slashingArmor() {
+			if (player.hardenedSkin.level == 1) {return 1}
+			if (player.hardenedSkin.level == 2) {return 1}
+			if (player.hardenedSkin.level == 3) {return 1}
+			if (player.hardenedSkin.level == 4) {return 1}
+			if (player.hardenedSkin.level >= 5) {return 1}
+		},		
+		stacks: 1,
+		maxStacks: function() {
+			return 5
+		},
+	},
+
 	goldToUpgrade: function () {
 		return 9 * this.level
 	},
@@ -7993,19 +8123,38 @@ const defender = {
 		return this.level + 1
 	},
 }
-player.defender = { ...defender }
-const knightsResolve = {
+player.hardenedSkin = { ...hardenedSkin }
+
+const knightsResolve = {//WEIGHT ADDS ATTACK POWER
 	level: 0,
 	name: `Knight's Resolve`,
 	refName: 'knightsResolve',
 	cooldown: 0,
 	type: 'skill',
 	color: 'green',
+	bonusDamage: function() {
+		if (this.level == 1) {return player.mods.weight * 0.1}
+		if (this.level == 2) {return player.mods.weight * 0.2}
+		if (this.level == 3) {return player.mods.weight * 0.3}
+		if (this.level == 4) {return player.mods.weight * 0.4}
+		if (this.level == 5) {return player.mods.weight * 0.5}
+		if (this.level == 6) {return player.mods.weight * 0.6}
+		if (this.level == 7) {return player.mods.weight * 0.7}
+		if (this.level == 8) {return player.mods.weight * 0.8}
+		if (this.level == 9) {return player.mods.weight * 0.9}
+		if (this.level >= 10) {return player.mods.weight * 1.0}
+	},
 	goldToUpgrade: function () {
 		return 9 * this.level
 	},
 	pointsToUpgrade: function () {
 		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Knight's Resolve `, this.color, line1)
+		customizeEachWord(`grants knights additional damage based on their modified weight. This skill takes into consideration the Knight's weight before it is mitigated.`, 'white', line1)
 	},
 }
 player.knightsResolve = { ...knightsResolve }
@@ -8043,21 +8192,26 @@ const evasiveRoll = {
 	level: 0,
 	name: `Evasive Roll`,
 	refName: 'evasiveRoll',
+	resourceName: 'focus',
+	maxLevel: 1,
+	get resourceCost() {
+		if (this.level >= 1) {return 20}
+	},
 	cooldown: 0,
 	type: 'skill',
-	color: 'green',
+	color: 'ranger-color',
 	goldToUpgrade: function () {
-		return 9 * this.level
+		return 250
 	},
 	pointsToUpgrade: function () {
-		return this.level + 1
+		return 15
 	},
 }
 player.evasiveRoll = { ...evasiveRoll }
 const athletics = {
 	level: 0,
-	name: `Evasive Roll`,
-	refName: 'evasiveRoll',
+	name: `Athletics`,
+	refName: 'athletics',
 	cooldown: 0,
 	type: 'skill',
 	color: 'green',
@@ -8102,8 +8256,10 @@ const tauntingShout = {
 	name: `Taunting Shout`,
 	refName: 'tauntingShout',
 	cooldown: 0,
+	resourceName: 'might',
+	resourceCost: 1,
 	type: 'skill',
-	color: 'green',
+	color: 'warrior-color',
 	goldToUpgrade: function () {
 		return 9 * this.level
 	},
@@ -8118,27 +8274,7 @@ const tauntingShout = {
 	},
 }
 player.tauntingShout = { ...tauntingShout }
-const fistsOfFury = {
-	level: 0,
-	name: `Fists of Fury`,
-	refName: 'fistsOfFury',
-	cooldown: 0,
-	type: 'skill',
-	color: 'green',
-	goldToUpgrade: function () {
-		return 9 * this.level
-	},
-	pointsToUpgrade: function () {
-		return this.level + 1
-	},
-	description: function() {
-		let line1 = lineFunc()
-		blankSpace()
-		customizeEachWord(`A skill for Monks who would rather use their fists in combat rather than rely on weapons. A Monk who knows this skill gains a bonus to damage when fighting unarmed.`, 'white', line1)
-		blankSpace()
-	},
-}
-player.fistsOfFury = { ...fistsOfFury }
+
 const berserking = {
 	level: 0,
 	name: `Berserking`,
@@ -8245,14 +8381,45 @@ player.brutalBlows = { ...brutalBlows }
 
 const thrillOfTheKill = {
 	level: 0,
-	name: 'Thrill of the Kill',
+	name: 'Thrill Of The Kill',
 	refName: 'thrillOfTheKill',
 	type: 'skill',
 	color: 'green',
+	buff: {
+		name: 'Thrill Of The Kill',
+		refName: 'thrillOfTheKill',
+		heal: function() {
+			return 5
+		},
+		flavorText: function(undefined, healAmount) {
+			let line1 = lineFunc()
+			customizeEachWord(`You heal for `, 'green', line1)
+			customizeEachWord(`${healAmount} `, 'light-blue', line1)
+			blankSpace()
+		},
+		duration: 10000,
+		stacks: 1,
+		maxStacks: function() {
+			return 1
+		},
+	},
+	heal: function() {
+		return 10
+	},
+	flavorText: function(a, b, c, d, e) {
+		quickMessage(`${a}`)
+		quickMessage(`${b}`)
+		quickMessage(`${c}`)
+		quickMessage(`${d}`)
+		quickMessage(`${e}`)
+	},
 	activate: function() {
-		if (this.thrillOfTheKill) {
-			player.stasis = false
-			quickMessage(`You feel invigorated by bloodlust and feel unstoppable!`)
+		let weapon1 = getWeapon1() ? getWeapon1() : undefined
+		let weapon2 = getWeapon2() ? getWeapon2() : undefined
+		if (weapon1) {
+			applyWeaponEnchant(weapon1, player.thrillOfTheKill.buff)
+		} else if (weapon2) {
+			applyWeaponEnchant(weapon2, player.thrillOfTheKill.buff)
 		}
 	},
 	goldToUpgrade: function () {
@@ -8264,7 +8431,7 @@ const thrillOfTheKill = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You lust for blood after a kill, doing something something`, 'white', line1)
+		customizeEachWord(`You lust for blood after a kill, your attacks heal you for a short time`, 'white', line1)
 		blankSpace()
 	},
 }
@@ -8305,12 +8472,7 @@ const fleetFooted = {
 		if (this.level == 2) {reductionTime = 0.2}
 		if (this.level == 3) {reductionTime = 0.3}
 		if (this.level == 4) {reductionTime = 0.4}
-		if (this.level == 5) {reductionTime = 0.5}
-		if (this.level == 6) {reductionTime = 0.6}
-		if (this.level == 7) {reductionTime = 0.7}
-		if (this.level == 8) {reductionTime = 0.8}
-		if (this.level == 9) {reductionTime = 0.9}
-		if (this.level == 10) {reductionTime = 1.0}
+		if (this.level >= 5) {reductionTime = 0.5}
 		return reductionTime
 	},
 	goldToUpgrade: function () {
@@ -8337,16 +8499,11 @@ const initiation = {
 	reduction: function() {
 		let reductionTime = 0
 		if (this.level == 0) {reductionTime = 0}
-		if (this.level == 1) {reductionTime = 0.1}
-		if (this.level == 2) {reductionTime = 0.2}
-		if (this.level == 3) {reductionTime = 0.3}
-		if (this.level == 4) {reductionTime = 0.4}
-		if (this.level == 5) {reductionTime = 0.5}
-		if (this.level == 6) {reductionTime = 0.6}
-		if (this.level == 7) {reductionTime = 0.7}
-		if (this.level == 8) {reductionTime = 0.8}
-		if (this.level == 9) {reductionTime = 0.9}
-		if (this.level == 10) {reductionTime = 1.0}
+		if (this.level == 1) {reductionTime = 0.2}
+		if (this.level == 2) {reductionTime = 0.4}
+		if (this.level == 3) {reductionTime = 0.6}
+		if (this.level == 4) {reductionTime = 0.8}
+		if (this.level >= 5) {reductionTime = 1.0}
 		return reductionTime
 	},
 	goldToUpgrade: function () {
@@ -8370,6 +8527,39 @@ const vigilance = {
 	cooldown: 0,
 	type: 'skill',
 	color: 'green',
+	buff: {
+		name: 'Tactics',
+		refName: 'tactics',
+		get dodge() {
+			if (player.vigilance.level == 1) {return 5}
+			if (player.vigilance.level == 2) {return 5}
+			if (player.vigilance.level == 3) {return 10}
+			if (player.vigilance.level == 4) {return 10}
+			if (player.vigilance.level == 5) {return 15}
+			if (player.vigilance.level == 6) {return 15}
+			if (player.vigilance.level == 7) {return 20}
+			if (player.vigilance.level == 8) {return 20}
+			if (player.vigilance.level == 9) {return 25}
+			if (player.vigilance.level >= 10) {return 25}
+		},
+		get agi() {
+			if (player.vigilance.level == 1) {return 0}
+			if (player.vigilance.level == 2) {return 2}
+			if (player.vigilance.level == 3) {return 2}
+			if (player.vigilance.level == 4) {return 4}
+			if (player.vigilance.level == 5) {return 4}
+			if (player.vigilance.level == 6) {return 6}
+			if (player.vigilance.level == 7) {return 6}
+			if (player.vigilance.level == 8) {return 8}
+			if (player.vigilance.level == 9) {return 8}
+			if (player.vigilance.level >= 10) {return 10}
+		},
+		duration: 10000,
+		stacks: 1,
+		maxStacks: function() {
+			return 1
+		},
+	},
 	goldToUpgrade: function () {
 		return 9 * this.level
 	},
@@ -8385,12 +8575,69 @@ const vigilance = {
 }
 player.vigilance = { ...vigilance }
 const tactics = {
-	level: 0,
+	level: 1,
 	name: `Tactics`,
 	refName: 'tactics',
 	cooldown: 0,
 	type: 'skill',
 	color: 'green',
+	buff: {
+		name: 'Tactics',
+		refName: 'tactics',
+		get slashingArmor() {
+			if (player.tactics.level == 1) {return 1}
+			if (player.tactics.level == 2) {return 2}
+			if (player.tactics.level == 3) {return 3}
+			if (player.tactics.level == 4) {return 5}
+			if (player.tactics.level == 5) {return 7}
+			if (player.tactics.level == 6) {return 10}
+			if (player.tactics.level == 7) {return 13}
+			if (player.tactics.level == 8) {return 16}
+			if (player.tactics.level == 9) {return 20}
+			if (player.tactics.level >= 10) {return 25}
+		},
+		get piercingArmor() {
+			if (player.tactics.level == 1) {return 1}
+			if (player.tactics.level == 2) {return 2}
+			if (player.tactics.level == 3) {return 3}
+			if (player.tactics.level == 4) {return 5}
+			if (player.tactics.level == 5) {return 7}
+			if (player.tactics.level == 6) {return 10}
+			if (player.tactics.level == 7) {return 13}
+			if (player.tactics.level == 8) {return 16}
+			if (player.tactics.level == 9) {return 20}
+			if (player.tactics.level >= 10) {return 25}
+		},
+		get bluntArmor() {
+			if (player.tactics.level == 1) {return 1}
+			if (player.tactics.level == 2) {return 2}
+			if (player.tactics.level == 3) {return 3}
+			if (player.tactics.level == 4) {return 5}
+			if (player.tactics.level == 5) {return 7}
+			if (player.tactics.level == 6) {return 10}
+			if (player.tactics.level == 7) {return 13}
+			if (player.tactics.level == 8) {return 16}
+			if (player.tactics.level == 9) {return 20}
+			if (player.tactics.level >= 10) {return 25}
+		},
+		get str() {
+			if (player.tactics.level == 1) {return 0}
+			if (player.tactics.level == 2) {return 1}
+			if (player.tactics.level == 3) {return 1}
+			if (player.tactics.level == 4) {return 2}
+			if (player.tactics.level == 5) {return 2}
+			if (player.tactics.level == 6) {return 4}
+			if (player.tactics.level == 7) {return 4}
+			if (player.tactics.level == 8) {return 6}
+			if (player.tactics.level == 9) {return 6}
+			if (player.tactics.level >= 10) {return 10}
+		},
+		duration: 10000,
+		stacks: 1,
+		maxStacks: function() {
+			return 1
+		},
+	},
 	goldToUpgrade: function () {
 		return 9 * this.level
 	},
@@ -8400,11 +8647,82 @@ const tactics = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`Grants a bonus after using the advance command to initiate combat.`, 'white', line1)
+		customizeEachWord(`Grants an armor bonus for a short duration after using the advance command to initiate combat.`, 'white', line1)
 		blankSpace()
 	},
 }
 player.tactics = { ...tactics }
+const fistsOfFury = {
+	level: 0,
+	name: `Fists of Fury`,
+	refName: 'fistsOfFury',
+	cooldown: 0,
+	type: 'skill',
+	color: 'green',
+	update: function() {
+		//Goblin Fist
+		//Ogre Fist
+		//Titan Fist
+		//Dragon Fist
+		//God Fist
+		if (this.level == 1) {player.rightFist.topDamage += 2}
+		if (this.level == 1) {player.leftFist.topDamage += 2}
+		if (this.level == 2) {player.rightFist.topDamage += 3}
+		if (this.level == 2) {player.leftFist.topDamage += 3}
+		if (this.level == 3) {player.rightFist.topDamage += 4}
+		if (this.level == 3) {player.leftFist.topDamage += 4}
+		if (this.level == 4) {player.rightFist.topDamage += 5}
+		if (this.level == 4) {player.leftFist.topDamage += 5}
+		if (this.level == 5) {player.rightFist.topDamage += 6}
+		if (this.level == 5) {player.leftFist.topDamage += 6}
+	},
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`A skill for Monks who would rather use their fists in combat rather than rely on weapons. Fists of Fury increases the top damage value of both your fists.`, 'white', line1)
+		blankSpace()
+	},
+}
+player.fistsOfFury = { ...fistsOfFury }
+const fistsOfCalm = {
+	level: 0,
+	name: `Fists of Calm`,
+	refName: 'fistsOfCalm',
+	cooldown: 0,
+	type: 'skill',
+	color: 'green',
+	update: function() {
+		//Goblin Fist
+		//Ogre Fist
+		//Titan Fist
+		//Dragon Fist
+		//God Fist
+		if (this.level == 1) {player.rightFight.topDamage += 2}
+		if (this.level == 2) {player.rightFight.topDamage += 3}
+		if (this.level == 3) {player.rightFight.topDamage += 4}
+		if (this.level == 4) {player.rightFight.topDamage += 5}
+		if (this.level == 5) {player.rightFight.topDamage += 6}
+	},
+	goldToUpgrade: function () {
+		return 9 * this.level
+	},
+	pointsToUpgrade: function () {
+		return this.level + 1
+	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`A skill for Monks who would rather use their fists in combat rather than rely on weapons. Fists of Calm increases the bottom damage value of both your fists.`, 'white', line1)
+		blankSpace()
+	},
+}
+player.fistsOfFury = { ...fistsOfFury }
 const wayOfTheFist = {
 	level: 0,
 	name: `Way Of The Fist`,
@@ -8413,18 +8731,37 @@ const wayOfTheFist = {
 	type: 'skill',
 	color: 'green',
 	update: function() {
-		let increaseAmount
-		if (this.level < 3) {
-			increaseAmount = .2
-		} else if (this.level < 6) {
-			increaseAmount = .4
-		} if (this.level < 9) {
-			increaseAmount = .6
-		}
-		player.rightFist.botDamage += increaseAmount
-		player.rightFist.topDamage += increaseAmount
-		player.leftFist.botDamage += increaseAmount
-		player.leftFist.topDamage += increaseAmount
+		let attackPowerIncrease = 0
+		let bluntPenIncrease = 0
+		if (player.wayOfTheFist.level == 1) {attackPowerIncrease = 1}
+		if (player.wayOfTheFist.level == 1) {bluntPenIncrease = 0}
+		if (player.wayOfTheFist.level == 2) {attackPowerIncrease = 2}
+		if (player.wayOfTheFist.level == 2) {bluntPenIncrease = 3}
+		if (player.wayOfTheFist.level == 3) {attackPowerIncrease = 3}
+		if (player.wayOfTheFist.level == 3) {bluntPenIncrease = 3}
+		if (player.wayOfTheFist.level == 4) {attackPowerIncrease = 5}
+		if (player.wayOfTheFist.level == 4) {bluntPenIncrease = 5}
+		if (player.wayOfTheFist.level == 5) {attackPowerIncrease = 6}
+		if (player.wayOfTheFist.level == 5) {bluntPenIncrease = 6}
+		if (player.wayOfTheFist.level == 6) {attackPowerIncrease = 7}
+		if (player.wayOfTheFist.level == 6) {bluntPenIncrease = 7}
+		if (player.wayOfTheFist.level == 7) {attackPowerIncrease = 9}
+		if (player.wayOfTheFist.level == 7) {bluntPenIncrease = 9}
+		if (player.wayOfTheFist.level == 8) {attackPowerIncrease = 10}
+		if (player.wayOfTheFist.level == 8) {bluntPenIncrease = 10}
+		if (player.wayOfTheFist.level == 9) {attackPowerIncrease = 11}
+		if (player.wayOfTheFist.level == 9) {bluntPenIncrease = 11}
+		if (player.wayOfTheFist.level >= 10) {attackPowerIncrease = 15}
+		if (player.wayOfTheFist.level >= 10) {bluntPenIncrease = 15}
+		// player.unarmed.botMultiplier += increaseAmount
+		player.rightFist.mods.attackPower = attackPowerIncrease
+		player.leftFist.mods.attackPower = attackPowerIncrease
+		player.rightFist.mods.bluntPen = bluntPenIncrease
+		player.leftFist.mods.bluntPen = bluntPenIncrease
+		console.log(attackPowerIncrease)
+		console.log(player.rightFist.mods)
+		weaponOrShieldAddPlayerAttribute(player.rightFist)
+		weaponOrShieldAddPlayerAttribute(player.leftFist)
 	},
 	goldToUpgrade: function () {
 		return 9 * this.level
@@ -8435,20 +8772,13 @@ const wayOfTheFist = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`Grants a bonus after using the advance command to initiate combat.`, 'white', line1)
+		customizeEachWord(`Increases the top end damage you deal with your fists with no weapon equipped. Also increases your blunt penetration. (right now this applies to any unarmed weapon. haven't split martial arts skill from unarmed yet)`, 'white', line1)
 		blankSpace()
 	},
 }
 player.wayOfTheFist = { ...wayOfTheFist }
-//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
-//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
-//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
-//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
 
-//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
-//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
-//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
-//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
+
 const bleed = {
 	level: 1,
 	name: 'Bleed',
@@ -8458,7 +8788,7 @@ const bleed = {
 	damage: function(enemy, swingObject) {
 		let damage = swingObject.totalDamage
 		let totalDamage = Math.ceil(damage * (enemy.debuffs.bleed.stacks * 0.1))
-		quickMessage(`Bleed bonus damage = ${totalDamage}`)
+		console.log(totalDamage, ' BLEED BONUS DAMAGE')
 		return Math.ceil(totalDamage)
 		// return 0.1 * this.stacks
 		//change to increment by 10% per stack
@@ -8468,7 +8798,12 @@ const bleed = {
 		if (this.level == 2) {return 0.25}
 		if (this.level == 3) {return 0.30}
 		if (this.level == 4) {return 0.35}
-		if (this.level >= 5) {return 0.40}
+		if (this.level == 5) {return 0.40}
+		if (this.level == 6) {return 0.45}
+		if (this.level == 7) {return 0.50}
+		if (this.level == 8) {return 0.55}
+		if (this.level == 9) {return 0.60}
+		if (this.level >= 10) {return 0.65}
 	},
 	maxStacks: function() {
 		return this.level + 2
@@ -8476,11 +8811,21 @@ const bleed = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`Bleed is a debuff applied to enemies by certain Warrior skills. Bleed increases the damage of your regular attacks against the target. Damage is increased further for each stack on the target.`, 'white', line1)
+		customizeEachWord(`Bleed is a debuff applied to enemies by certain Warrior skills. Each stack of bleed on the target increases the damage dealt to it by all warrior abilities and regular attacks by ${player.bleed.bonusModifier() * 100}%. Damage is increased further for each stack on the target.`, 'white', line1)
 		blankSpace()
 	},
 }
 player.bleed = { ...bleed }
+//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
+//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
+//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
+//////////////////////////////////////SKILLS SKILLS SKILLS SKILLS////////////////////////////////////////
+
+//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
+//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
+//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
+//////////////////////////////////////ABILITIES ABILITIES ABILITIES//////////////////////////////////////
+
 
 const charge = {
 	//Ideas: Can hit and engage multiple enemies at once
@@ -8507,17 +8852,37 @@ const ripslash = {
 	color: 'warrior-color',
 	cooldownSet: 8000,
 	cooldown: 8000,
-	windUp: 1,
+	windUp: 6,
+	numberOfSwings: function() {
+		if (this.level == 1) { return 2}
+		if (this.level == 2) { return 2}
+		if (this.level == 3) { return 3}
+		if (this.level == 4) { return 3}
+		if (this.level == 5) { return 4}
+		if (this.level >= 6) { return 4}
+	},
 	resourceCost: 1,
 	resourceName: 'might',
 	weaponTypesUsed: ['oneHanded', 'twoHanded'],
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight()
-		let bleedBonusDamage = calculateBleedBonus(enemy, baseDamage)
-		let totalDamage = Math.ceil(baseDamage + bleedBonusDamage)
-		console.log(bleedBonusDamage, ' RIPSLASH BONUS DAMAGE')
+		let levelModifier
+		if (this.level == 1) { levelModifier = 1.5 }
+		if (this.level == 2) { levelModifier = 2.0 }
+		//level 3 now hits 2 times
+		if (this.level == 3) { levelModifier = 2.0 }
+		if (this.level == 4) { levelModifier = 2.5 }
+		//level 5 now hits 3 times
+		if (this.level == 5) { levelModifier = 2.5 }
+		if (this.level >= 6) { levelModifier = 3.0 }
+		let baseAndLevelDamage = (baseDamage * levelModifier)
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
+		let totalDamage = baseAndLevelDamage + bleedBonusDamage
+		console.log(baseDamage, ' RIPSLASH BASE DAMAGE')
+		console.log(baseAndLevelDamage, ' RIPSLASH BASE + LEVEL DAMAGE')
+		console.log(bleedBonusDamage, ' BLEED BONUS DAMAGE (ONLY THE BLEED PERCENTAGE -- NOT ADDED TO ANY BASE DAMAGE)')
 		console.log(totalDamage, ' TOTAL DAMAGE')
-		return totalDamage
+		return Math.ceil(totalDamage)
 	},
 	windUpText: function() {
 		let line1 = lineFunc()
@@ -8558,6 +8923,14 @@ const ripslash = {
 			customizeEachWord(`!`, 'white', line2)
 			blankSpace()
 	},
+	description: function() {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`Ripslash `, this.color, line1)
+		customizeEachWord(`Level 1: Deals single target damage`, 'white', line1)
+		customizeEachWord(`Ripslash `, this.color, line1)
+		blankSpace()
+	},
 	queued: false,
 	onCooldown: false,
 	goldToUpgrade: function () {
@@ -8577,24 +8950,35 @@ const cyclone = {
 	color: 'warrior-color',
 	cooldownSet: 10000,
 	cooldown: 10000,
-	windUp: 2,
+	windUp: 4,
+	numberOfTargets: function() {
+		if (this.level == 1) { return 2}
+		if (this.level == 2) { return 2}
+		if (this.level == 3) { return 3}
+		if (this.level == 4) { return 3}
+		if (this.level == 5) { return 4}
+		if (this.level >= 6) { return 4}
+	},
 	resourceName: 'might',
 	resourceCost: 2,
-	numberOfTargets: 3,
 	weaponTypesUsed: ['oneHanded', 'twoHanded'],
 	damage: function (enemy) {
-		let damage = baseAttackDamageRight()
-		switch(this.level) {
-			case 1:
-			damage = damage * 1.5
-			break;
-			case 2:
-			damage = damage * 2.0
-			break;
-			case 3:
-			damage = damage * 2.5
-		}
-		return Math.ceil(damage)
+		let baseDamage = baseAttackDamageRight()
+		let levelModifier
+		if (this.level == 1) { levelModifier = 1.25 }
+		if (this.level == 2) { levelModifier = 1.75 }
+		//level 3: now hits 3 targets
+		if (this.level == 3) { levelModifier = 1.75 }
+		if (this.level == 4) { levelModifier = 2.25 }
+		//level 5: now hits 4 targets
+		if (this.level == 5) { levelModifier = 2.25 }
+		if (this.level == 6) { levelModifier = 2.75 }
+		//level 7: now hits 5 targets
+		if (this.level >= 7) { levelModifier = 2.75}
+		let baseAndLevelDamage = (baseDamage * levelModifier)
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
+		let totalDamage = baseAndLevelDamage + bleedBonusDamage
+		return Math.ceil(totalDamage)
 	},
 	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked) {
 		let line1 = document.createElement('div')
@@ -8666,17 +9050,29 @@ const cataclysm = {
 	color: 'warrior-color',
 	cooldownSet: 10000,
 	cooldown: 10000,
-	windUp: 2,
+	windUp: 4,
 	resourceName: 'might',
 	resourceCost: 3, //player.maxMight is what this should be when not testing things
 	weaponTypesUsed: ['oneHanded', 'twoHanded'],
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight()
-		let bleedBonusDamage = calculateBleedBonus(enemy, baseDamage)
-		let totalDamage = Math.ceil(baseDamage + bleedBonusDamage)
-		console.log(bleedBonusDamage, ' CATACLYSM BONUS DAMAGE')
+		let levelModifier
+		if (this.level == 1) { levelModifier = 1.5 }
+		if (this.level == 2) { levelModifier = 2.0 }
+		//level 3 now hits 2 times
+		if (this.level == 3) { levelModifier = 2.0 }
+		if (this.level == 4) { levelModifier = 2.5 }
+		//level 5 now hits 3 times
+		if (this.level == 5) { levelModifier = 2.5 }
+		if (this.level >= 6) { levelModifier = 3.0 }
+		let basePlusLevelDamage = (baseDamage * levelModifier)
+		let bleedBonusDamage = calculateBleedBonus(enemy, basePlusLevelDamage)
+		let totalDamage = basePlusLevelDamage + bleedBonusDamage
+		console.log(baseDamage, ' CATACLYSM BASE DAMAGE')
+		console.log(basePlusLevelDamage, ' CATACLYSM BASE + LEVEL DAMAGE')
+		console.log(bleedBonusDamage, ' BLEED BONUS DAMAGE (ONLY THE BLEED PERCENTAGE -- NOT ADDED TO ANY BASE DAMAGE)')
 		console.log(totalDamage, ' TOTAL DAMAGE')
-		return totalDamage
+		return Math.ceil(totalDamage)
 	},
 	debuff: {
 		name: 'Cataclysm',
@@ -9079,18 +9475,29 @@ const valorStrike = {
 	resourceCost: 1,
 	weaponTypesUsed: ['shields', 'oneHanded'],
 	valorBonus: function() {
-		if (this.level == 1) {return 0.1}
-		if (this.level == 2) {return 0.15}
-		if (this.level == 3) {return 0.20}
-		if (this.level == 4) {return 0.25}
-		if (this.level >= 5) {return 0.30}
+		if (this.level == 1) {return 1.10}
+		if (this.level == 2) {return 1.15}
+		if (this.level == 3) {return 1.20}
+		if (this.level == 4) {return 1.25}
+		if (this.level == 5) {return 1.30}
+		if (this.level == 6) {return 1.35}
+		if (this.level >= 7) {return 1.40}
 	},
 	damage: function () {
 		let baseDamage = baseAttackDamageRight()
+		let levelModifier
+		if (this.level == 1) { levelModifier = 1.0}
+		if (this.level == 2) { levelModifier = 1.1}
+		if (this.level == 3) { levelModifier = 1.2}
+		if (this.level == 4) { levelModifier = 1.3}
+		if (this.level == 5) { levelModifier = 1.4}
+		if (this.level == 6) { levelModifier = 1.5}
+		if (this.level == 7) { levelModifier = 1.6}
+		if (this.level == 8) { levelModifier = 1.7}
 		let bonusModifier = this.valorBonus()
-		let bonusDamage = baseDamage * bonusModifier
-		let totalDamage = Math.ceil(baseDamage + bonusDamage)
-		return totalDamage
+		let baseAndLevelDamage = baseDamage * levelModifier
+		let totalDamage = baseAndLevelDamage * bonusModifier
+		return Math.ceil(totalDamage)
 	},
 	buff: {
 		name: 'Valor',
@@ -9098,7 +9505,7 @@ const valorStrike = {
 		duration: 30000,
 		stacks: 1,
 		maxStacks: function() {
-			return player.boomingMight.level + 9
+			return player.valorStrike.level + 5
 		},
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
@@ -9168,7 +9575,7 @@ const shieldSlam = {
 	cooldown: 10000,
 	windUp: 2,
 	resourceName: 'might',
-	resourceCost: 1,
+	resourceCost: 2,
 	numberOfTargets: function() {
 		return this.level + 1
 	},
@@ -9177,25 +9584,49 @@ const shieldSlam = {
 		name: 'Shield Slam',
 		refName: 'shieldSlam',
 		modifiedStats: ['slashingArmor', 'piercingArmor', 'bluntArmor'],
-		slashingArmor: -5,
-		piercingArmor: -5,
-		bluntArmor: -5,
+		get slashingArmor() {
+			if (player.shieldSlam.level == 1) {return -5}
+			if (player.shieldSlam.level == 2) {return -10}
+			if (player.shieldSlam.level == 3) {return -15}
+			if (player.shieldSlam.level == 4) {return -20}
+			if (player.shieldSlam.level >= 5) {return -25}
+		},
+		get piercingArmor() {
+			if (player.shieldSlam.level == 1) {return -5}
+			if (player.shieldSlam.level == 2) {return -10}
+			if (player.shieldSlam.level == 3) {return -15}
+			if (player.shieldSlam.level == 4) {return -20}
+			if (player.shieldSlam.level >= 5) {return -25}
+		},
+		get bluntArmor() {
+			if (player.shieldSlam.level == 1) {return -5}
+			if (player.shieldSlam.level == 2) {return -10}
+			if (player.shieldSlam.level == 3) {return -15}
+			if (player.shieldSlam.level == 4) {return -20}
+			if (player.shieldSlam.level >= 5) {return -25}
+		},
 		duration: 20000,
 		stacks: 0,
 		maxStacks: function() {
-			return player.shieldSlam.level
+			return 1
 		},
 	},
 	damage: function () {
-		let baseDamage = 10
-		let weightAndArmorDamage = (player.weight + player.armor) * 0.33
-		let totalDamage = Math.ceil(baseDamage + weightAndArmorDamage)
-		// if (player.currentLeftHandWeapon().skillUsed == 'shields') {
-		// 	return baseAttackDamageLeft()
-		// } else {
-		// 	return baseAttackDamageRight()
-		// }
-		return totalDamage
+		let baseAttackDamage = baseAttackDamageRight()
+		let baseWeightDamage = baseWeightDamage()
+		let baseDamage = baseAttackDamage + baseWeightDamage
+		let levelModifier
+		if (this.level == 1) { levelModifier = 1.0}
+		if (this.level == 2) { levelModifier = 1.25}
+		if (this.level == 3) { levelModifier = 1.50}
+		if (this.level == 4) { levelModifier = 1.75}
+		if (this.level == 5) { levelModifier = 2.0}
+		if (this.level == 6) { levelModifier = 2.25}
+		if (this.level == 7) { levelModifier = 2.50}
+		if (this.level == 8) { levelModifier = 2.75}
+		let baseAndLevelDamage = baseDamage * levelModifier
+		let totalDamage = baseAndLevelDamage
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -9255,7 +9686,7 @@ const shieldSlam = {
 		return 9 * this.level
 	},
 	pointsToUpgrade: function () {
-		return this.level + 1
+		return 10
 	},
 	description: function() {
 		let line1 = lineFunc()
@@ -9275,7 +9706,7 @@ const boomingMight = {
 	cooldown: 10000,
 	windUp: 2,
 	resourceName: 'might',
-	resourceCost: 2,
+	resourceCost: 3,
 	weaponTypesUsed: ['oneHanded', 'shields'],
 	buff: {
 		name: 'Valor',
@@ -9283,15 +9714,26 @@ const boomingMight = {
 		duration: 30000,
 		stacks: 0,
 		maxStacks: function() {
-			return player.boomingMight.level + 9
+			return player.valorStrike.level + 5
 		},
 		type: 'debuff',
 	},
 	damage: function () {
-		let baseDamage = 10 //this number is randomly made up, keep if it works
-		let abilityDamage = (player.weight + player.armor)
-		let totalDamage = Math.ceil(baseDamage + abilityDamage)
-		return totalDamage
+		let baseAttackDamage = baseAttackDamageRight()
+		let weightDamage = baseWeightDamage()
+		let baseDamage = baseAttackDamage + weightDamage
+		let levelModifier
+		if (this.level == 1) { levelModifier = 1.0}
+		if (this.level == 2) { levelModifier = 1.25}
+		if (this.level == 3) { levelModifier = 1.50}
+		if (this.level == 4) { levelModifier = 1.75}
+		if (this.level == 5) { levelModifier = 2.0}
+		if (this.level == 6) { levelModifier = 2.25}
+		if (this.level == 7) { levelModifier = 2.50}
+		if (this.level == 8) { levelModifier = 2.75}
+		let baseAndLevelDamage = baseDamage * levelModifier
+		let totalDamage = baseAndLevelDamage 
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -13670,7 +14112,7 @@ const shields = {
 	speed: 0,
 	accuracy: 0,
 	slashingPen: 0,
-	piercingPend: 0,
+	piercingPen: 0,
 	bluntPen: 0,
 	color: 'green',
 	goldToUpgrade: function () {
@@ -15177,11 +15619,12 @@ function updateTwoHanded() {
 	let agi = player.agi + player.mods.agi
 
 	let twoHandedAttributes = ((str * 2) + dex + agi) - 4
-	player.twoHanded.attackPower = twoHandedAttributes
+	player.twoHanded.attackPower = Math.floor(twoHandedAttributes + player.mods.attackPower)
 	player.twoHanded.topMultiplier = parseFloat((0.30 + player.twoHanded.level / 20).toFixed(2))
 	player.twoHanded.botMultiplier = parseFloat((0.30 + player.twoHanded.level / 20).toFixed(2))
 	player.twoHanded.accuracy = Math.floor(10 + ((dex * 3) + player.twoHanded.level + player.mods.accuracy) * 10) / 10
-	player.twoHanded.speed = player.twoHanded.speed <= 2 ? 2 : (6.2 - Math.floor((player.twoHanded.level / 5) * 100) / 100).toFixed(1)
+	player.twoHanded.speed = player.twoHanded.speed <= 2 ? 2 : parseFloat((6.2 - Math.floor((player.twoHanded.level / 5) * 100) / 100).toFixed(1))
+	player.twoHanded.speed += player.weight * 0.1
 }
 
 function updateOneHanded() {
@@ -15197,20 +15640,12 @@ function updateOneHanded() {
 		player.oneHanded.accuracy = Math.floor(10 + (dex + player.oneHanded.level + player.mods.accuracy) * 10) / 10
 	}
 	let oneHandedAttributes = str + dex
-	player.oneHanded.attackPower = oneHandedAttributes
+	player.oneHanded.attackPower = Math.floor(oneHandedAttributes + player.mods.attackPower)
 	player.oneHanded.topMultiplier = parseFloat((0.30 + player.oneHanded.level / 20).toFixed(2)) //parseFloat((0.40 + 1 / 20).toFixed(2));
 	player.oneHanded.botMultiplier = parseFloat((0.30 + player.oneHanded.level / 20).toFixed(2))
-	player.oneHanded.speed = player.oneHanded.speed <= 2 ? 2 : (4.1 - Math.floor((player.oneHanded.level / 10) * 100) / 100).toFixed(1)
+	player.oneHanded.speed = player.oneHanded.speed <= 2 ? 2 : parseFloat((5.1 - Math.floor((player.oneHanded.level / 10) * 100) / 100).toFixed(1))
+	player.oneHanded.speed += player.weight * 0.1
 }
-// function updateDualWield() {
-// 	let dualWieldAttributes = (player.str + player.mods.str) * 1.5 + (player.dex + player.mods.dex) * 1.5
-
-// 	player.dualWield.attackPower = dualWieldAttributes
-// 	player.dualWield.topMultiplier = parseFloat((0.45 + player.dualWield.level / 20).toFixed(2))
-// 	player.dualWield.botMultiplier = parseFloat((0.45 + player.dualWield.level / 20).toFixed(2))
-// 	player.dualWield.accuracy = Math.floor(10 + ((player.dex * 3) + player.dualWield.level) * 10) / 10
-// 	player.dualWield.speed = player.dualWield.speed <= 2 ? 2 : (5.1 - Math.floor((player.dualWield.level / 10) * 100) / 100).toFixed(1)
-// }
 
 function updateDaggers() {
 	// let str = player.str + player.mods.str
@@ -15227,11 +15662,13 @@ function updateDaggers() {
 	}
 	let daggersAttributes = dex + agi
 //mods
-	player.daggers.attackPower = Math.ceil(daggersAttributes)
+	player.daggers.attackPower = Math.ceil(daggersAttributes  + player.mods.attackPower)
 	player.daggers.topMultiplier = parseFloat((0.30 + player.daggers.level / 20).toFixed(2))
 	player.daggers.botMultiplier = parseFloat((0.30 + player.daggers.level / 20).toFixed(2))
 	//1 point of dex increases accuracy by 1
-	player.daggers.speed = player.daggers.speed <= 2 ? 2 : (5.1 - Math.floor((player.daggers.level / 10) * 100) / 100).toFixed(1)
+	player.daggers.speed = player.daggers.speed <= 2 ? 2 : parseFloat((5.1 - Math.floor((player.daggers.level / 10) * 100) / 100).toFixed(1))
+	player.daggers.speed += player.weight * 0.1
+
 }
 
 function updateUnarmed() {
@@ -15241,11 +15678,12 @@ function updateUnarmed() {
 	let dualSwingPenalty = 10
 	let unarmedAttributes = (str + dex + agi)
 
-	player.unarmed.attackPower = Math.ceil(unarmedAttributes)
+	player.unarmed.attackPower = Math.ceil(unarmedAttributes + player.mods.attackPower)
 	player.unarmed.topMultiplier = parseFloat((0.30 + player.unarmed.level / 20).toFixed(2))
 	player.unarmed.botMultiplier = parseFloat((0.30 + player.unarmed.level / 20).toFixed(2))
 	player.unarmed.accuracy = Math.floor(10 + (dex + player.mods.accuracy + player.unarmed.level - dualSwingPenalty) * 10) / 10
 	player.unarmed.speed = parseFloat((4.1 - Math.floor((player.unarmed.level / 10) * 100) / 100).toFixed(1) < 2 ? 2 : parseFloat((4.1 - Math.floor((player.unarmed.level / 10) * 100) / 100).toFixed(1)))
+	player.unarmed.speed += player.weight * 0.1
 }
 
 function updateBows() {
@@ -15253,11 +15691,13 @@ function updateBows() {
 	let agi = player.agi + player.mods.agi
 	let bowsAttributes = dex + agi
 
-	player.bows.attackPower = Math.ceil(bowsAttributes)
+	player.bows.attackPower = Math.ceil(bowsAttributes + player.mods.attackPower)
 	player.bows.topMultiplier = parseFloat((0.30 + player.bows.level / 20).toFixed(2))
 	player.bows.botMultiplier = parseFloat((0.30 + player.bows.level / 20).toFixed(2))
 	player.bows.accuracy = Math.floor(10 + (dex + player.bows.level + player.mods.accuracy) * 10) / 10
-	player.bows.speed = player.bows.speed <= 2 ? 2 : (5.1 - Math.floor((player.bows.level / 10) * 100) / 100).toFixed(1)
+	player.bows.speed = player.bows.speed <= 2 ? 2 : parseFloat((5.1 - Math.floor((player.bows.level / 10) * 100) / 100).toFixed(1))
+	player.bows.speed += player.weight * 0.1
+
 }
 function updateMysticPower() {
 	let mys = player.mys + player.mods.mys
@@ -15285,8 +15725,8 @@ function updateShields() {
 function updateDodge() {
 	//SHOULD MAKE AGILITY FACTOR INTO DODGE
 	//every point of agility gives 3 to dodge
-	let calculatedDodge = player.level + player.dodging.rating() + ((player.mods.agi + player.agi) * 3) + player.mods.dodge
-	player.dodge = calculatedDodge - player.weight <= 0 ? 0 : calculatedDodge - player.weight
+	let calculatedDodge = (player.level + player.dodging.rating() + ((player.mods.agi + player.agi) * 3) + player.mods.dodge) - player.weight
+	player.dodge = calculatedDodge
 }
 
 
@@ -15328,6 +15768,36 @@ function updateCurrentWeaponSkill() {
 }
 
 function initializePlayerStats() {}
+
+// function updateWeaponAndArmorMods() {
+// 	let allItemsEquipped = pushItem.filter(
+// 		item =>
+// 			item.roomId == 'right hand' ||
+// 			item.roomId == 'left hand' ||
+// 			item.roomId == 'right ring' ||
+// 			item.roomId == 'left ring' ||
+// 			item.roomId == 'head' ||
+// 			item.roomId == 'necklace' ||
+// 			item.roomId == 'shoulders' ||
+// 			item.roomId == 'chest' ||
+// 			item.roomId == 'back' ||
+// 			item.roomId == 'hands' ||
+// 			item.roomId == 'waist' ||
+// 			item.roomId == 'legs' ||
+// 			item.roomId == 'feet'	
+// 		)
+// 		allItemsEquipped.forEach(equippedItem => {
+// 			if (equippedItem.mods) {
+// 				for (let itemMod in equippedItem.mods) {
+// 					if (player.hasOwnProperty(itemMod)) {
+
+// 						player[itemMod] = player.mods[itemMod]
+// 					}
+// 					player.mods[itemMod]
+// 				}
+// 			}
+// 		})
+// }
 
 function updateWeight() {
 	player.weight = player.mods.weight - (player.str * 5) <= 0 ? 0 : player.mods.weight - (player.str * 5)
@@ -15963,7 +16433,7 @@ let egbert = {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line2)
-			customizeEachWord(`"Before you go, I want to tell you how to get to the Town Center as well as the Guild Plaza where the ${player.guild}'s Guild is. The Training Halls that we are in are inside the castle walls in the courtyard. The Town of Galvadia is almost directly south of here, and the Guild Plaza is just a few directions south of the Town Square. If you read the sign here, it will give you the exact directions to the Town Square. If you get lost, there are signs at almost every intersection and junction that will point you in the right direction."`, white, line2)
+			customizeEachWord(`"Before you go, I want to tell you how to get to the Town Square and the Guild Plaza where the ${player.guild}'s Guild is. Go west from here, then southwest, then straight south until you come to the Castle Crossroads. Follow the bend in the road, continuing south, and you'll be there in no time. Read any signs you come across. They're very useful for getting directions to various places around Galvadia."`, white, line2)
 			blankSpace()
 			await dialogueWait(200)
 			blankSpace()
@@ -16962,7 +17432,7 @@ const ragnar = {
 			quickMessage(`You must be a Fighter in order to train with Ragnar`)
 		}
 	},
-	skillsOffered: [dualStrike, bladeBlitz, shred, charge, oneHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, bloodthirst, battleRage, weaponTempering, armorTempering, counterAttack, tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft],
+	skillsOffered: [dualStrike, bladeBlitz, shred, charge, oneHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, battleRage, weaponTempering, armorTempering, counterAttack, tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft],
 	skillsMaxLevel: {
 		dualStrike: 5,
 		bladeBlitz: 5,
@@ -16974,7 +17444,6 @@ const ragnar = {
 		slashingExpertise: 5,
 		piercingExpertise: 5,
 		bluntExpertise: 5,
-		bloodthirst: 5,
 		battleRage: 5,
 		weaponTempering: 5,
 		armorTempering: 5,
@@ -17072,7 +17541,7 @@ const magvello = {
 			quickMessage(`You must be a Berserker in order to train with Magvello`)
 		}
 	},
-	skillsOffered: [ripslash, cyclone, cataclysm, charge, twoHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, bloodthirst, battleRage, weaponTempering, armorTempering, counterAttack, tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft],
+	skillsOffered: [ripslash, cyclone, cataclysm, charge, twoHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, battleRage, weaponTempering, armorTempering, counterAttack, tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft],
 	skillsMaxLevel: {
 		ripslash: 5,
 		cyclone: 5,
@@ -17084,7 +17553,6 @@ const magvello = {
 		slashingExpertise: 5,
 		piercingExpertise: 5,
 		bluntExpertise: 5,
-		bloodthirst: 5,
 		battleRage: 5,
 		weaponTempering: 5,
 		armorTempering: 5,
@@ -17175,7 +17643,7 @@ let fieldsTrainerDialogue = {
 			this.questSequence.first = true
 			return
 		}
-		if (!this.questSequence.second || player.level < 5) {
+		if (!this.questSequence.second || player.level < 3) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`${this.name}: `, this.nameColor, line1)
@@ -17191,12 +17659,12 @@ let fieldsTrainerDialogue = {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`${this.name}: `, this.nameColor, line4)
-			customizeEachWord(`"Once you've done some combat training in the fields and reached level 5, return to me for your next task. Feel free to come back as you level up to train your skills."`, 'white', line4)
+			customizeEachWord(`"Once you've done some combat training in the fields and reached level 3, return to me for your next task. Feel free to come back as you level up to train your skills."`, 'white', line4)
 			blankSpace()
 			this.questSequence.second = true
 			return
 		}
-		if (player.level >= 5 && !this.questSequence.third) {
+		if (player.level >= 3 && !this.questSequence.third) {
 			if (player.guild == 'Warrior') {
 				await dialogueWait(200)
 				customizeEachWord(`${this.name}: `, this.nameColor, line1)
@@ -17229,7 +17697,7 @@ let fieldsTrainerDialogue = {
 			}
 			await dialogueWait(200)
 			customizeEachWord(`${this.name}: `, this.nameColor, line3)
-			customizeEachWord(`"Now that you're stronger, I want you to train in the East Training Fields. The monsters will be a little tougher, and some will attack you from range so you might have to adjust your tactics. Once you think you're strong enough, I want you to defeat the elemental boss to the south. Boss enemies different than regular enemies in several ways: They are stronger and have more health while providing more experience and drops, there's usually one boss enemy in an area, they are guaranteed to spawn when you enter the room, when killed they will respawn after a long duration, and they are typically accompanied by minions."`, 'white', line3)
+			customizeEachWord(`"Now that you're stronger, you can train in the East Training Fields. The monsters will be a little tougher, and some will attack you from range so you might have to adjust your tactics. Once you think you're strong enough, I want you to defeat the elemental boss to the south. Boss enemies different than regular enemies in several ways: They are stronger and have more health while providing more experience and drops, there's usually one boss enemy in an area, they are guaranteed to spawn when you enter the room, when killed they will respawn after a long duration, and they are typically accompanied by minions."`, 'white', line3)
 			blankSpace()
 			await dialogueWait(200)
 			customizeEachWord(`${this.name}: `, this.nameColor, line4)
@@ -17252,7 +17720,7 @@ let fieldsTrainerDialogue = {
 			crossroads_shops_and_fields.descriptions.zoneExitsBool.south = true
 			return
 		}
-		if (!player.killList.lesserMudElemental && !player.killList.lesserGrassElemental && !player.killList.lesserWaterElemental) {
+		if (!player.killList.lesserMudElemental || !player.killList.lesserGrassElemental || !player.killList.lesserWaterElemental) {
 			await dialogueWait(200)
 			customizeEachWord(`${this.name}: `, this.nameColor, line1)
 			customizeEachWord(`"The way is open to the south. Return to me when you have slain the boss elemental."`, 'white', line1)
@@ -17272,7 +17740,8 @@ let fieldsTrainerDialogue = {
 			blankSpace()
 			await dialogueWait(200)
 			customizeEachWord(`${this.name} `, this.nameColor, line3)
-			customizeEachWord(`walks to the west`, this.nameColor, line3)
+			customizeEachWord(`walks to the west`, 'white', line3)
+			blankSpace()
 			this.questSequence.fifth = true
 			crossroads_shops_and_fields.npc.pop()
 			switch(player.guild) {
@@ -17331,10 +17800,9 @@ let questObject = {
 	weaponsmith: {
 		copperQuest: {
 			count: 0,
-			oreMax: 0,
+			oreMax: 6,
 			questItem: copperOre,
 			questSequence1: {
-				complete: false,
 			}
 		},
 		ironQuest: {
@@ -17438,7 +17906,7 @@ async function craftQuestTurnIn1(npc, rewardAmount) {
 	await dialogueWait(200)
 	blankSpace()
 	customizeEachWord(`${npc.name}: `, npc.nameColor, line2)
-	customizeEachWord(`"A little more and I can make something new!"`, 'white', line2)
+	customizeEachWord(`"For every 3 ores, I can craft a new set of weapons. So fa, you have turned in a total of ${questObject.weaponsmith.copperQuest.count}"`, 'white', line2)
 	blankSpace()
 }
 async function craftQuestTurnIn2(npc, rewardAmount) {
@@ -17454,7 +17922,7 @@ async function craftQuestTurnIn2(npc, rewardAmount) {
 	blankSpace()
 	playerGainGold(rewardAmount)
 	customizeEachWord(`${npc.name}: `, npc.nameColor, line2)
-	customizeEachWord(`"I can make something new now!"`, 'white', line2)
+	customizeEachWord(`"I can craft a new set of weapons! Check out the shop to see what's in stock."`, 'white', line2)
 	blankSpace()
 }
 async function craftQuestTurnIn3(npc, rewardAmount) {
@@ -17470,7 +17938,7 @@ async function craftQuestTurnIn3(npc, rewardAmount) {
 	await dialogueWait(200)
 	blankSpace()
 	customizeEachWord(`${npc.name}: `, npc.nameColor, line2)
-	customizeEachWord(`"I can now make everything available!"`, 'white', line2)
+	customizeEachWord(`"I can now craft all weapons that are made using copper ore."`, 'white', line2)
 	blankSpace()
 }
 async function craftQuestComplete(npc) {
@@ -17478,7 +17946,7 @@ async function craftQuestComplete(npc) {
 	await dialogueWait(200)
 	blankSpace()
 	customizeEachWord(`${npc.name}: `, npc.nameColor, line1)
-	customizeEachWord(`"I don't need anymore! I can make everything with these materials."`, 'white', line1)
+	customizeEachWord(`"I don't need any copper ore. I can make everything that utilizes copper."`, 'white', line1)
 	blankSpace()
 }
 
@@ -17514,7 +17982,7 @@ let greaves = {
 		}
 	},
 	skillsOffered: [valorStrike, shieldSlam, boomingMight, charge, oneHanded, shields, cleave, slashingExpertise,
-	piercingExpertise, bluntExpertise, bloodthirst, battleRage, weaponTempering, armorTempering, counterAttack, 
+	piercingExpertise, bluntExpertise, battleRage, weaponTempering, armorTempering, counterAttack, 
 	tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft, defender, knightsResolve, tauntingShout],
 	skillsMaxLevel: {
 		valorStrike: 5,
@@ -17527,7 +17995,6 @@ let greaves = {
 		slashingExpertise: 5,
 		piercingExpertise: 5,
 		bluntExpertise: 5,
-		bloodthirst: 5,
 		battleRage: 5,
 		weaponTempering: 5,
 		armorTempering: 5,
@@ -17680,10 +18147,10 @@ const zel = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
+		// if (this.questSequence.second) {
+		// 	this.questSequence.first = true
+		// 	this.speak()
+		// }
 	},
 }
 const shallox = {
@@ -18366,10 +18833,17 @@ const joch = {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`${this.name}: `, this.nameColor, line1)
-			customizeEachWord(`"Got any copper ingots? My store could always use more ore!"`, 'white', line1)
+			customizeEachWord(`"I could make use of any copper ores you might find. If I got my hands on some, I could make a new set of weapons. I know there's copper ore in the Kobold Caves, but it's quite dangerous to venture there."`, 'white', line1)
 			blankSpace()
 			return
-		} 
+		} else {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"Ahhh, I live for the smell of smoldering metal."`, 'white', line1)
+			blankSpace()
+			return
+		}
 		//iron
 	},
 	offer: async function() {
@@ -18393,11 +18867,10 @@ const joch = {
 				questObject.weaponsmith.copperQuest.count++
 				pushItem.splice(qItemIndex, 1)
 				let count = questObject.weaponsmith.copperQuest.count
-				if (count == 10) {
+				if (count == 6) {
 					craftQuestTurnIn3(this, rewardAmount)
-				} else if (count == 5) {
+				} else if (count == 3) {
 					craftQuestTurnIn2(this, rewardAmount)
-
 				} else  {
 					craftQuestTurnIn1(this, rewardAmount)
 				} 
@@ -18421,11 +18894,37 @@ const joch = {
 	speak: async function () {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
-		await dialogueWait(200)
-		blankSpace()
-		customizeEachWord(`${this.name}: `, this.nameColor, line1)
-		customizeEachWord(`Greetings! I am the Weaponsmith, Joch. I sell an assortment of weapons. I am able to craft more weapons, however, I need materials in order to craft them. I can make use of copper ore.`, 'white', line1)
-		blankSpace()
+		let line3 = lineFunc()
+		if (!questObject.weaponsmith.copperQuest.questSequence1.complete) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"Hello, welcome to my shop! Well, our shop. Me and my twin brother Clyde work the smith here. I make the weapons, and he makes the armor!"`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`${this.name}: `, this.nameColor, line2)
+			customizeEachWord(`"We're running a bit short on metals, so we can only make items that don't use a lot of copper. If you find any copper ores, bring 'em back here to increase our stock. We'll also tip you a little for your troubles. Can't pay ya full price for em, but what we can make will make up for it."`, 'white', line2)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`${this.name}: `, this.nameColor, line3)
+			customizeEachWord(`"The Kobold Caves have some copper veins to mine. You'll need a pickaxe to mine, but lucky you, I have some in stock. I wouldn't mess around with Kobolds until at least level 8. But who knows, maybe you're more skilled than ya look!"`, 'white', line3)
+			blankSpace()
+		} else {
+			let randomNumber = randomNumberRange(1, 2)
+			if (randomNumber == 1) {
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`${this.name}: `, this.nameColor, line1)
+				customizeEachWord(`I live for the smell of smoldering ore!`, 'white', line1)
+				blankSpace()
+			} else if (randomNumber == 2) {
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`${this.name}: `, this.nameColor, line1)
+				customizeEachWord(`I'd love to be able to go up north to the mountains. I've heard there's some good ores up there, but the goblins have set up camp at the base of the mountain.`, 'white', line1)
+				blankSpace()
+			}
+		}
 	},
 	displayShop: function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
@@ -18517,8 +19016,40 @@ let clyde = {
 	buy: function (secondCommand) {
 		buyInteraction(secondCommand, this)
 	},
-	speak: function () {
-		npcDialogue('Greetings! I am Clyde the shopkeeper. If you would like to see what I have to sell, please trade with me.', 'joch-name')
+	speak: async function () {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		let line3 = lineFunc()
+		if (!questObject.weaponsmith.copperQuest.questSequence1.complete) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"Hello, welcome to my shop! Well, our shop. Me and my twin brother Joch work the smith here. I make the armor, and he makes the weapons!"`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`${this.name}: `, this.nameColor, line2)
+			customizeEachWord(`"We're running a bit short on metals, so we can only make items that don't use a lot of copper. If you find any copper ores, bring 'em back here to increase our stock. We'll also tip you a little for your troubles. Can't pay ya full price for em, but what we can make will make up for it."`, 'white', line2)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`${this.name}: `, this.nameColor, line3)
+			customizeEachWord(`"The Kobold Caves have some copper veins to mine. You'll need a pickaxe to mine, but lucky you, my brother has some in stock. I wouldn't mess around with Kobolds until at least level 8. But who knows, maybe you're more skilled than ya look!"`, 'white', line3)
+			blankSpace()
+		} else {
+			let randomNumber = randomNumberRange(1, 2)
+			if (randomNumber == 1) {
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`${this.name}: `, this.nameColor, line1)
+				customizeEachWord(`I live for the smell of smoldering ore!`, 'white', line1)
+				blankSpace()
+			} else if (randomNumber == 2) {
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`${this.name}: `, this.nameColor, line1)
+				customizeEachWord(`I'd love to be able to go up north to the mountains. I've heard there's some good ores up there, but the goblins have set up camp at the base of the mountain.`, 'white', line1)
+				blankSpace()
+			}
+		}
 	},
 	displayShop: function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
@@ -19625,76 +20156,6 @@ const sylas = {
 	},
 }
 
-const lordGalvadane = {
-	npc: true,
-	id: 0,
-	x: 0,
-	y: 0,
-	z: -2,
-	name: 'oldman',
-	displayName: function (peopleDiv) {
-		const npcDiv = document.createElement('div')
-		const firstNameSpan = document.createElement('span')
-		const firstNameNode = document.createTextNode(`${this.name}`)
-		if (this.prefix != undefined) {
-			const prefixSpan = document.createElement('span')
-			const prefixNode = document.createTextNode(`${this.prefix}`)
-			prefixSpan.classList.add(this.prefixColor)
-			prefixSpan.appendChild(prefixNode)
-			npcDiv.appendChild(prefixSpan)
-		}
-
-		firstNameSpan.classList.add(this.nameColor)
-		firstNameSpan.appendChild(firstNameNode)
-		npcDiv.appendChild(firstNameSpan)
-
-		if (this.suffix != undefined) {
-			const suffixSpan = document.createElement('span')
-			const suffixNode = document.createTextNode(`${this.suffix}`)
-			suffixSpan.classList.add(this.suffixColor)
-			suffixSpan.appendChild(suffixNode)
-			npcDiv.appendChild(suffixSpan)
-		}
-		peopleDiv.appendChild(npcDiv)
-	},
-	skills: [unarmedCombatSkill, oneHandedWeaponSkill, twoHandedWeaponSkill, daggerSkill],
-	skillsOffered: ['Martial Arts', 'One Handed Weapons', 'Two Handed Weapons', 'Daggers'],
-	skillsMaxLevel: {
-		unarmed: 10,
-		oneHanded: 10,
-		twoHanded: 10,
-	},
-	desc: () => quickMessage('Joch stands here with a smile, looking ready to sell his wares!', 'descriptions'),
-	speak: function () {
-		quickMessage('Greetings! I am Joch the shopkeeper. If you would like to see what I have to sell, please trade with me.')
-	},
-	train: (thisNpcName, ssoi) => {
-		displayShopSkillsOrSpells(thisNpcName, ssoi)
-	},
-}
-const warriorGuildMaster = {
-	npc: true,
-	id: 0,
-	x: -10,
-	y: -13,
-	z: 0,
-	name: `Zir`,
-	displayName: `Zir, Guildmaster of the Warrior's Guild`,
-	skills: [unarmedCombatSkill, oneHandedWeaponSkill, twoHandedWeaponSkill],
-	skillsOffered: ['unarmed combat', 'one handed weapon skill', 'two handed weapon skill'],
-	skillsMaxLevel: {
-		unarmed: 10,
-		oneHanded: 10,
-		twoHanded: 10,
-	},
-	desc: () => quickMessage('Joch stands here with a smile, looking ready to sell his wares!', 'descriptions'),
-	speak: function () {
-		quickMessage('Greetings! I am Joch the shopkeeper. If you would like to see what I have to sell, please trade with me.')
-	},
-	train: thisNpcName => {
-		displayShopSkillsOrSpells(thisNpcName)
-	},
-}
 const levins = {
 	npc: true,
 	id: 0,
@@ -20484,7 +20945,7 @@ function sell(secondCommand, itemNumberPre) {
 				if (!itemSold) {
 					quickMessage(`You do not have that item to sell`)
 				} else {
-					if (itemSold.sellValue === 0) {
+					if (itemSold.sellValue == 0) {
 						quickMessage(`This item cannot be sold`)
 						return
 					}
@@ -20500,6 +20961,10 @@ function sell(secondCommand, itemNumberPre) {
 				if (itemSold == undefined) {
 					quickMessage(`You do not have that item to sell`)
 				} else {
+					if (itemSold.sellValue == 0) {
+						quickMessage(`This item cannot be sold`)
+						return
+					}
 					console.log('2 THIS IS WHERE SOLD')
 					sellItemDialog(itemSold.name, itemSold.sellValue)
 					let removeThisItem = pushItem.find(item => item.id == itemSold.id)
@@ -21712,11 +22177,13 @@ let galvadiaWelcomeArea2 = new AreaMaker(
 function calculateSupremeDodging() {
 	applyBuff(player.supremeDodging.buff)
 }
+function calculateDefender() {
+	applyBuff(player.defender.buff)
+}
 function applyOnHitSkillBuffs(weaponObject) {
 	if (weaponObject.doesSwingHit) {
-		if (player.supremeDodging.level > 0) {
-			calculateSupremeDodging()
-		}
+		if (player.supremeDodging.level > 0) {calculateSupremeDodging()}
+		if (player.defender.level > 0) {calculateDefender()}
 	}
 }
 
@@ -22956,7 +23423,7 @@ let crossroads_shops_and_fields = new AreaMaker(
 		zoneExitsBool: {
 			north: true,
 			east: 'blocked',
-			south: 'blocked',
+			south: true,
 			west: true,
 		},
 		zoneExits: [],
@@ -23013,7 +23480,7 @@ mud_elemental_field.onEntry = function() {
 		monsterGen(lesserGrassElemental(currentArea))
 		bossTimeouts.lesserMudElemental = setTimeout(() => {
 			delete bossTimeouts.lesserMudElemental
-		}, 60 * 3000)
+		}, 600000)
 	}
 }
 let marketplace_bazaar = new AreaMaker(
@@ -24648,7 +25115,7 @@ let castleMoat = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'bridge',
-		areaName: `In Front Of The Castle Moat Bridge`, //change area name
+		areaName: `North Castle Crossroads In Front Of The Castle Moat Bridge`, //change area name
 		zoneType: "galvadia_exterior_north",
 		desc: `Two guards stand at the entrance to the moat bridge, inspecting people as they pass.
 		There is a sign here.`,
@@ -27380,15 +27847,23 @@ koboldCavesRoom24.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild
 koboldCavesRoom25.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
 koboldCavesRoom26.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldChild, probability: 3}, {enemy: koboldScoundrel, probability: 3}])}
 //floor 2
-koboldCavesFloor2Room1.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
-koboldCavesFloor2Room2.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
-koboldCavesFloor2Room3.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
-koboldCavesFloor2Room4.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
-koboldCavesFloor2Room5.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
-koboldCavesFloor2Room6.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
-koboldCavesFloor2Room7.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}])}
-
-
+koboldCavesFloor2Room1.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}, {enemy: koboldScoundrel, probability: 2}])}
+koboldCavesFloor2Room2.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}, {enemy: koboldScoundrel, probability: 2}])}
+koboldCavesFloor2Room3.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}, {enemy: koboldScoundrel, probability: 2}])}
+koboldCavesFloor2Room4.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}, {enemy: koboldScoundrel, probability: 2}])}
+koboldCavesFloor2Room5.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}, {enemy: koboldScoundrel, probability: 2}])}
+koboldCavesFloor2Room6.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}, {enemy: koboldScoundrel, probability: 2}])}
+koboldCavesFloor2Room7.onEntry = function() {spawnMonsterOnEntry([{enemy: koboldDigger, probability: 5}, {enemy: koboldArcher, probability: 2}, {enemy: koboldSpearthrower, probability: 2}, {enemy: koboldScoundrel, probability: 2}])}
+//CHIEF ROOM
+koboldCavesFloor2Room7.onEntry = function() {
+	let doAnyExist = pushMonster.some(monster => monster.refName == 'koboldChief')
+	if (!bossTimeouts.koboldChief && !doAnyExist) {
+		monsterGen(koboldChief(currentArea))
+		bossTimeouts.koboldChief = setTimeout(() => {
+			delete bossTimeouts.koboldChief
+		}, 600000)
+	}
+}
 
 let trainingHallsCombatHalls1 = new AreaMaker( //change name
 	0,
@@ -29523,9 +29998,9 @@ let trainingHallsCombatRoom3 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'light-blue',
-		areaName: `Monk Initiate Room`,
+		areaName: `Attributes: Secondary Benefits`,
 		zoneType: 'galvadia_advanced_training_rooms',
-		desc: ``,
+		desc: `Strength: Strength`,
 		zoneExitsBool: {
 			east: true,
 		},
@@ -29626,7 +30101,13 @@ let trainingHallsCombatRoom2 = new AreaMaker( //change name
 		areaNameClass: 'light-blue',
 		areaName: `Combat Stats`, //change area name
 		zoneType: 'galvadia_advanced_training_rooms',
-		desc: `Attack: This is the primary stat that influences your damage. 
+		desc: `Attack: This is the primary stat that influences your damage. Each weapon skill utilizes different stats in order to calculate attack:
+		Unarmed: Each point of either Str, Dex, or Agi will raise your attack by 1
+		One Handed Weapons: Each point of Str or Dex will raise your attack by 1
+		Two Handed Weapons: Each point of Str will increase your attack by 2
+		Daggers: Each point of Dex or Agi will increase your attack by 1
+		Bows: Each point of Dex or Agi will increase your attack by 1
+
 		Speed: This is the speed at which you can swing your weapon for regular attacks. It can only be lowered by training your weapon skill, and the fastest swing you can acquire is two seconds.
 		Accuracy: Your accuracy represents your percent chance of hitting an enemy with 0 dodge and the same level as you. Accuracy is increased primarily through the Dexterity attribute, but is also increased by training your weapon skill. Some guilds offer additional skills that will increase your accuracy as well.
 		Dodge: Dodge is similar to accuracy in that in that it represents your percent chance of dodging an enemy's regular attack that has 0 accuracy and the same level as you. Dodge is increased primarily through the Agility attribute, and various skills typically taught by trainers of the Rogue's Guild.`,
@@ -30005,7 +30486,7 @@ let theShallows7 = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Northeastern edge of the Glade.',
-		desc: 'NORTHEAST PART. There is cotton here.',
+		desc: 'NORTHEAST PART. There is a clover here.',
 		zoneExitsBool: {
 			west: true,
 			south: true,
@@ -30023,28 +30504,27 @@ let theShallows7 = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-		actionWord: ['cotton']
+		actionWord: ['clover']
 	}),
 	{
-		cotton: {
-			names: ['cotton'],
+		clover: {
+			names: ['clover'],
 			empty: false,
 			respawn: function() {
 				setTimeout(() => {
-					quickMessage(`cotton reset`)
 					this.empty = false
-				}, 10000) //10 second respawn timer just to test
+				}, 900000) //15 minute respawn timer just to test
 			},
 			desc: function() {
 				let line1 = lineFunc()
-				if (!theShallows7.interactables.cotton.empty) {
-					customizeEachWord(`A blossom of cotton that looks ripe for the pickins`, 'white', line1)
+				if (!theShallows7.interactables.clover.empty) {
+					customizeEachWord(`A blossom of clover that looks ripe for the pickins`, 'white', line1)
 				} else {
 					customizeEachWord(`There is no blossom to pick`, 'white', line1)
 				}
 			},
 			color: function() {
-				if (theShallows7.interactables.cotton.empty) {
+				if (theShallows7.interactables.clover.empty) {
 					return 'white'
 				} else {
 					return 'green'
@@ -30198,7 +30678,7 @@ let theShallows12 = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Northeastern edge of the Glade.',
-		desc: 'NORTHEAST PART. There is cotton here.',
+		desc: 'NORTHEAST PART. There is a clover here.',
 		zoneExitsBool: {
 			southeast: true,
 			west: true,
@@ -30216,28 +30696,27 @@ let theShallows12 = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-		actionWord: ['cotton']
+		actionWord: ['clover']
 	}),
 	{
-		cotton: {
-			names: ['cotton'],
+		clover: {
+			names: ['clover'],
 			empty: false,
 			respawn: function() {
 				setTimeout(() => {
-					quickMessage(`cotton reset`)
 					this.empty = false
-				}, 10000) //10 second respawn timer just to test
+				}, 900000) //15 minute respawn timer just to test
 			},
 			desc: function() {
 				let line1 = lineFunc()
-				if (!theShallows12.interactables.cotton.empty) {
-					customizeEachWord(`A blossom of cotton that looks ripe for the pickins`, 'white', line1)
+				if (!theShallows12.interactables.clover.empty) {
+					customizeEachWord(`A blossom of clover that looks ripe for the pickins`, 'white', line1)
 				} else {
-					customizeEachWord(`There is no blossom to pick`, 'white', line1)
+					customizeEachWord(`There is no clover to pick`, 'white', line1)
 				}
 			},
 			color: function() {
-				if (theShallows12.interactables.cotton.empty) {
+				if (theShallows12.interactables.clover.empty) {
 					return 'white'
 				} else {
 					return 'green'
@@ -30358,7 +30837,7 @@ let theShallows16 = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Northeastern edge of the Glade.',
-		desc: 'NORTHEAST PART. There is cotton here.',
+		desc: 'NORTHEAST PART. There is a clover here.',
 		zoneExitsBool: {
 			east: true,
 			southwest: true,
@@ -30376,28 +30855,27 @@ let theShallows16 = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-		actionWord: ['cotton']
+		actionWord: ['clover']
 	}),
 	{
-		cotton: {
-			names: ['cotton'],
+		clover: {
+			names: ['clover'],
 			empty: false,
 			respawn: function() {
 				setTimeout(() => {
-					quickMessage(`cotton reset`)
 					this.empty = false
-				}, 10000) //10 second respawn timer just to test
+				}, 900000) //15 minute respawn timer just to test
 			},
 			desc: function() {
 				let line1 = lineFunc()
-				if (!theShallows16.interactables.cotton.empty) {
-					customizeEachWord(`A blossom of cotton that looks ripe for the pickins`, 'white', line1)
+				if (!theShallows16.interactables.clover.empty) {
+					customizeEachWord(`A blossom of clover that looks ripe for the pickins`, 'white', line1)
 				} else {
-					customizeEachWord(`There is no blossom to pick`, 'white', line1)
+					customizeEachWord(`There is no clover to pick`, 'white', line1)
 				}
 			},
 			color: function() {
-				if (theShallows16.interactables.cotton.empty) {
+				if (theShallows16.interactables.clover.empty) {
 					return 'white'
 				} else {
 					return 'green'
@@ -31556,7 +32034,7 @@ let startingAreaUp = new AreaMaker(
 let startingAreaBelow = new AreaMaker(
 	0,
 	false,
-	[lordGalvadane],
+	[],
 	false,
 	areaIdGenerator(),
 	3,
@@ -36073,7 +36551,7 @@ function sinistralAbilities(ability, weaponUsed, targetEnemy) {
 		if (ability.refName == 'guillotine') {
 			if (targetEnemy.health <= 0) {
 				if (targetEnemy?.debuffs?.sinisterMark) {
-					let adrenalineGained = targetEnemy.debuffs.sinisterMark.stacks * 5
+					let adrenalineGained = targetEnemy.debuffs.sinisterMark.stacks * 10
 					ability.flavorTextAdrenalineGain()
 					resourceGained(ability, adrenalineGained, 'maxAdrenaline')
 				}
@@ -36846,7 +37324,7 @@ function gainClassResourceOnAttack(doesSwingHit) {
 	if (player.guild == 'Ranger') {
 		resource = 'focus'
 		maxResource = 'maxFocus'
-		resourceGain = 2
+		resourceGain = 3
 	}
 	if (player.guild == 'Sinistral') {
 		resource = 'adrenaline'
@@ -36903,7 +37381,28 @@ function abilityWeaponsCheck(ability, weaponUsed) {
 	}
 }
 
-
+function tauntingShoutFunction() {
+	let ability = player.tauntingShout
+	if (ability.level > 0) {
+		player.combat = true
+		resourceConsumed(ability)
+		let allEnemiesInRoom = getAllEnemiesInRoom()
+		allEnemiesInRoom.forEach(enemy => {
+			enemy.combat = true
+		})
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You let out a `, 'white', line1)
+		customizeEachWord(`Taunting Shout`, ability.color, line1)
+		customizeEachWord(`, taunting every enemy to attack you!`, 'white', line1)
+		blankSpace()
+	} else {
+		let line1 = lineFunc()
+		customizeEachWord(`You do not know the ability `, 'white', line1)
+		customizeEachWord(`Taunting Shout`, ability.color, line1)
+		customizeEachWord(`.`, 'white', line1)
+	}
+}
 
 function ripslashFunction(secondCommand, thirdCommand) {
 	let ability = player.ripslash
@@ -36929,29 +37428,32 @@ function ripslashFunction(secondCommand, thirdCommand) {
 				return
 			}
 			if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
+				let numberOfSwings = ability.numberOfSwings()
 				let targetEnemy = targetCombatEnemy(secondCommand, thirdCommand)
-				let hitChance = playerAbilityHitChance(targetEnemy)
 				player.isAbilityQueued = false
 				player[abilityName].queued = false
 				resourceConsumed(ability)
-				if (hitChance == false) {
-					ability.flavorTextMiss(targetEnemy, weaponUsed)
-				} else if (hitChance == true) {
-					baseDamage = player[abilityName].damage(targetEnemy)
-					penetrationType = calculatePenetrationRoll()
-					penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
-					damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
-					damageBlocked = baseDamage - damageAfterArmor
-					ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
-					applyDamageToEnemy(targetEnemy, damageAfterArmor)
-					if (targetEnemy?.debuffs?.bleed) {
-						applyDebuff(targetEnemy, player.bleed)
+				for (let i = 0; i < numberOfSwings; i++) {
+					let hitChance = playerAbilityHitChance(targetEnemy)
+					if (hitChance == false) {
+						ability.flavorTextMiss(targetEnemy, weaponUsed)
+					} else if (hitChance == true) {
+					let	baseDamage = player[abilityName].damage(targetEnemy)
+					let	penetrationType = calculatePenetrationRoll()
+					let	penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+					let	damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+					let	damageBlocked = baseDamage - damageAfterArmor
+						ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
+						applyDamageToEnemy(targetEnemy, damageAfterArmor)
+						if (targetEnemy?.debuffs?.bleed) {
+							applyDebuff(targetEnemy, player.bleed)
+						}
 					}
 				}
 			} else {
-				player[abilityName].cooldown = player[abilityName].cooldownSet
-				initiateAbilityCooldown(ability)
-			}
+					player[abilityName].cooldown = player[abilityName].cooldownSet
+					initiateAbilityCooldown(ability)
+				}
 			updateScroll()
 		}, ability.windUp * 1000)
 }
@@ -36979,7 +37481,7 @@ function cycloneFunction() {
 				}
 				if (player.combat == true && player[abilityName].cooldown == player[abilityName].cooldownSet) {
 					let meleeCombatMonsters = getAllEnemiesInCombat()
-					let numberOfTargets = meleeCombatMonsters.length > ability.numberOfTargets ? ability.numberOfTargets : meleeCombatMonsters.length
+					let numberOfTargets = Math.min(ability.numberOfTargets(), meleeCombatMonsters.length)
 					resourceConsumed(ability)
 					console.log(numberOfTargets, ' NUMBER OF TARGETS')
 					player[abilityName].queued = false
@@ -37420,7 +37922,7 @@ function boomingMightFunction() {
 				let allEnemiesInCombat = getAllEnemiesInCombat()
 				let numberOfEnemies = allEnemiesInCombat.length
 				let baseDamage = player[abilityName].damage()
-				let damagePerEnemy = Math.ceil(baseDamage / numberOfEnemies)
+				// let damagePerEnemy = Math.ceil(baseDamage / numberOfEnemies)
 				player[abilityName].queued = false
 				player.isAbilityQueued = false
 				ability.flavorText2()
@@ -37431,8 +37933,8 @@ function boomingMightFunction() {
 					} else if (hitChance == true) {
 						penetrationType = calculatePenetrationRoll()
 						penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
-						damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemy, damagePerEnemy, penetrationType)
-						damageBlocked = damagePerEnemy - damageAfterArmor
+						damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemy, baseDamage, penetrationType)
+						damageBlocked = baseDamage - damageAfterArmor
 						ability.flavorText(enemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked)
 						applyDamageToEnemy(enemy, damageAfterArmor)
 						applyBuff(ability.buff)
@@ -38602,6 +39104,30 @@ function aimedShotFunction(secondCommand, thirdCommand) {
 		}, player.aimedShot.windUp * 1000)
 	}
 		
+function evasiveRollFunction() {
+	let ability = player.evasiveRoll
+	if (player.evasiveRoll.level <= 0) {
+		let line1 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You do not know the ability `, 'white', line1)
+		customizeEachWord(`Evasive Roll `, 'ranger-color', line1)
+		blankSpace()	
+		return
+	}
+	if (abilityResourceCheck(ability)) {return}
+	let allCombatEnemies = getAllEnemiesInCombat()
+	player.combat = false
+	allCombatEnemies.forEach(enemy => {
+		enemy.combat = false
+	})
+	let line1 = lineFunc()
+	blankSpace()
+	customizeEachWord(`You perform an `, 'white', line1)
+	customizeEachWord(`Evasive Roll `, 'ranger-color', line1)
+	customizeEachWord(`and break combat!`, 'white', line1)
+	blankSpace()
+	resourceConsumed(ability)
+}
 
 function calculateOnHitDamage(enemy, swingObject) {
 	let damage = 0
@@ -38609,6 +39135,7 @@ function calculateOnHitDamage(enemy, swingObject) {
 		case 'Warrior':
 			damage += calculateBleedDamage(enemy, swingObject)
 			damage += calculateFuryBonus(enemy, swingObject)
+			damage += calculateKnightsResolveBonus()
 			break;
 		case 'Monk':
 			// damage = calculateSealBreakerDamage(enemy, swingObject)	
@@ -38938,6 +39465,13 @@ function calculateFuryBonus(enemy, swingObject) {
 	console.log(furyBonus, ' FURY BONUS 50% OF DAMAGE')
 	return Math.ceil(furyBonus)
 }
+function calculateKnightsResolveBonus() {
+	let knightsResolveBonus = 0
+	if (player.knightsResolve.level <= 0) {return knightsResolveBonus}
+	knightsResolveBonus = player.knightsResolve.bonusDamage()
+	console.log(knightsResolveBonus, ' KNIGHTS RESOLVE BONUS DAMAGE')
+	return Math.ceil(knightsResolveBonus)
+}
 
 function calculateStealthDamage(enemy, swingObject) {
 	//stealth check happens inside player.stealth.damageBonus
@@ -39098,9 +39632,11 @@ function displayBuffTextAndTimer(buff) {
   }
 
 function applyWeaponEnchant(weaponOrWeapons, enchantment) {
+	console.log(enchantment, ' ENCHANTMENT')
 	let duration = enchantment.duration
-	console.log(weaponOrWeapons[0])
-	console.log(weaponOrWeapons[1])
+	console.log(weaponOrWeapons, ' SINGLE WEAPON GETTING ENCHANTED')
+	console.log(weaponOrWeapons[0], ' ARRAY WEAPON ITEM 1')
+	console.log(weaponOrWeapons[1], ' ARRAY WEAPON ITEM 2')
 	let enchantmentName = enchantment.refName
 	let enchantmentToApply = enchantment
 	if (Array.isArray(weaponOrWeapons)) {
@@ -39114,14 +39650,12 @@ function applyWeaponEnchant(weaponOrWeapons, enchantment) {
 		}
 		clearTimeout(weaponOrWeapons[0].enchantment[enchantmentName].timeoute)
 		weaponOrWeapons[0].enchantment[enchantmentName].timeoute = setTimeout(() => {
-		clearTimeout(weaponOrWeapons[0].enchantment[enchantmentName].timeoute)
+			clearTimeout(weaponOrWeapons[0].enchantment[enchantmentName].timeoute)
 			delete weaponOrWeapons[0].enchantment[enchantmentName]
 			let line1 = lineFunc()
 			customizeEachWord(`${enchantment.name} `, enchantment.color, line1)
 			customizeEachWord(`has worn off`, 'white', line1)
 		}, duration)
-
-
 		//weapon 2
 		//////////////////////////////////////////////////////////////////////////////
 		weaponOrWeapons[1].enchantment[enchantmentName] = enchantmentToApply
@@ -39139,6 +39673,7 @@ function applyWeaponEnchant(weaponOrWeapons, enchantment) {
 			customizeEachWord(`has worn off`, 'white', line1)		
 		}, duration)
 	} else {
+		quickMessage(`single weapon`)
 		let previousStacks = weaponOrWeapons?.enchantment[enchantmentName]?.stacks
 		weaponOrWeapons.enchantment[enchantmentName] = enchantmentToApply
 		if (previousStacks > weaponOrWeapons.enchantment[enchantmentName].stacks) {
@@ -39156,6 +39691,7 @@ function applyWeaponEnchant(weaponOrWeapons, enchantment) {
 }
 
 function applyBuff(buff) {
+	console.log(buff)
 	//stacks
 	// let buff1 = document.querySelector('#buff1')
 	let counter = buff.duration / 1000
@@ -39954,7 +40490,7 @@ function mudBall() { //eat for health
 			manaBonus: 0,
 			duration: 100000,
 		},
-		sellValue: 5,
+		sellValue: 10,
 		description: `A moist ball of mud - Try eating it or giving it to someone who likes to play with mud!`,
 		desc: function () {
 			allItemDescription(this)
@@ -39989,13 +40525,47 @@ function waterBerry() { //eat for mana
 			manaBonus: 10,
 			duration: 100000,
 		},
-		sellValue: 5,
+		sellValue: 10,
 		description: `A plump, luscious, Water Berry - Try eating it or giving it to someone who is thirsty!`,
 		desc: function () {
 			allItemDescription(this)
 		},
 	}
 	return waterBerry
+}
+function grassFruit() { //eat for mana
+	let grassFruit = {
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Grass Fruit',
+		color: 'green',
+		keywords: ['grass', 'fruit', 'grass fruit'],
+		type: { 
+			quest: true,
+			food: true,
+		},
+		cookable: false,
+		cookedVersion: undefined,
+		cookPhrase: undefined,
+		buff: {
+			name: 'Sated',
+			healthBonus: 5,
+			manaBonus: 5,
+			duration: 100000,
+		},
+		sellValue: 10,
+		description: `A Grass Fruit! You're not sure what it is, but it looks kinda tastey.`,
+		desc: function () {
+			allItemDescription(this)
+		},
+	}
+	return grassFruit
 }
 
 function halfEatenFish() {
@@ -40213,7 +40783,7 @@ function crackedBone() { //used in crafting to craft one handed weapons and dagg
 		color: 'green',
 		keywords: ['cracked', 'bone', 'cracked bone'],
 		type: { quest: true },
-		sellValue: 5,
+		sellValue: 10,
 		description: `A cracked, human bone`,
 		desc: function () {
 			allItemDescription(this)
@@ -40259,7 +40829,7 @@ function cultTexts() {
 		name: 'Cult Texts',
 		refName: 'cultTexts',
 		color: 'green',
-		keywords: ['cult', 'texts', 'cult texts'],
+		keywords: ['cult', 'texts', 'text', 'cult texts'],
 		type: { quest: true },
 		sellValue: 0,
 		description: `A book adorned with strange symbols`,
@@ -40339,7 +40909,52 @@ function generateId() {
 //////////////////////////////////////////////////++QUEST ITEMS++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++QUEST ITEMS++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++QUEST ITEMS++//////////////////////////////////////////////////
-
+function wormGuts(level, isMonsterDrop) { //QUEST FOR TIM-TIM
+	let wormGuts = {
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Worm Guts',
+		refName: 'wormGuts',
+		color: 'green',
+		keywords: ['worm', 'guts', 'worm guts'],
+		type: { quest: true },
+		sellValue: 5,
+		description: `Mushy, stinky worm guts`,
+		desc: function () {
+			allItemDescription(this)
+		},
+	}
+	return wormGuts
+}
+function littleBoneToy(level, isMonsterDrop) { //QUEST FOR MOTHER WITH BABY
+	let littleBoneToy = {
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Little Bone Toy',
+		refName: 'littleBoneToy',
+		color: 'green',
+		keywords: ['little', 'bone', 'toy', 'little bone', 'bone toy', 'little bone toy'],
+		type: { quest: true },
+		sellValue: 5,
+		description: `You can barely make out that it's a toy at all with how crudely it was crafted. Upon closer inspection, it looks to be made of small.. Human bones?`,
+		desc: function () {
+			allItemDescription(this)
+		},
+	}
+	return littleBoneToy
+}
 
 function goblinHead(monsterLevel) {
 	let goblinHead = {
@@ -40364,7 +40979,6 @@ function goblinHead(monsterLevel) {
 	}
 	return goblinHead
 }
-
 function tutorialKey() {
 	let tutorialKey = {
 		id: function () {
@@ -40490,7 +41104,7 @@ function ratTail(level, isMonsterDrop) { //used in crafting to craft leather arm
 		color: 'green',
 		keywords: ['rat', 'tail', 'rat tail'],
 		type: { quest: true },
-		sellValue: 5,
+		sellValue: 20,
 		description: `A thick, long rat tail`,
 		desc: function () {
 			allItemDescription(this)
@@ -40513,7 +41127,7 @@ function ratSkin(level, isMonsterDrop) {
 		color: 'green',
 		keywords: ['rat', 'skin', 'rat skin'],
 		type: { quest: true },
-		sellValue: 5,
+		sellValue: 10,
 		description: `The thin hide of a rat`,
 		desc: function () {
 			allItemDescription(this)
@@ -40535,15 +41149,39 @@ function stagAntlers(level, isMonsterDrop) {
 		refName: 'stagAnterls',
 		color: 'green',
 		keywords: ['antlers'],
-		type: { quest: true },
-		sellValue: 12,
-		description: `A large rack of antlers`,
+		type: { sell: true },
+		sellValue: 77,
+		description: `A large rack of Stag Antlers.`,
 		desc: function () {
 			allItemDescription(this)
 		},
 	}
 	return stagAntlers
 }
+function brokenAntlers(level, isMonsterDrop) {
+	let brokenAntlers = {
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Stag Antlers',
+		refName: 'stagAnterls',
+		color: 'green',
+		keywords: ['antlers'],
+		type: { sell: true },
+		sellValue: 22,
+		description: `Broken Stag antlers.`,
+		desc: function () {
+			allItemDescription(this)
+		},
+	}
+	return brokenAntlers
+}
+
 function smallSackOfGold(level, isMonsterDrop) {
 	let smallSackOfGold = {
 		id: function () {
@@ -40569,10 +41207,7 @@ function smallSackOfGold(level, isMonsterDrop) {
 }
 /////////////////////////////////                  CRAFTING                    /////////////////////////////////
 /////////////////////////////////                  CRAFTING                    /////////////////////////////////
-
 /////////////////////////////////                  CLOTH                    /////////////////////////////////
-/////////////////////////////////                  CLOTH                    /////////////////////////////////
-
 function thinFiber() {
 	let thinFiber = {
 		id: function () {
@@ -40587,7 +41222,10 @@ function thinFiber() {
 		refName: 'thinFiber',
 		color: 'green',
 		keywords: ['thin', 'fiber', 'thin fiber'],
-		type: { quest: true },
+		type: { 
+			quest: true ,
+			crafting: true,
+		},			
 		sellValue: 10,
 		description: `Thin fibrous material used for weaving cloth armor. A tailor would have use for this.`,
 		desc: function () {
@@ -40610,20 +41248,18 @@ function refinedFiber() {
 		refName: 'refinedFiber',
 		color: 'green',
 		keywords: ['refined', 'fiber', 'refined fiber'],
-		type: { quest: true },
+		type: { 
+			quest: true ,
+			crafting: true,
+		},	
 		sellValue: 38,
-		description: `Thin yet refined fibers used for weaving cloth armor.`,
+		description: `Thin yet refined fibers used for weaving cloth armor. Turn this in to a tailor so they can craft more items`,
 		desc: function () {
 			allItemDescription(this)
 		},
 	}
 	return refinedFiber
 }
-
-/////////////////////////////////                  CLOTH                    /////////////////////////////////
-/////////////////////////////////                  CLOTH                    /////////////////////////////////
-
-/////////////////////////////////                  LEATHER                    /////////////////////////////////
 /////////////////////////////////                  LEATHER                    /////////////////////////////////
 function lightHide(level, isMonsterDrop) { //used for crafting tier 1 and 2
 	let lightHide = {
@@ -40643,8 +41279,8 @@ function lightHide(level, isMonsterDrop) { //used for crafting tier 1 and 2
 			quest: true,
 			crafting: true,
 		},
-		sellValue: 18,
-		description: `The thin hide of an animal`,
+		sellValue: 35,
+		description: `The thin hide of an animal. Turn this in to a leatherworker so they can craft more items.`,
 		desc: function () {
 			allItemDescription(this)
 		},
@@ -40665,19 +41301,18 @@ function thickHide(level, isMonsterDrop) { //used for crafting tier 3 and 4
 		refName: 'thickHide',
 		color: 'green',
 		keywords: ['thick', 'hide', 'thick hide'],
-		type: { quest: true },
+		type: { 
+			quest: true ,
+			crafting: true,
+		},		
 		sellValue: 55,
-		description: `The thick hide of an animal`,
+		description: `The thick hide of an animal. Turn this in to a leatherworker so they can craft more items.`,
 		desc: function () {
 			allItemDescription(this)
 		},
 	}
 	return thickHide
 }
-/////////////////////////////////                  LEATHER                    /////////////////////////////////
-/////////////////////////////////                  LEATHER                    /////////////////////////////////
-
-/////////////////////////////////                  PLATE                    /////////////////////////////////
 /////////////////////////////////                  PLATE                    /////////////////////////////////
 function copperOre() { //used in crafting to craft leather armor
 	let copperOre = {
@@ -40693,9 +41328,12 @@ function copperOre() { //used in crafting to craft leather armor
 		refName: 'copperOre',
 		color: 'green',
 		keywords: ['copper', 'ore', 'copper ore'],
-		type: { quest: true },
-		sellValue: 26,
-		description: `A small lump of copper ore`,
+		type: { 
+			quest: true ,
+			crafting: true,
+		},
+		sellValue: 47,
+		description: `A small lump of copper ore. Turn this in to a blacksmith or armor smith so they can craft more items.`,
 		desc: function () {
 			allItemDescription(this)
 		},
@@ -40716,21 +41354,19 @@ function ironOre() { //used in crafting to craft leather armor
 		refName: 'ironOre',
 		color: 'green',
 		keywords: ['iron', 'ore', 'iron ore'],
-		type: { quest: true },
-		sellValue: 77,
-		description: `A small lump of iron ore`,
+		type: { 
+			quest: true ,
+			crafting: true,
+		},		sellValue: 84,
+		description: `A small lump of iron ore. Turn this in to a blacksmith or armor smith so they can craft more items.`,
 		desc: function () {
 			allItemDescription(this)
 		},
 	}
 	return ironOre
 }
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////
-
-function crucifix(level, isMonsterDrop) { //used in crafting to craft leather armor
+function crucifix(level, isMonsterDrop) { //QUEST ITEM FOR CATHEDRAL
 	let crucifix = {
 		id: function () {
 			for (let i = 0; i < 50; i++) {
@@ -40745,7 +41381,7 @@ function crucifix(level, isMonsterDrop) { //used in crafting to craft leather ar
 		color: 'green',
 		keywords: ['crucifix'],
 		type: { quest: true },
-		sellValue: 5,
+		sellValue: 22,
 		description: `An ornately carved crucifix. It has dried blood around the edges..`,
 		desc: function () {
 			allItemDescription(this)
@@ -40754,7 +41390,7 @@ function crucifix(level, isMonsterDrop) { //used in crafting to craft leather ar
 	return crucifix
 }
 
-function brightYellowFlower() {
+function brightYellowFlower() { //QUEST ITEM FOR THE GLADE
 	let brightYellowFlower = {
 		id: function () {
 			for (let i = 0; i < 50; i++) {
@@ -40777,7 +41413,7 @@ function brightYellowFlower() {
 	}
 	return brightYellowFlower
 }
-function sackOfGrain() {
+function sackOfGrain() { //QUEST ITEM FOR THE WAGON IN TOWN
 	let sackOfGrain = {
 		id: function () {
 			for (let i = 0; i < 50; i++) {
@@ -40815,9 +41451,9 @@ function largeBone(level, isMonsterDrop) { //used in crafting to craft leather a
 		refName: 'largeBone',
 		color: 'green',
 		keywords: ['large', 'bone', 'large bone'],
-		type: { quest: true },
-		sellValue: 10,
-		description: `A large human bone`,
+		type: { sell: true },
+		sellValue: 35,
+		description: `A large, human bone.`,
 		desc: function () {
 			allItemDescription(this)
 		},
@@ -40838,9 +41474,9 @@ function smallBone(level, isMonsterDrop) { //used in crafting to craft leather a
 		refName: 'smallBone',
 		color: 'green',
 		keywords: ['small', 'bone', 'small bone'],
-		type: { quest: true },
-		sellValue: 10,
-		description: `A small human bone`,
+		type: { sell: true },
+		sellValue: 14,
+		description: `A small, human bone`,
 		desc: function () {
 			allItemDescription(this)
 		},
@@ -40849,52 +41485,7 @@ function smallBone(level, isMonsterDrop) { //used in crafting to craft leather a
 }
 
 
-function wormGuts(level, isMonsterDrop) { //used in crafting to craft leather armor
-	let wormGuts = {
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushItem[i]) {
-					return i
-				}
-			}
-		},
-		roomId: currentArea.id,
-		name: 'Worm Guts',
-		refName: 'wormGuts',
-		color: 'green',
-		keywords: ['worm', 'guts', 'worm guts'],
-		type: { quest: true },
-		sellValue: 5,
-		description: `Mushy, stinky worm guts`,
-		desc: function () {
-			allItemDescription(this)
-		},
-	}
-	return wormGuts
-}
-function littleBoneToy(level, isMonsterDrop) { //used in crafting to craft leather armor
-	let littleBoneToy = {
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushItem[i]) {
-					return i
-				}
-			}
-		},
-		roomId: currentArea.id,
-		name: 'Little Bone Toy',
-		refName: 'littleBoneToy',
-		color: 'green',
-		keywords: ['little', 'bone', 'toy', 'little bone', 'bone toy', 'little bone toy'],
-		type: { quest: true },
-		sellValue: 5,
-		description: `You can barely make out that it's a toy at all with how crudely it was crafted. Upon closer inspection, it looks to be made of small.. Human bones?`,
-		desc: function () {
-			allItemDescription(this)
-		},
-	}
-	return littleBoneToy
-}
+
 function dirtyRags(level, isMonsterDrop) { //used in crafting to craft leather armor
 	let dirtyRags = {
 		id: function () {
@@ -40944,9 +41535,31 @@ function silverOre() { //used in crafting to craft leather armor
 	return silverOre
 }
 
-function pickleLily() {}
+function pickleLily() {//RARE FLOWER FOR KASIA
+	let pickleLily = {
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Bright Yellow Flower',
+		refName: 'brightYellowFlower',
+		color: 'green',
+		keywords: ['bright', 'yellow', 'flower', 'bright yellow', 'yellow flower', 'bright yellow flower'],
+		type: { quest: true },
+		sellValue: 0,
+		description: `A beautiful pink and green flower. Someone who loves flowers would absolutely love this.`,
+		desc: function () {
+			allItemDescription(this)
+		},
+	}
+	return pickleLily
+}
 
-function luckyCoin() {
+function luckyCoin() {//QUEST FOR SYLAS
 	let luckyCoin = {
 		id: function () {
 			for (let i = 0; i < 50; i++) {
@@ -40972,27 +41585,7 @@ function luckyCoin() {
 	return luckyCoin
 }
 pushItem.push(luckyCoin())
-// function trainingDummyToken() {
-// 	let trainingDummyToken = {
-// 		id: function () {
-// 			for (let i = 0; i < 50; i++) {
-// 				if (!pushItem[i]) {
-// 					return i
-// 				}
-// 			}
-// 		},
-// 		roomId: '',
-// 		name: 'Training Dummy Token',
-// 		keywords: ['token', 'training dummy token'],
-// 		type: { quest: true },
-// 		desc: () => {
-// 			quickMessage(`Simple training dummy token`)
-// 		},
-// 	}
-// 	return trainingDummyToken
-// }
 pushItem.push(tutorialKey())
-
 //////////////////////////////////////////////////++MISC ITEMS++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++MISC ITEMS++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++MISC ITEMS++//////////////////////////////////////////////////
@@ -41035,8 +41628,8 @@ function pieceOfBlob() {
 	}
 	return pieceOfBlob
 }
-function grassFiber() {
-	let grassFiber = {
+function grassDust() {
+	let grassDust = {
 		id: function () {
 			for (let i = 0; i < 50; i++) {
 				if (!pushItem[i]) {
@@ -41045,20 +41638,96 @@ function grassFiber() {
 			}
 		},
 		roomId: currentArea.id,
-		name: 'Grass Fiber',
+		name: 'Grass Dust',
 		color: 'green',
-		keywords: ['grass', 'fiber', 'grass fiber'],
+		keywords: ['grass', 'dust', 'grass dust'],
 		type: {
-			quest: true,
+			sell: true,
 		},
 		sellValue: 10,
-		uses: ['quest, sell'],
-		description: `The remains of the Grassling coelesced to form this fiber. You don't have a use for this, but a tailor might have a use for this. Otherwise it can be sold.`,
+		description: `The remains of a low level grass elemental, in powder form..`,
 		desc: () => {
 			allItemDescription(this)
 		},
 	}
-	return grassFiber
+	return grassDust
+}
+function waterDust() {
+	let waterDust = {
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Water Dust',
+		color: 'green',
+		keywords: ['water', 'dust', 'water dust'],
+		type: {
+			sell: true,
+		},
+		sellValue: 10,
+		description: `The remains of a low level water elemental, in powder form..`,
+		desc: () => {
+			allItemDescription(this)
+		},
+	}
+	return waterDust
+}
+function mudDust() {
+	let mudDust = {
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Mud Dust',
+		color: 'green',
+		keywords: ['mud', 'dust', 'mud dust'],
+		type: {
+			sell: true,
+		},
+		sellValue: 10,
+		description: `The remains of a low level earth elemental, in powder form..`,
+		desc: () => {
+			allItemDescription(this)
+		},
+	}
+	return mudDust
+}
+function flowerBasket(monsterLevel) { //tier 0.5
+	let flowerBasket = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Flower Basket',
+		refName: 'flowerBasket',
+		picture: '',
+		color: 'green',
+		keywords: ['basket', 'flower basket'],
+		requirements: {
+			int: 3,
+		},
+		type: {
+		},
+		price: 50,
+		sellValue: 15,
+		description: `A basket used for collecting plants and flowers.`,
+		desc: function () {
+			itemDescription(this)
+		},
+	}
+	return flowerBasket
 }
 function pickaxe(monsterLevel) { //tier 0.5
 	let pickaxe = {
@@ -41082,17 +41751,19 @@ function pickaxe(monsterLevel) { //tier 0.5
 			piercingPen: 0,
 			weight: 10,
 		},
-		requirements: {},
+		requirements: {
+			str: 3,
+		},
 		type: {
 			weapon: true,
 			twoHanded: true,
-			sword: true,
+			axe: true,
 		},
 		enchantment: [],
 		skillUsed: 'twoHanded',
 		price: 250,
 		sellValue: 15,
-		description: `This is used for mining ore.`,
+		description: `An axe used for mining ore.`,
 		desc: function () {
 			itemDescription(this)
 		},
@@ -41100,6 +41771,49 @@ function pickaxe(monsterLevel) { //tier 0.5
 		miss: (enemy, weapon) => oneHandedSwing1(enemy, weapon),
 	}
 	return pickaxe
+}
+function skinningKnife(monsterLevel) { //tier 0.5
+	let skinningKnife = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Skinning Knife',
+		refName: 'skinningKnife',
+		picture: 'images/weapons/daggers/skinning knife/skinning knife.png',
+		color: 'green',
+		keywords: ['pickaxe'],
+		botDamage: randomNumberRange(1, 1),
+		topDamage: randomNumberRange(1, 1),
+		mods: {
+			slashingPen: 0,
+			piercingPen: 0,
+			weight: 10,
+		},
+		requirements: {
+			dex: 3,
+		},
+		type: {
+			weapon: true,
+			daggers: true,
+			dagger: true,
+		},
+		enchantment: [],
+		skillUsed: 'daggers',
+		price: 50,
+		sellValue: 15,
+		description: `A knife used for skinning carcassed.`,
+		desc: function () {
+			itemDescription(this)
+		},
+		swing: (enemy, weapon) => oneHandedSwing1(enemy, weapon),
+		miss: (enemy, weapon) => oneHandedSwing1(enemy, weapon),
+	}
+	return skinningKnife
 }
 
 
@@ -41238,8 +41952,6 @@ function shortbow(monsterLevel) { //tier 2
 	return shortbow
 }
 function longbow(monsterLevel) { //tier 3
-	if (backpack != undefined) {
-	}
 	let longbow = {
 		id: () => {
 			for (let i = 0; i < 50; i++) {
@@ -41989,6 +42701,8 @@ function trainingShortsword(monsterLevel) { //tier 1
 		botDamage: randomNumberRange(3, 3),
 		topDamage: randomNumberRange(4, 4),
 		mods: {
+			str: 5,
+			dex: 2,
 			slashingPen: 0,
 			piercingPen: 0,
 			weight: 5,
@@ -42613,7 +43327,7 @@ function largeBoneClub(monsterLevel) { //tier 1.5
 		},
 		enchantment: [],
 		skillUsed: 'twoHanded',
-		price: 5,
+		price: 35,
 		sellValue: 7,
 		description: `What looks to be the large leg bone of an animal or creature`,
 		desc: function () {
@@ -44006,8 +44720,7 @@ function cultRobes(monsterLevel) { //tier 2.5
 		color: 'green',
 		keywords: ['cult', 'robes', 'cult robes'],
 		mods: {
-			weight: 1,
-			armor: 1,
+			weight: 0,
 			wis: 1,
 			spellPower: 1,
 		},
@@ -44017,8 +44730,7 @@ function cultRobes(monsterLevel) { //tier 2.5
 			cloth: true,
 			armorType: 'Cloth',
 		},
-		price: 250,
-		sellValue: 125,
+		sellValue: 40,
 		description: `The robes still smell of someone else`,
 		slot: 'chest',
 		desc: function () {
@@ -44203,9 +44915,9 @@ function muddyGloves(monsterLevel) {  //tier 0.5
 		keywords: ['muddy', 'gloves', 'muddy gloves'],
 		mods: {
 			weight: 1,
-			slashingArmor: 2,
-			piercingArmor: 2,
-			bluntArmor: 2,
+			slashingArmor: 0,
+			piercingArmor: 1,
+			bluntArmor: 0,
 		},
 		type: {
 			material: 'Leather',
@@ -44215,7 +44927,7 @@ function muddyGloves(monsterLevel) {  //tier 0.5
 			armorType: 'Leather'
 		},
 		price: 0,
-		sellValue: 5,
+		sellValue: 12,
 		description: `Holes have been eaten into most parts of these gloves`,
 		slot: 'hands',
 		desc: function () {
@@ -44276,9 +44988,9 @@ function waterloggedBoots(monsterLevel) { //tier 1
 		keywords: ['waterlogged', 'boots', 'waterlogged boots'],
 		mods: {
 			weight: 1,
-			slashingArmor: 2,
-			piercingArmor: 2,
-			bluntArmor: 2,
+			slashingArmor: 0,
+			piercingArmor: 0,
+			bluntArmor: 1,
 		},
 		requirements: {
 		},
@@ -44289,7 +45001,7 @@ function waterloggedBoots(monsterLevel) { //tier 1
 			armorType: 'Leather'
 		},
 		price: 0,
-		sellValue: 5,
+		sellValue: 12,
 		description: `Ragged boots that look like they were taken off a dead body`,
 		slot: 'feet',
 		desc: function () {
@@ -44299,8 +45011,8 @@ function waterloggedBoots(monsterLevel) { //tier 1
 	return waterloggedBoots
 }
 
-function grasswovenHat(monsterLevel) { //tier 0.5
-	let grasswovenHat = {
+function grassStainedHat(monsterLevel) { //tier 0.5
+	let grassStainedHat = {
 		id: () => {
 			for (let i = 0; i < 50; i++) {
 				if (!pushItem[i]) {
@@ -44309,14 +45021,14 @@ function grasswovenHat(monsterLevel) { //tier 0.5
 			}
 		},
 		roomId: currentArea.id,
-		name: 'Grasswoven Hat',
+		name: 'Grass Stained Hat',
 		color: 'green',
-		keywords: ['grasswoven', 'hat', 'grasswoven hat'],
+		keywords: ['grass', 'stained', 'hat', 'grass stained', 'stained hat', 'grass stained hat'],
 		mods: {
 			weight: 1,
-			slashingArmor: 2,
-			piercingArmor: 2,
-			bluntArmor: 2,
+			slashingArmor: 1,
+			piercingArmor: 0,
+			bluntArmor: 0,
 		},
 		type: {
 			armor: true,
@@ -44325,14 +45037,14 @@ function grasswovenHat(monsterLevel) { //tier 0.5
 			armorType: 'Leather'
 		},
 		price: 0,
-		sellValue: 5,
+		sellValue: 12,
 		description: `A very lightweight jerkin used by most trainees. It provides a little defense while also allowing the wearer to stay light on their feet.`,
 		slot: 'head',
 		desc: function () {
 			itemDescription(this)
 		},
 	}
-	return grasswovenHat
+	return grassStainedHat
 }
 function leatherCap(monsterLevel) { //tier 2
 	let leatherCap = {
@@ -44783,9 +45495,9 @@ function ratSkullHelm(monsterLevel) {  //tier 2.5
 		keywords: ['rat', 'skull', 'helm', 'rat skull', 'skull helm', 'rat skull helm'],
 		mods: {
 			weight: 1,
-			slashingArmor: 2,
-			piercingArmor: 2,
-			bluntArmor: 2,
+			slashingArmor: 3,
+			piercingArmor: 3,
+			bluntArmor: 1,
 		},
 		requirements: {
 		},
@@ -44821,9 +45533,9 @@ function ratHideTunic(monsterLevel) {  //tier 2.5
 		keywords: ['rat', 'hide', 'tunic', 'rat hide', 'hide tunic', 'rat hide tunic'],
 		mods: {
 			weight: 1,
-			slashingArmor: 2,
-			piercingArmor: 2,
-			bluntArmor: 2,
+			slashingArmor: 3,
+			piercingArmor: 3,
+			bluntArmor: 1,
 		},
 		requirements: {
 		},
@@ -44859,9 +45571,9 @@ function ratHidePants(monsterLevel) {  //tier 2.5
 		keywords: ['rat', 'hide', 'pants', 'rat hide', 'hide pants', 'rat hide pants'],
 		mods: {
 			weight: 1,
-			slashingArmor: 2,
-			piercingArmor: 2,
-			bluntArmor: 2,
+			slashingArmor: 3,
+			piercingArmor: 3,
+			bluntArmor: 1,
 		},
 		requirements: {
 		},
@@ -44917,8 +45629,7 @@ function trainingShield(monsterLevel) {
 			piercingArmor: 1,
 			bluntArmor: 1,
 			weight: 5,
-		},
-		requirements: {},
+		},	
 		type: {
 			skillUsed: 'Shields',
 			armor: true,
@@ -44954,7 +45665,9 @@ function squiresShield(monsterLevel) {
 			piercingArmor: 2,
 			bluntArmor: 2,
 			weight: 5,		},
-		requirements: {},
+		requirements: {
+			shields: 2,
+		},
 		type: {
 			armor: true,
 			shield: true,
@@ -44987,9 +45700,10 @@ function bronzeShield(monsterLevel) {
 			slashingArmor: 4,
 			piercingArmor: 4,
 			bluntArmor: 4,
-			weight: 5,		},
+			weight: 5,
+		},
 		requirements: {
-			oneHanded: 3,
+			shields: 3,
 		},
 		type: {
 			armor: true,
@@ -45025,6 +45739,9 @@ function galvadianKiteShield(monsterLevel) {
 			piercingArmor: 6,
 			bluntArmor: 6,
 			weight: 15,		
+		},
+		requirements: {
+			shields: 4,
 		},
 		type: {
 			armor: true,
@@ -45294,7 +46011,14 @@ function requirementsMet(item) {
 	  }
 	  const playerStat = player[stat]?.level !== undefined ? player[stat].level : player[stat];
 	  if (playerStat < requirement) {
-		quickMessage(`Your ${item.name} requires a ${player[stat].name} skill level of ${requirement} to use`);
+		let line1 = lineFunc()
+		customizeEachWord(`Your `, 'white', line1)
+		customizeEachWord(`${item.name} `, item.color, line1)
+		customizeEachWord(`requires a `, 'white', line1)
+		customizeEachWord(`${player[stat].name} `, 'green', line1)
+		customizeEachWord(`skill level of `, 'white', line1)
+		customizeEachWord(`${requirement} `, 'light-blue', line1)
+		customizeEachWord(`to use.`, 'white', line1)
 		return false;
 	  }
 	}
@@ -45366,10 +46090,12 @@ function weaponOrShieldAddPlayerAttribute(moddedWeaponOrShield) {
 }
 
 function weaponOrShieldRemovePlayerAttribute(moddedWeaponOrShield) {
+	console.log(moddedWeaponOrShield)
 	if (moddedWeaponOrShield.type.shield) {
 		player.mods.armor -= player.shields.rating()
 	}
 	if (moddedWeaponOrShield.type.weapon || moddedWeaponOrShield.type.shield) {
+		console.log('This should add stats to player')
 		let moddedWeaponOrShieldMods = moddedWeaponOrShield.mods
 		let moddedWeaponOrShieldKeys = Object.keys(moddedWeaponOrShieldMods)
 		for (let i = 0; i < moddedWeaponOrShieldKeys.length; i++) {
@@ -46188,8 +46914,14 @@ function contagionEnemyDies(enemy) {
 	}
 }
 
-function enemyDeathConditionals(enemy) {
+function applyThrillOfTheKill() {
+	player.thrillOfTheKill.activate()
+}
+ 
+ 
+ function enemyDeathConditionals(enemy) {
 	contagionEnemyDies(enemy)
+	applyThrillOfTheKill()
 }
 
 function enemyDeath(enemy) {
@@ -46264,7 +46996,6 @@ function enemyDeath(enemy) {
 		playerLevelFunc()
 	}
 }
-
 function masterMonster(area) {
 	let masterMonster = {
 		color: `red`,
@@ -46295,8 +47026,9 @@ function masterMonster(area) {
 		name: 'Master Monster',
 		refName: 'master',
 		keywords: ['master'],
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
+		health: () => 10000 + (this.level * this.con),
+		maxHealth: () => 10000 + (this.level * this.con),
+		con: () => 5,
 		enemyAttackPower: () => 20,
 		accuracy: () => 5,
 		dodge: () => 0,
@@ -46317,12 +47049,6 @@ function masterMonster(area) {
 			let level = randomNumberRange(1, 1)
 			return level
 		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -46502,7 +47228,7 @@ function rat(area) {
 		entersExitsRoomPhrase: `hobbles`,
 		hostile: true,
 		combat: false,
-		armor: 1,
+		armor: 0,
 		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
@@ -46705,7 +47431,7 @@ function rat(area) {
 	}
 	return rat
 }
-
+//TRAINING FIELDS
 function mudling(area) {
 	let mudling = {
 		color: `red`,
@@ -46720,63 +47446,50 @@ function mudling(area) {
 		entersExitsRoomPhrase: `plops`,
 		hostile: true,
 		combat: false,
-		armor: 1,
-		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		armor: 0,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
 		name: 'Mudling',
 		refName: 'mudling',
 		keywords: ['mudling'],
-		health: () => 40,
-		maxHealth: () => 40,
+		level: () => {
+			let level = randomNumberRange(1, 3)
+			return level
+		},
+		health: () => 15 + (this.level * this.con),
+		maxHealth: () => 15 + (this.level * this.con),
+		con: () => 5,
 		enemyAttackPower: () => 20,
-		accuracy: () => this.dex,
+		accuracy: () => 0,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		damageCalculation: function() {
 			return randomNumberRange(3, 4)
 		},
-		itemDrops: [],
 		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 0,
-			// 	probability2: 1,
-			// 	probability3: 2,
-			// 	probability4: 3,
-			// 	probability5: 4,
-			// 	probability6: 5,
-			// }
-			// return enemyGoldDrops(goldAmount)
 			return randomNumberRange(5, 8)
 		},
 		itemDropsRoll: function () {
-			const itemDrops =  [mudBall, muddyGloves]
-			const probability = [30, 100]
+			const itemDrops =  [mudBall]
+			const probability = [30]
 			enemyItemDrops(itemDrops, probability, this)
 		},
+		enemyMoveSpeed: 6000,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		damageTypes: ['blunt'],
+		attackTypes: { 
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		itemDrops: [],
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(1, 3)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -46805,7 +47518,6 @@ function mudling(area) {
 			let hitRoll = Math.floor(Math.random() * 100) + 1
 			return enemyHitChance >= hitRoll
 		},
-		enemyMoveSpeed: 6000,
 		desc: function () {
 			let description = `The Mudling looks to be a low form of earth elemental`
 			enemyDescription(this, description)
@@ -46853,62 +47565,61 @@ function mudling(area) {
 	}
 	return mudling
 }
-
-function mudlet(area) {
-	let mudlet = {
+function waterling(area) {
+	let waterling = {
 		color: `red`,
-		picture: "images/monsters/elementals/mudlet/mudlet.png",
-		entersTheRoomPhrase: `plops in!`,
-		advancePhrase: `flops toward you..`,
-		deathPhrase: `sinks into a lifeless puddle`,
-		entersExitsRoomPhrase: `plops`,
+		picture: "images/monsters/elementals/waterling/waterling.png",
+		entersTheRoomPhrase: `drips in!`,
+		advancePhrase: `splashes toward you`,
+		deathPhrase: `splashes to bits`,
+		entersExitsRoomPhrase: `bounces`,
 		hostile: true,
 		combat: false,
 		armor: 1,
-		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Waterling',
+		refName: 'waterling',
+		keywords: ['waterling'],
+		level: () => {
+			let level = randomNumberRange(1, 3)
+			return level
+		},
+		health: () => 15 + (this.level * this.con),
+		maxHealth: () => 15 + (this.level * this.con),
+		con: () => 5,
+		enemyAttackPower: () => 20,
+		accuracy: () => 0,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(3, 4)
+		},
+		itemDrops: [],
+		gold: function () {
+			return randomNumberRange(5, 8)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [waterBerry]
+			const probability = [30]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 50,
+			melee: 100,
 			ranged: 0,
-			meleeAbility: 50,
+			meleeAbility: 0,
 			rangedAbility: 0,
 		},
 		slashingArmor: 0,
 		piercingArmor: 0,
 		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Mudlet',
-		refName: 'mudlet',
-		keywords: ['mudlet'],
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
-		enemyAttackPower: () => 20,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			return randomNumberRange(8, 15)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [mudBall, muddyGloves]
-			const probability = [50, 100]
-			enemyItemDrops(itemDrops, probability, this)
-		},
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(3, 4)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -46932,8 +47643,140 @@ function mudlet(area) {
 			console.log(attackType, ' ATTACK TYPE')
 			return attackType
 		},
+		hitChance: function(enemy) {
+		let enemyHitChance = calculateEnemyHitChance(enemy)
+		let hitRoll = Math.floor(Math.random() * 100) + 1
+		return enemyHitChance >= hitRoll
+		},
+		enemyMoveSpeed: 6000,
+		desc: function () {
+			let description = `The Waterling looks to be a low form of water elemental`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'splashes on you!',
+		missPhrase: 'splashes at you and misses!',
+		rangedAttackPhrase: 'splurts water at you!',
+		rangedMissPhrase: 'splurts water at you and misses!',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 2000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return waterling
+}
+function grassling(area) {
+	let grassling = {
+		color: `red`,
+		picture: "images/monsters/elementals/grassling/grassling.png",
+		entersTheRoomPhrase: `wafts in!`,
+		advancePhrase: `waddles up to you..`,
+		deathPhrase: `wilts over and fades away`,
+		entersExitsRoomPhrase: `blows`,
+		hostile: true,
+		combat: false,
+		armor: 1,
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Grassling',
+		refName: 'grassling',
+		keywords: ['grassling'],
+		level: () => {
+			let level = randomNumberRange(1, 3)
+			return level
+		},
+		health: () => 15 + (this.level * this.con),
+		maxHealth: () => 15 + (this.level * this.con),
+		con: () => 5,
+		enemyAttackPower: () => 20,
+		accuracy: () => 0,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		damageCalculation: function() {
-			return randomNumberRange(5, 6)
+			return randomNumberRange(3, 6)
+		},
+		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		gold: function () {
+			return randomNumberRange(5, 8)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [grassFruit]
+			const probability = [30]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		itemDrops: [],
+
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
 		},
 		hitChance: function(enemy) {
 		let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -46941,6 +47784,142 @@ function mudlet(area) {
 		return enemyHitChance >= hitRoll
 		},
 		enemyMoveSpeed: 6000,
+		desc: function () {
+			let description = `The Grassling looks to be a low form of air elemental`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'whips itself at you and hits!',
+		missPhrase: 'whips itself at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 4000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return grassling
+}
+function mudlet(area) {
+	let mudlet = {
+		color: `red`,
+		picture: "images/monsters/elementals/mudlet/mudlet.png",
+		entersTheRoomPhrase: `plops in!`,
+		advancePhrase: `flops toward you..`,
+		deathPhrase: `sinks into a lifeless puddle`,
+		entersExitsRoomPhrase: `plops`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Mudlet',
+		refName: 'mudlet',
+		keywords: ['mudlet'],
+		level: () => {
+			let level = randomNumberRange(3, 4)
+			return level
+		},
+		health: () => 30 + (this.level * this.con),
+		maxHealth: () => 30 + (this.level * this.con),
+		con: () => 5,
+		enemyAttackPower: () => 20,
+		accuracy: () => 0,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(5, 6)
+		},
+		gold: function () {
+			return randomNumberRange(8, 15)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [mudBall, muddyGloves]
+			const probability = [50, 20]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		enemyMoveSpeed: 6000,
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 50,
+			ranged: 0,
+			meleeAbility: 50,
+			rangedAbility: 0,
+		},
+		
+		itemDrops: [],
+
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+
+		hitChance: function(enemy) {
+		let enemyHitChance = calculateEnemyHitChance(enemy)
+		let hitRoll = Math.floor(Math.random() * 100) + 1
+		return enemyHitChance >= hitRoll
+		},
 		meleeAbilityCalculation: {
 			abilityUseChance: {
 				ability1: 100,
@@ -47027,481 +48006,6 @@ function mudlet(area) {
 	}
 	return mudlet
 }
-
-function grassling(area) {
-	let grassling = {
-		color: `red`,
-		picture: "images/monsters/elementals/grassling/grassling.png",
-		entersTheRoomPhrase: `wafts in!`,
-		advancePhrase: `waddles up to you..`,
-		deathPhrase: `wilts over and fades away`,
-		entersExitsRoomPhrase: `blows`,
-		hostile: true,
-		combat: false,
-		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Grassling',
-		refName: 'grassling',
-		keywords: ['grassling'],
-		health: () => 40,
-		maxHealth: () => 40,
-		enemyAttackPower: () => 20,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		damageCalculation: function() {
-			return randomNumberRange(3, 6)
-		},
-		itemDrops: [],
-		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 0,
-			// 	probability2: 1,
-			// 	probability3: 2,
-			// 	probability4: 3,
-			// 	probability5: 4,
-			// 	probability6: 5,
-			// }
-			// return enemyGoldDrops(goldAmount)
-			return randomNumberRange(5, 8)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [grassFiber, grasswovenHat]
-			const probability = [30, 100]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(1, 3)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		hitChance: function(enemy) {
-		let enemyHitChance = calculateEnemyHitChance(enemy)
-		let hitRoll = Math.floor(Math.random() * 100) + 1
-		return enemyHitChance >= hitRoll
-		},
-		enemyMoveSpeed: 6000,
-		desc: function () {
-			let description = `The Grassling looks to be a low form of air elemental`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'whips itself at you and hits!',
-		missPhrase: 'whips itself at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 4000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return grassling
-}
-
-function grasslet(area) {
-	let grasslet = {
-		color: `red`,
-		picture: "images/monsters/elementals/grasslet/grasslet.png",
-		entersTheRoomPhrase: `wafts in!`,
-		advancePhrase: `waddles up to you..`,
-		deathPhrase: `wilts over and fades away`,
-		entersExitsRoomPhrase: `blows`,
-		hostile: true,
-		combat: false,
-		armor: 1,
-		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 0,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 100,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Grasslet',
-		refName: 'grasslet',
-		keywords: ['grasslet'],
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
-		enemyAttackPower: () => 20,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 0,
-			// 	probability2: 1,
-			// 	probability3: 2,
-			// 	probability4: 3,
-			// 	probability5: 4,
-			// 	probability6: 5,
-			// }
-			// return enemyGoldDrops(goldAmount)
-			return randomNumberRange(8, 15)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [grassFiber, grasswovenHat]
-			const probability = [50, 100]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(1, 3)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(3, 4)
-		},
-		hitChance: function(enemy) {
-		let enemyHitChance = calculateEnemyHitChance(enemy)
-		let hitRoll = Math.floor(Math.random() * 100) + 1
-		return enemyHitChance >= hitRoll
-		},
-		enemyMoveSpeed: 6000,
-		rangedAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				name: 'Stinging Wind',
-				color: 'wind',
-				damageType: 'wind', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
-				// penetrationTypes: ['slashing', 'piercing'],
-				combatType: 'ranged',
-				castTime: 5000,
-				damage: function() {return randomNumberRange(5, 5)},
-				abilityPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`whips its body toward you, sending a blade of wind at you!`, 'white', line1)
-				}, 
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
-				}, 
-				flavorTextMiss: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`${enemy.name} `, enemy.color, line1)
-					customizeEachWord(`whips its body at you and`, 'white', line1)
-					customizeEachWord(`misses!`, 'red', line1)
-				},
-			},
-		},
-		desc: function () {
-			let description = `The Grasslet looks to be a low form of air elemental`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'whips itself at you and hits!',
-		missPhrase: 'whips itself at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 2000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return grasslet
-}
-function waterling(area) {
-	let waterling = {
-		color: `red`,
-		picture: "images/monsters/elementals/waterling/waterling.png",
-		entersTheRoomPhrase: `drips in!`,
-		advancePhrase: `splashes toward you`,
-		deathPhrase: `splashes to bits`,
-		entersExitsRoomPhrase: `bounces`,
-		hostile: true,
-		combat: false,
-		armor: 1,
-		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Waterling',
-		refName: 'waterling',
-		keywords: ['waterling'],
-		health: () => 40,
-		maxHealth: () => 40,
-		enemyAttackPower: () => 20,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		damageCalculation: function() {
-			return randomNumberRange(3, 4)
-		},
-		itemDrops: [],
-		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 0,
-			// 	probability2: 1,
-			// 	probability3: 2,
-			// 	probability4: 3,
-			// 	probability5: 4,
-			// 	probability6: 5,
-			// }
-			// return enemyGoldDrops(goldAmount)
-			return randomNumberRange(5, 8)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [waterBerry, waterloggedBoots]
-			const probability = [30, 30]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		level: () => {
-			let level = randomNumberRange(1, 3)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		hitChance: function(enemy) {
-		let enemyHitChance = calculateEnemyHitChance(enemy)
-		let hitRoll = Math.floor(Math.random() * 100) + 1
-		return enemyHitChance >= hitRoll
-		},
-		enemyMoveSpeed: 6000,
-		desc: function () {
-			let description = `The Waterling looks to be a low form of water elemental`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'splashes on you!',
-		missPhrase: 'splashes at you and misses!',
-		rangedAttackPhrase: 'splurts water at you!',
-		rangedMissPhrase: 'splurts water at you and misses!',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 2000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return waterling
-}
 function waterlet(area) {
 	let waterlet = {
 		color: `red`,
@@ -47513,6 +48017,36 @@ function waterlet(area) {
 		hostile: true,
 		combat: false,
 		armor: 1,
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Waterlet',
+		refName: 'waterlet',
+		keywords: ['waterlet'],
+		level: () => {
+			let level = randomNumberRange(3, 4)
+			return level
+		},
+		health: () => 30 + (this.level * this.con),
+		maxHealth: () => 30 + (this.level * this.con),
+		con: () => 5,
+		enemyAttackPower: () => 20,
+		accuracy: () => 0,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(5, 6)
+		},
+		gold: function () {
+			return randomNumberRange(8, 15)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [waterBerry, waterloggedBoots]
+			const probability = [50, 20]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		itemDrops: [],
 		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 0,
@@ -47523,46 +48057,6 @@ function waterlet(area) {
 		slashingArmor: 0,
 		piercingArmor: 0,
 		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Waterlet',
-		refName: 'waterlet',
-		keywords: ['waterlet'],
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
-		enemyAttackPower: () => 20,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 0,
-			// 	probability2: 1,
-			// 	probability3: 2,
-			// 	probability4: 3,
-			// 	probability5: 4,
-			// 	probability6: 5,
-			// }
-			// return enemyGoldDrops(goldAmount)
-			return randomNumberRange(8, 15)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [waterBerry, waterloggedBoots]
-			const probability = [50, 100]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		level: () => {
-			let level = randomNumberRange(1, 3)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
@@ -47589,9 +48083,7 @@ function waterlet(area) {
 			console.log(attackType, ' ATTACK TYPE')
 			return attackType
 		},
-		damageCalculation: function() {
-			return randomNumberRange(4, 5)
-		},
+
 		hitChance: function(enemy) {
 		let enemyHitChance = calculateEnemyHitChance(enemy)
 		let hitRoll = Math.floor(Math.random() * 100) + 1
@@ -47699,6 +48191,172 @@ function waterlet(area) {
 	}
 	return waterlet
 }
+function grasslet(area) {
+	let grasslet = {
+		color: `red`,
+		picture: "images/monsters/elementals/grasslet/grasslet.png",
+		entersTheRoomPhrase: `wafts in!`,
+		advancePhrase: `waddles up to you..`,
+		deathPhrase: `wilts over and fades away`,
+		entersExitsRoomPhrase: `blows`,
+		hostile: true,
+		combat: false,
+		armor: 1,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Grasslet',
+		refName: 'grasslet',
+		keywords: ['grasslet'],
+		level: () => {
+			let level = randomNumberRange(3, 4)
+			return level
+		},
+		health: () => 30 + (this.level * this.con),
+		maxHealth: () => 30 + (this.level * this.con),
+		con: () => 5,
+		enemyAttackPower: () => 20,
+		accuracy: () => 0,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(5, 6)
+		},
+		gold: function () {
+			return randomNumberRange(8, 15)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [grassFruit, grassStainedHat]
+			const probability = [50, 20]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		itemDrops: [],
+		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 0,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 100,
+		},
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		enemyMoveSpeed: 6000,
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+
+		hitChance: function(enemy) {
+		let enemyHitChance = calculateEnemyHitChance(enemy)
+		let hitRoll = Math.floor(Math.random() * 100) + 1
+		return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+			abilityUseChance: {
+				ability1: 100,
+			},
+			ability1: {
+				name: 'Stinging Wind',
+				color: 'wind',
+				damageType: 'wind', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
+				// penetrationTypes: ['slashing', 'piercing'],
+				combatType: 'ranged',
+				castTime: 5000,
+				damage: function() {return randomNumberRange(5, 6)},
+				abilityPhrase: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`The `, 'white', line1)
+					customizeEachWord(`Grassling `, 'red', line1)
+					customizeEachWord(`whips its body toward you, sending a blade of wind at you!`, 'white', line1)
+				}, 
+				windUpPhrase: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`The `, 'white', line1)
+					customizeEachWord(`Grassling `, 'red', line1)
+					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
+				}, 
+				flavorTextMiss: function(enemy) {
+					let line1 = lineFunc()
+					customizeEachWord(`${enemy.name} `, enemy.color, line1)
+					customizeEachWord(`whips its body at you and`, 'white', line1)
+					customizeEachWord(`misses!`, 'red', line1)
+				},
+			},
+		},
+		desc: function () {
+			let description = `The Grasslet looks to be a low form of air elemental`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'whips itself at you and hits!',
+		missPhrase: 'whips itself at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 2000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return grasslet
+}
 function lesserMudElemental(area) {
 	let lesserMudElemental = {
 		color: `red`,
@@ -47709,40 +48367,25 @@ function lesserMudElemental(area) {
 		entersExitsRoomPhrase: `bounces`,
 		hostile: true,
 		combat: false,
-		armor: 5,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 50,
-			ranged: 0,
-			meleeAbility: 50,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		armor: 0,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
 		name: 'Lessser Mud Ele',
 		refName: 'lesserMudElemental',
 		keywords: ['lesser', 'mud', 'elemental', 'lesser mud elemental'],
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
+		level: () => {
+			let level = randomNumberRange(5, 5)
+			return level
+		},
+		health: () => 50 + (this.level * this.con),
+		maxHealth: () => 50 + (this.level * this.con),
+		con: () => 5,
 		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
+		accuracy: () => 0,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
 		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 6,
-			// 	probability2: 7,
-			// 	probability3: 8,
-			// 	probability4: 9,
-			// 	probability5: 10,
-			// 	probability6: 11,
-			// }
-			// return enemyGoldDrops(goldAmount)
 			return randomNumberRange(15, 25)
 		},
 		itemDropsRoll: function () {
@@ -47750,16 +48393,18 @@ function lesserMudElemental(area) {
 			const probability = [100]
 			enemyItemDrops(itemDrops, probability, this)
 		},
-		level: () => {
-			let level = randomNumberRange(5, 5)
-			return level
+		itemDrops: [],
+		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 50,
+			ranged: 0,
+			meleeAbility: 50,
+			rangedAbility: 0,
 		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
+		slashingArmor: 2,
+		piercingArmor: 2,
+		bluntArmor: 2,
+		enemyMoveSpeed: 6000,
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
@@ -47794,40 +48439,13 @@ function lesserMudElemental(area) {
 		let hitRoll = Math.floor(Math.random() * 100) + 1
 		return enemyHitChance >= hitRoll
 		},
-		enemyMoveSpeed: 6000,
-		rangedAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				name: 'Stinging Wind',
-				color: 'light-green',
-				damage: function() {return randomNumberRange(10, 20)},
-				abilityPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`whips its body toward you, sending a blade of wind at you!`, 'white', line1)
-				}, 
-				windUpPhrase: function(enemy) {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Grassling `, 'red', line1)
-					customizeEachWord(`begins dancing back and forth..`, 'white', line1)
-				}, 
-				damageType: 'wind',
-				penetrationTypes: ['slashing', 'piercing'],
-				combatType: 'ranged',
-				castTime: 5000,
-			},
-		},
 		meleeAbilityCalculation: {
 			abilityUseChance: {
 				ability1: 100,
 			},
 			ability1: {
-				damage: function() {return randomNumberRange(1, 10)},
-				abilityPhrase: function(enemy) {
+				damage: function() {return randomNumberRange(6, 9)},
+				abilityPhrase: function() {
 					let line1 = lineFunc()
 					customizeEachWord(`With a gurgling lurch forward, the `, 'white', line1)
 					customizeEachWord(`Mud Elemental `, 'red', line1)
@@ -47908,40 +48526,25 @@ function lesserWaterElemental(area) {
 		entersExitsRoomPhrase: `bounces`,
 		hostile: true,
 		combat: false,
-		armor: 5,
-		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 0,
-			ranged: 100,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
+		armor: 0,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
 		name: 'Lesser Water Ele',
 		refName: 'lesserWaterElemental',
 		keywords: ['lesser', 'water', 'elemental', 'lesser water elemental', 'water elemental', 'lesser water'],
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
+		level: () => {
+			let level = randomNumberRange(5, 5)
+			return level
+		},
+		health: () => 50 + (this.level * this.con),
+		maxHealth: () => 50 + (this.level * this.con),
+		con: () => 5,
 		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
+		accuracy: () => 0,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
 		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 6,
-			// 	probability2: 7,
-			// 	probability3: 8,
-			// 	probability4: 9,
-			// 	probability5: 10,
-			// 	probability6: 11,
-			// }
-			// return enemyGoldDrops(goldAmount)
 			return randomNumberRange(15, 25)
 		},
 		itemDropsRoll: function () {
@@ -47949,16 +48552,17 @@ function lesserWaterElemental(area) {
 			const probability = [100, 100]
 			enemyItemDrops(itemDrops, probability, this)
 		},
-		level: () => {
-			let level = randomNumberRange(5, 5)
-			return level
+		itemDrops: [],
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 0,
+			ranged: 100,
+			meleeAbility: 0,
+			rangedAbility: 0,
 		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
+		slashingArmor: 2,
+		piercingArmor: 2,
+		bluntArmor: 2,
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
@@ -48047,7 +48651,6 @@ function lesserWaterElemental(area) {
 	}
 	return lesserWaterElemental
 }
-
 function lesserGrassElemental(area) {
 	let lesserGrassElemental = {
 		color: `red`,
@@ -48058,7 +48661,33 @@ function lesserGrassElemental(area) {
 		entersExitsRoomPhrase: `bounces`,
 		hostile: true,
 		combat: false,
-		armor: 5,
+		armor: 0,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Lesser Grass Ele',
+		refName: 'lesserGrassElemental',
+		keywords: ['lesser', 'grass', 'elemental', 'lesser grass elemental'],
+		level: () => {
+			let level = randomNumberRange(5, 5)
+			return level
+		},
+		health: () => 50 + (this.level * this.con),
+		maxHealth: () => 50 + (this.level * this.con),
+		con: () => 5,
+		enemyAttackPower: () => 7,
+		accuracy: () => 0,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		itemDrops: [],
+		gold: function () {
+			return randomNumberRange(15, 25)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [grassFruit, grassStainedHat]
+			const probability = [100, 100]
+			enemyItemDrops(itemDrops, probability, this)
+		},
 		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 0,
@@ -48066,49 +48695,9 @@ function lesserGrassElemental(area) {
 			meleeAbility: 0,
 			rangedAbility: 50,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Lesser Grass Elemental',
-		refName: 'lesserGrassElemental',
-		keywords: ['lesser', 'grass', 'elemental', 'lesser grass elemental'],
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			// const goldAmount = {
-			// 	probability1: 6,
-			// 	probability2: 7,
-			// 	probability3: 8,
-			// 	probability4: 9,
-			// 	probability5: 10,
-			// 	probability6: 11,
-			// }
-			// return enemyGoldDrops(goldAmount)
-			return randomNumberRange(15, 25)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [grassFiber, grasswovenHat]
-			const probability = [100, 100]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		level: () => {
-			let level = randomNumberRange(5, 5)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
+		slashingArmor: 2,
+		piercingArmor: 2,
+		bluntArmor: 2,
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
@@ -48223,18 +48812,753 @@ function lesserGrassElemental(area) {
 	}
 	return lesserGrassElemental
 }
-
-function koboldChild(area) {
-	let koboldChild = {
+//GRAVEYARD
+function skeleton(area) {
+	let skeleton = {
 		color: `red`,
-		picture: "images/monsters/kobolds/kobold child/kobold child.png",
-		entersTheRoomPhrase: `scampers in!`,
-		advancePhrase: `runs up to you..`,
-		deathPhrase: `lets out a high pitched cry as it dies!`,
-		entersExitsRoomPhrase: `scampers`,
+		picture: "images/monsters/undead/skeletons/skeleton/skeleton.png",
+		entersTheRoomPhrase: `clacks in!`,
+		advancePhrase: `creeps toward you..`,
+		deathPhrase: `lets out a hoarse scream as the magic leaves its bones`,
+		entersExitsRoomPhrase: `creeps`,
 		hostile: true,
 		combat: false,
-		armor: 1,
+		armor: 0,
+		slashingArmor: 4,
+		piercingArmor: 8,
+		bluntArmor: 4,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Skeleton',
+		refName: 'skeleton',
+		keywords: ['skeleton'],
+		level: () => {
+			let level = randomNumberRange(5, 8)
+			return level
+		},
+		health: () => 50 + (this.level * this.con),
+		maxHealth: () => 50 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(10, 18)
+		},
+		itemDrops: [],
+		gold: function () {
+			const goldAmount = {
+				probability1: randomNumberRange(20, 35),
+			}
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [smallBone, largeBone, crackedBone]
+			const probability = [10, 10, 20]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A skeleton animated by magic`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'swings its bony arm at you!',
+		missPhrase: 'swings its bony arm at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 100, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 5000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return skeleton
+}
+function cultist(area) {
+	let cultist = {
+		color: `red`,
+		picture: "images/monsters/humanoids/cultist/cultist.png",
+		entersTheRoomPhrase: `looms in!`,
+		advancePhrase: `strides toward you..`,
+		deathPhrase: `collapses into a pile of robes`,
+		entersExitsRoomPhrase: `strides`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Cultist',
+		refName: 'cultist',
+		keywords: ['cultist'],
+		level: () => {
+			let level = randomNumberRange(5, 8)
+			return level
+		},
+		health: () => 50 + (this.level * this.con),
+		maxHealth: () => 50 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(10, 18)
+		},
+		gold: function () {
+			return randomNumberRange(15, 40)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [cultRobes, crucifix]
+			const probability = [20, 20]
+			if (!pushItem.find(item => item.refName == 'cultTexts')) {
+				itemDrops.push(cultTexts)
+				probability.push(100)
+			}
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		slashingArmor: 5,
+		piercingArmor: 5,
+		bluntArmor: 5,
+		itemDrops: [],
+
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+		hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A hooded figure holding a sharp dagger at its side.`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'slashes at you with a dagger!',
+		missPhrase: 'slashes at you with a dagger and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 1000, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 5000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return cultist
+}
+function giantRat(area) {
+	let giantRat = {
+		color: `red`,
+		picture: "images/monsters/animals/giant rat/giant rat.png",
+		entersTheRoomPhrase: `squeeks in!`,
+		advancePhrase: `scurries toward you..`,
+		deathPhrase: `wimpers as it flops over dead`,
+		entersExitsRoomPhrase: `scurries`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+		damageTypes: ['slashing'],		
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		strikePhrase: 'bares its fangs at you and bites!',
+		missPhrase: 'bites at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		slashingArmor: 5,
+		piercingArmor: 5,
+		bluntArmor: 5,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Giant Rat',
+		refName: 'giantRat',
+		keywords: ['giant', 'rat', 'giant rat'],
+		level: () => {
+			let level = randomNumberRange(5, 8)
+			return level
+		},
+		health: () => 25 + (this.level * this.con),
+		maxHealth: () => 25 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(6, 10)
+		},
+		itemDrops: [],
+		gold: function () {
+			return randomNumberRange(10, 15)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [ratTail, ratSkin, lightHide]
+			const probability = [10, 20, 10]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A big ole rat`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 1000, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 5000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return giantRat
+}
+function graveWorm(area) {
+	let graveWorm = {
+		color: `red`,
+		picture: "images/monsters/insects/graveworm/graveworm.png",
+		entersTheRoomPhrase: `squishes in!`,
+		advancePhrase: `writhes toward you..`,
+		deathPhrase: `turns into a pile of pink mess`,
+		entersExitsRoomPhrase: `writhes`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Grave Worm',
+		refName: 'graveWorm',
+		keywords: ['grave', 'worm', 'grave worm'],
+		level: () => {
+			let level = randomNumberRange(5, 8)
+			return level
+		},
+		health: () => 25 + (this.level * this.con),
+		maxHealth: () => 25 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(2, 5)
+		},
+		gold: function () {
+			return randomNumberRange(10, 15)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [wormGuts]
+			const probability = [30]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		itemDrops: [],
+		damageTypes: ['piercing'],		
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		slashingArmor: 1,
+		piercingArmor: 1,
+		bluntArmor: 1,
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A thick, pink grave worm. Disgusting.`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'bites at you!',
+		missPhrase: 'bites at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 1000, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 4000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return graveWorm
+}
+//THE SHALLOWS
+function wildBoar(area) {
+	let wildBoar = {
+		color: `red`,
+		picture: "images/monsters/animals/wild boar/wild boar.png",
+		entersTheRoomPhrase: `charges in!`,
+		advancePhrase: `charges toward you..`,
+		deathPhrase: `lets out a shrill squeal as it thuds to the ground`,
+		entersExitsRoomPhrase: `charges`,
+		hostile: true,
+		combat: false,
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Wild Boar',
+		refName: 'wildBoar',
+		keywords: ['wild', 'boar', 'wild boar'],
+		level: () => {
+			let level = randomNumberRange(9, 12)
+			return level
+		},
+		health: () => 70 + (this.level * this.con),
+		maxHealth: () => 70 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 5,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(8, 16)
+		},
+		itemDrops: [],
+		gold: function () {
+			const goldAmount = {
+				probability1: randomNumberRange(20, 40),
+			}
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [rawBoarMeat, lightHide]
+			const probability = [40, 20]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		armor: 0,
+		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		slashingArmor: 10,
+		piercingArmor: 10,
+		bluntArmor: 10,
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A large wild boar`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'runs at you and gores you with its tusks!',
+		missPhrase: 'runs at you to gore you but misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 100, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 4000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return wildBoar
+}
+function stag(area) {
+	let stag = {
+		color: `red`,
+		picture: "images/monsters/animals/stag/stag.png",
+		entersTheRoomPhrase: `trots in!`,
+		advancePhrase: `charges toward you..`,
+		deathPhrase: `collapses to the ground`,
+		entersExitsRoomPhrase: `trots`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Stag',
+		refName: 'stag',
+		keywords: ['stag'],
+		level: () => {
+			let level = randomNumberRange(9, 12)
+			return level
+		},
+		health: () => 70 + (this.level * this.con),
+		maxHealth: () => 70 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 5,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(8, 16)
+		},
+		gold: function () {
+			const goldAmount = {
+				probability1: randomNumberRange(20, 40),
+			}
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [brokenAntlers, lightHide, stagAntlers]
+			const probability = [20, 20, 7]
+			enemyItemDrops(itemDrops, probability, this)
+		},
 		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
@@ -48242,46 +49566,148 @@ function koboldChild(area) {
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Kobold Child',
-		refName: 'koboldChild',
-		keywords: ['kobold', 'child', 'kobold child'],
-		health: () => (this.level * this.con),
-		maxHealth: () => (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		slashingArmor: 10,
+		piercingArmor: 3,
+		bluntArmor: 10,
 		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(7, 12),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [littleBoneToy, dirtyRags, halfEatenFish]
-			const probability = [25, 5, 5]
-			enemyItemDrops(itemDrops, probability, this)
-		},
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A large wild stag`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'rears back and clops you with its hooves!',
+		missPhrase: 'stamps at you but misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 100, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 4000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return stag
+}
+function impling(area) {
+	let impling = {
+		color: `red`,
+		picture: "images/monsters/imps/impling/impling.png",
+		entersTheRoomPhrase: `troddles in!`,
+		advancePhrase: `hops toward you..`,
+		deathPhrase: `curses you as its scream turns to silence`,
+		entersExitsRoomPhrase: `troddles`,
+		hostile: true,
+		combat: false,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Impling',
+		refName: 'impling',
+		keywords: ['impling'],
 		level: () => {
-			let level = randomNumberRange(5, 6)
+			let level = randomNumberRange(9, 12)
 			return level
 		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
+		health: () => 20 + (this.level * this.con),
+		maxHealth: () => 20 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 10,
+		dodge: () => 5,
+		experience: () => Math.floor((this.health / 2) - player.level + 10 < 0 ? 0 : (this.health / 2) - player.level) + 50,
+		itemDrops: [],
+		gold: function () {
+			let goldAmount = randomNumberRange(35, 65)
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [clothCap, silkFootwraps]
+			const probability = [10, 5]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		armor: 0,
+		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 0,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 100,
+		},
+		slashingArmor: 1,
+		piercingArmor: 1,
+		bluntArmor: 1,
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -48306,7 +49732,309 @@ function koboldChild(area) {
 			return attackType
 		},
 		damageCalculation: function() {
-			return randomNumberRange(8, 12)
+			return randomNumberRange(5, 10)
+		},
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+			abilityUseChance: {
+				ability1: 100,
+			},
+			ability1: {
+				damage: function() {return randomNumberRange(10, 20)},
+				windUpPhrase: function() {
+					let line1 = lineFunc()
+					customizeEachWord(`The `, 'white', line1)
+					customizeEachWord(`Impling `, 'red', line1)
+					customizeEachWord(`begins chanting strange words of magic..`, 'white', line1)
+				},
+				abilityPhrase: function() {
+					let line1 = lineFunc()
+					customizeEachWord(`With outstretched fingers, the `, 'white', line1)
+					customizeEachWord(`Impling `, 'red', line1)
+					customizeEachWord(`shoots out a small streak of `, 'white', line1)
+					customizeEachWord(`fire `, 'fire', line1)
+					customizeEachWord(`at you!`, 'white', line1)
+
+				},
+				name: 'Fireball',
+				damageType: 'fire', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
+				color: 'fire',
+				penetrationTypes: [],
+				combatType: 'ranged',
+				castTime: 3000,
+			},
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A small Impling`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: '',
+		missPhrase: '',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 100, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 4000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return impling
+}
+function bandit(area) {
+	let bandit = {
+		color: `red`,
+		entersTheRoomPhrase: `sneaks in!`,
+		advancePhrase: `advances toward you..`,
+		deathPhrase: `falls to the ground dead`,
+		entersExitsRoomPhrase: `sneaks`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Bandit',
+		refName: 'bandit',
+		keywords: ['bandit'],
+		level: () => {
+			let level = randomNumberRange(9, 12)
+			return level
+		},
+		health: () => 110 + (this.level * this.con),
+		maxHealth: () => 110 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 10,
+		dodge: () => 20,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level) + 30,
+		damageCalculation: function() {
+			return randomNumberRange(10, 20)
+		},
+		gold: function () {
+			return randomNumberRange(25, 50)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  []
+			const probability = []
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		slashingArmor: 10,
+		piercingArmor: 10,
+		bluntArmor: 10,
+		itemDrops: [],
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
+		},
+			hitChance: function(enemy) {
+			let enemyHitChance = calculateEnemyHitChance(enemy)
+			let hitRoll = Math.floor(Math.random() * 100) + 1
+			return enemyHitChance >= hitRoll
+		},
+		rangedAbilityCalculation: {
+		},
+		meleeAbilityCalculation: {
+		},
+		desc: function () {
+			let description = `A cloaked, hooded Bandit.`
+			enemyDescription(this, description)
+		},
+		death: function (enemy) {
+			enemyDeath(enemy)
+		},
+		strikePhrase: 'slashes his daggers at you!',
+		missPhrase: 'slashes his daggers at you and misses!',
+		rangedAttackPhrase: '',
+		rangedMissPhrase: '',
+		id: function () {
+			for (let i = 0; i < 50; i++) {
+				if (!pushMonster[i]) {
+					return i
+				}
+			}
+		},
+		enemyMove: async function (enemy) {
+			if (!player.isAlive) {
+				enemyMovesRandomly(enemy);
+			} else if (enemyIsOneRoomFromPlayer(enemy)) {
+				enemyMoveOneRoom(enemy);
+			} else {
+				switch (enemy.moveSwitch) {
+					case 0:
+						enemyMoveOneRoom(enemy);
+						break;
+					case 1:
+						enemyMovesRandomly(enemy);
+						break;
+					case 2:
+						// Additional logic for moveSwitch 2 if needed
+						break;
+					default:
+						// Handle unexpected moveSwitch values
+						break;
+				}
+			}
+		},
+		moveSwitch: 0,
+		enemyBehaviorInterval: undefined,
+		behaviorInterval: false,
+		mainInterval: 1000, //probably delete this I think it was used in an old function
+		enemyMoveSpeed: 5000,
+		enemyBehavior: function () {
+			despawnAfter5Minutes(this)
+			monsterBehavior(this)
+		},
+	}
+	return bandit
+}
+//KOBOLD CAVES
+function koboldChild(area) {
+	let koboldChild = {
+		color: `red`,
+		picture: "images/monsters/kobolds/kobold child/kobold child.png",
+		entersTheRoomPhrase: `scampers in!`,
+		advancePhrase: `runs up to you..`,
+		deathPhrase: `lets out a high pitched cry as it dies!`,
+		entersExitsRoomPhrase: `scampers`,
+		hostile: true,
+		combat: false,
+		armor: 0,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Kobold Child',
+		refName: 'koboldChild',
+		keywords: ['kobold', 'child', 'kobold child'],
+		level: () => {
+			let level = randomNumberRange(9, 12)
+			return level
+		},
+		health: () => 0 + (this.level * this.con),
+		maxHealth: () => 0 + (this.level * this.con),
+		con: () => 10,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(5, 10)
+		},
+		itemDrops: [],
+		gold: function () {
+			let goldAmount = randomNumberRange(20, 50)
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [littleBoneToy, dirtyRags, halfEatenFish, lightHide]
+			const probability = [10, 5, 5, 5]
+			enemyItemDrops(itemDrops, probability, this)
+		},
+		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 100,
+			ranged: 0,
+			meleeAbility: 0,
+			rangedAbility: 0,
+		},
+		slashingArmor: 0,
+		piercingArmor: 0,
+		bluntArmor: 0,
+		x: function () {return currentArea.x},
+		y: function () {return currentArea.y},
+		z: function () {return currentArea.z},
+		isAlive: function() {
+			return this.health > 0
+		},
+		shouldEngagePlayer: function(enemy, attackType) {
+			if (enemy.combat == true) {return false}
+			if (player.isAlive == false) {return false}
+			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
+			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
+				return true
+			} else if (player.stealth.level > enemy.level) {
+				return false
+			} else if (player.stealth.level < enemy.level) {
+				player.isStealthed = false
+			} else {
+				return false
+			}
+		},
+		shouldAttackPlayer: function(enemy) { //change to attack type
+			if (!coordinatesMatch(enemy, player)) {return}
+			let attackType = determineEnemyAttackType(enemy)
+			console.log(attackType, ' ATTACK TYPE')
+			return attackType
 		},
 			hitChance: function(enemy) {
 			let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -48380,6 +50108,36 @@ function koboldScoundrel(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
+
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Kobold Scoundrel',
+		refName: 'koboldScoundrel',
+		keywords: ['kobold', 'scoundrel', 'kobold scoundrel'],
+		level: () => {
+			let level = randomNumberRange(12, 15)
+			return level
+		},
+		health: () => 75 + (this.level * this.con),
+		maxHealth: () => 75 + (this.level * this.con),
+		con: () => 15,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(10, 20)
+		},
+		gold: function () {
+			let goldAmount = randomNumberRange(35, 80)
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [rustySword, leatherGrips, dirtyRags, halfEatenFish, ironOre, lightHide]
+			const probability = [5, 5, 5, 5, 5, 5]
+			enemyItemDrops(itemDrops, probability, this)
+		},
 		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
@@ -48387,46 +50145,13 @@ function koboldScoundrel(area) {
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 10,
-		piercingArmor: 10,
-		bluntArmor: 10,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Kobold Scoundrel',
-		refName: 'koboldScoundrel',
-		keywords: ['kobold', 'scoundrel', 'kobold scoundrel'],
-		health: () => 40 + (this.level * this.con),
-		maxHealth: () => 40 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		slashingArmor: 5,
+		piercingArmor: 5,
+		bluntArmor: 5,
 		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(19, 30),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [rustySword, leatherGrips, dirtyRags, halfEatenFish]
-			const probability = [5, 5, 5, 5]
-			enemyItemDrops(itemDrops, probability, this)
-		},
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(9, 12)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -48450,13 +50175,10 @@ function koboldScoundrel(area) {
 			console.log(attackType, ' ATTACK TYPE')
 			return attackType
 		},
-		damageCalculation: function() {
-			return randomNumberRange(10, 15)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
+		hitChance: function(enemy) {
+		let enemyHitChance = calculateEnemyHitChance(enemy)
+		let hitRoll = Math.floor(Math.random() * 100) + 1
+		return enemyHitChance >= hitRoll
 		},
 		rangedAbilityCalculation: {
 		},
@@ -48514,8 +50236,6 @@ function koboldScoundrel(area) {
 	}
 	return koboldScoundrel
 }
-
-
 function koboldSpearthrower(area) {
 	let koboldSpearthrower = {
 		color: `red`,
@@ -48527,6 +50247,32 @@ function koboldSpearthrower(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Kobold Spearthrower',
+		refName: 'koboldSpearthrower',
+		keywords: ['kobold', 'thrower', 'kobold thrower'],
+		health: () => 75 + (this.level * this.con),
+		maxHealth: () => 75 + (this.level * this.con),
+		con: () => 15 + this.level,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		level: () => {
+			let level = randomNumberRange(12, 15)
+			return level
+		},
+		gold: function () {
+			let goldAmount = randomNumberRange(35, 80)
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [boneTippedSpear, dirtyRags, halfEatenFish, copperOre, lightHide]
+			const probability = [5, 5, 5, 5, 5]
+			enemyItemDrops(itemDrops, probability, this)
+		},
 		damageTypes: ['piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 50,
@@ -48534,46 +50280,13 @@ function koboldSpearthrower(area) {
 			meleeAbility: 0,
 			rangedAbility: 50,
 		},
-		slashingArmor: 10,
-		piercingArmor: 10,
-		bluntArmor: 10,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Kobold Spearthrower',
-		refName: 'koboldSpearthrower',
-		keywords: ['kobold', 'thrower', 'kobold thrower'],
-		health: () => 40 + (this.level * this.con),
-		maxHealth: () => 40 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		slashingArmor: 5,
+		piercingArmor: 5,
+		bluntArmor: 5,
 		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(19, 30),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [boneTippedSpear, dirtyRags, halfEatenFish]
-			const probability = [5, 5, 5]
-			enemyItemDrops(itemDrops, probability, this)
-		},
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(9, 12)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -48712,22 +50425,21 @@ function koboldArcher(area) {
 		name: 'Kobold Archer',
 		refName: 'koboldArcher',
 		keywords: ['kobold', 'archer', 'kobold archer'],
-		health: () => 40 + (this.level * this.con),
-		maxHealth: () => 40 + (this.level * this.con),
+		health: () => 50 + (this.level * this.con),
+		maxHealth: () => 50 + (this.level * this.con),
+		con: () => 15,
 		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
+		accuracy: () => 5,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
 		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(19, 30),
-			}
+			let goldAmount = randomNumberRange(35, 80)
 			return enemyGoldDrops(goldAmount)
 		},
 		itemDropsRoll: function () {
-			const itemDrops =  [crudelyCarvedBow, crudeShiv, dirtyRags, halfEatenFish, koboldToothNecklace]
-			const probability = [5, 5, 5, 5, 5]
+			const itemDrops =  [crudelyCarvedBow, crudeShiv, dirtyRags, halfEatenFish, koboldToothNecklace, copperOre]
+			const probability = [5, 5, 5, 5, 5, 5]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
@@ -48737,12 +50449,6 @@ function koboldArcher(area) {
 			let level = randomNumberRange(9, 12)
 			return level
 		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -48865,6 +50571,36 @@ function koboldDigger(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
+		statusEffects: {},
+		roomId: area.id,
+		randomItemDrops: Math.floor(Math.random() * 4) + 1,
+		name: 'Kobold Digger',
+		refName: 'koboldDigger',
+		keywords: ['kobold', 'digger', 'kobold digger'],
+		level: () => {
+			let level = randomNumberRange(9, 12)
+			return level
+		},
+		health: () => 100 + (this.level * this.con),
+		maxHealth: () => 100 + (this.level * this.con),
+		con: () => 15,
+		enemyAttackPower: () => 7,
+		accuracy: () => 5,
+		dodge: () => 0,
+		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(12, 18)
+		},
+		itemDrops: [],
+		gold: function () {
+			let goldAmount = randomNumberRange(35, 80)
+			return enemyGoldDrops(goldAmount)
+		},
+		itemDropsRoll: function () {
+			const itemDrops =  [dirtyRags, halfEatenFish, copperOre, pickaxe]
+			const probability = [20, 20, 5, 25]
+			enemyItemDrops(itemDrops, probability, this)
+		},
 		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
 		attackTypes: { //this is the type and percentage chance of each type of attack occuring
 			melee: 100,
@@ -48875,43 +50611,9 @@ function koboldDigger(area) {
 		slashingArmor: 10,
 		piercingArmor: 10,
 		bluntArmor: 10,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Kobold Digger',
-		refName: 'koboldDigger',
-		keywords: ['kobold', 'digger', 'kobold digger'],
-		health: () => 80 + (this.level * this.con),
-		maxHealth: () => 80 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(19, 30),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [dirtyRags, halfEatenFish, copperOre, pickaxe]
-			const probability = [20, 20, 5, 25]
-			enemyItemDrops(itemDrops, probability, this)
-		},
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(9, 12)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -48934,9 +50636,6 @@ function koboldDigger(area) {
 			let attackType = determineEnemyAttackType(enemy)
 			console.log(attackType, ' ATTACK TYPE')
 			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(12, 18)
 		},
 			hitChance: function(enemy) {
 			let enemyHitChance = calculateEnemyHitChance(enemy)
@@ -49027,60 +50726,57 @@ function koboldChief(area) {
 	let koboldChief = {
 		color: `red`,
 		picture: "images/monsters/kobolds/kobold chief/kobold chief.png",
-		entersTheRoomPhrase: `scampers in!`,
-		advancePhrase: `runs up to you..`,
-		deathPhrase: `lets out a whimpy howl as it dies`,
-		entersExitsRoomPhrase: `scampers`,
+		entersTheRoomPhrase: `jumps in!`,
+		advancePhrase: `marches toward you..`,
+		deathPhrase: `lets out a gurgling murmur as its eyes stare blankly.`,
+		entersExitsRoomPhrase: `marches`,
 		hostile: true,
 		combat: false,
 		armor: 0,
-		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 75,
-			ranged: 0,
-			meleeAbility: 25,
-			rangedAbility: 0,
-		},
-		slashingArmor: 15,
-		piercingArmor: 15,
-		bluntArmor: 15,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
 		name: 'Kobold Chief',
 		refName: 'koboldChief',
 		keywords: ['kobold', 'chief', 'kobold chief'],
-		health: () => 50 + (this.level * this.con),
-		maxHealth: () => 50 + (this.level * this.con),
+		level: () => {
+			return 16
+		},
+		health: () => 75 + (this.level * this.con),
+		maxHealth: () => 75 + (this.level * this.con),
+		con: () => 20,
 		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
+		accuracy: () => 10,
+		dodge: () => 10,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
+		damageCalculation: function() {
+			return randomNumberRange(20, 35)
+		},
 		itemDrops: [],
 		gold: function () {
 			const goldAmount = {
-				probability1: randomNumberRange(30, 50),
+				probability1: randomNumberRange(100, 200),
 			}
 			return enemyGoldDrops(goldAmount)
 		},
 		itemDropsRoll: function () {
-			const itemDrops =  [ratHideTunic, ratHidePants, ratSkullHelm, copperOre, halfEatenFish]
-			const probability = [50, 50, 50, 50, 100]
+			const itemDrops =  [ratHideTunic, ratHidePants, ratSkullHelm, copperOre, halfEatenFish, lightHide]
+			const probability = [50, 50, 50, 100, 100, 100]
 			enemyItemDrops(itemDrops, probability, this)
 		},
+		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
+		attackTypes: { //this is the type and percentage chance of each type of attack occuring
+			melee: 75,
+			ranged: 0,
+			meleeAbility: 25,
+			rangedAbility: 0,
+		},
+		slashingArmor: 20,
+		piercingArmor: 20,
+		bluntArmor: 20,
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(8, 8)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
 		isAlive: function() {
 			return this.health > 0
 		},
@@ -49104,9 +50800,7 @@ function koboldChief(area) {
 			console.log(attackType, ' ATTACK TYPE')
 			return attackType
 		},
-		damageCalculation: function() {
-			return randomNumberRange(4, 8)
-		},
+
 			hitChance: function(enemy) {
 			let enemyHitChance = calculateEnemyHitChance(enemy)
 			let hitRoll = Math.floor(Math.random() * 100) + 1
@@ -49123,16 +50817,19 @@ function koboldChief(area) {
 				abilityPhrase: function() {
 					let line1 = lineFunc()
 					customizeEachWord(`Kobold Chief `, 'red', line1)
-					customizeEachWord(`swings its sword at you in a crazed frenzy!`, 'white', line1)
+					customizeEachWord(`leaps and slashes down at you with its spear!`, 'white', line1)
 				},
 				windUpPhrase: function() {
+					let line1 = lineFunc()
 					customizeEachWord(`Kobold Chief `, 'red', line1)
 					customizeEachWord(`lets out a furious cry as it prepares to attack!`, 'white', line1)
 				},
+				name: 'Leap Strike',
+				color: 'green',
 				damageType: 'physical', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
-				penetrationTypes: ['slashing', 'piercing'],
+				penetrationTypes: ['slashing'],
 				combatType: 'melee',
-				castTime: 2000,
+				castTime: 3000,
 			},
 		},
 		desc: function () {
@@ -49142,10 +50839,21 @@ function koboldChief(area) {
 		death: function (enemy) {
 			enemyDeath(enemy)
 		},
-		strikePhrase: '',
-		missPhrase: '',
-		rangedAttackPhrase: 'fires an arrow at you!',
-		rangedMissPhrase: 'fires an arrow at you and misses!',
+		swing: function(enemy, damage, damageType, damageBlocked) {
+			let line1 = lineFunc()
+			let line2 = lineFunc()
+			customizeEachWord(`${enemy.name} `, 'white', line1)
+			customizeEachWord(`swings its 10 inch tinky at you!`, 'white', line1)
+			customizeEachWord(`You are hit for `, 'yellow', line2)
+			customizeEachWord(`${damage} `, 'light-blue', line2)
+			customizeEachWord(`${damageType} `, damageType, line2)
+			customizeEachWord(`damage. `, 'yellow', line2)
+			customizeEachWord(`(Your armor blocks `, 'white', line2)
+			customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+			customizeEachWord(`)`, 'white', line2)
+		},
+		strikePhrase: 'slashes you with its spear!',
+		missPhrase: 'swings its spear at your and misses!',
 		id: function () {
 			for (let i = 0; i < 50; i++) {
 				if (!pushMonster[i]) {
@@ -49179,7 +50887,7 @@ function koboldChief(area) {
 		enemyBehaviorInterval: undefined,
 		behaviorInterval: false,
 		mainInterval: 100, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 4000,
+		enemyMoveSpeed: 3000,
 		enemyBehavior: function () {
 			despawnAfter5Minutes(this)
 			monsterBehavior(this)
@@ -49187,6 +50895,12 @@ function koboldChief(area) {
 	}
 	return koboldChief
 }
+//GNOLL PLAINS
+
+
+
+
+
 
 function outlaw(area) {
 	let outlaw = {
@@ -49218,7 +50932,7 @@ function outlaw(area) {
 		health: () => 40 + (this.level * this.con),
 		maxHealth: () => 40 + (this.level * this.con),
 		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
+		accuracy: () => 10,
 		dodge: () => 0,
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
@@ -49334,1338 +51048,7 @@ function outlaw(area) {
 	return outlaw
 }
 
-function wildBoar(area) {
-	let wildBoar = {
-		color: `red`,
-		picture: "images/monsters/animals/wild boar/wild boar.png",
-		entersTheRoomPhrase: `charges in!`,
-		advancePhrase: `charges toward you..`,
-		deathPhrase: `lets out a shrill squeal as it thuds to the ground`,
-		entersExitsRoomPhrase: `charges`,
-		hostile: true,
-		combat: false,
-		armor: 10,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Wild Boar',
-		refName: 'wildBoar',
-		keywords: ['wild', 'boar', 'wild boar'],
-		health: () => 80 + (this.level * this.con),
-		maxHealth: () => 80 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => 10,
-		dodge: () => 5,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(10, 15),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [rawBoarMeat, lightHide]
-			const probability = [40, 20]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(7, 9)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(12, 20)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A large wild boar`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'runs at you and gores you with its tusks!',
-		missPhrase: 'runs at you to gore you but misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 100, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 4000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return wildBoar
-}
-function stag(area) {
-	let stag = {
-		color: `red`,
-		picture: "images/monsters/animals/stag/stag.png",
-		entersTheRoomPhrase: `trots in!`,
-		advancePhrase: `charges toward you..`,
-		deathPhrase: `collapses to the ground`,
-		entersExitsRoomPhrase: `trots`,
-		hostile: true,
-		combat: false,
-		armor: 10,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 0,
-		piercingArmor: 0,
-		bluntArmor: 0,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Stag',
-		refName: 'stag',
-		keywords: ['stag'],
-		health: () => 80 + (this.level * this.con),
-		maxHealth: () => 80 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => 10,
-		dodge: () => 5,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(10, 15),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [stagAntlers, lightHide]
-			const probability = [40, 20]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(7, 9)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(10, 20)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A large wild stag`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'rears back and clops you with its hooves!',
-		missPhrase: 'stamps at you but misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 100, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 4000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return stag
-}
 
-function impling(area) {
-	let impling = {
-		color: `red`,
-		picture: "images/monsters/imps/impling/impling.png",
-		entersTheRoomPhrase: `troddles in!`,
-		advancePhrase: `hops toward you..`,
-		deathPhrase: `curses you as its scream turns to silence`,
-		entersExitsRoomPhrase: `troddles`,
-		hostile: true,
-		combat: false,
-		armor: 10,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 0,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 100,
-		},
-		slashingArmor: 5,
-		piercingArmor: 5,
-		bluntArmor: 5,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Impling',
-		refName: 'impling',
-		keywords: ['impling'],
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => 10,
-		dodge: () => 5,
-		experience: () => Math.floor((this.health / 2) - player.level + 10 < 0 ? 0 : (this.health / 2) - player.level) + 10,
-		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(15, 25),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [clothCap]
-			const probability = [10]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(7, 9)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(5, 10)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-			abilityUseChance: {
-				ability1: 100,
-			},
-			ability1: {
-				damage: function() {return randomNumberRange(10, 22)},
-				windUpPhrase: function() {
-					let line1 = lineFunc()
-					customizeEachWord(`The `, 'white', line1)
-					customizeEachWord(`Impling `, 'red', line1)
-					customizeEachWord(`begins chanting strange words of magic..`, 'white', line1)
-				},
-				abilityPhrase: function() {
-					let line1 = lineFunc()
-					customizeEachWord(`With outstretched fingers, the `, 'white', line1)
-					customizeEachWord(`Impling `, 'red', line1)
-					customizeEachWord(`shoots out a small streak of `, 'white', line1)
-					customizeEachWord(`fire `, 'fire', line1)
-					customizeEachWord(`at you!`, 'white', line1)
-
-				},
-				name: 'Fireball',
-				damageType: 'fire', //IF NOT PHYSICAL, THIS HAS TO BE A DAMAGE TYPE THAT EXISTS ON THE PLAYER LIKE FIRERESIST, ICERESIST, AIRRESIST, ETC
-				color: 'fire',
-				penetrationTypes: [],
-				combatType: 'ranged',
-				castTime: 3000,
-			},
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A small Impling`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: '',
-		missPhrase: '',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 100, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 4000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return impling
-}
-
-function skeleton(area) {
-	let skeleton = {
-		color: `red`,
-		picture: "images/monsters/undead/skeletons/skeleton/skeleton.png",
-		entersTheRoomPhrase: `clacks in!`,
-		advancePhrase: `creeps toward you..`,
-		deathPhrase: `lets out a hoarse scream as the magic leaves its bones`,
-		entersExitsRoomPhrase: `creeps`,
-		hostile: true,
-		combat: false,
-		armor: 0,
-		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 5,
-		piercingArmor: 15,
-		bluntArmor: 5,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Skeleton',
-		refName: 'skeleton',
-		keywords: ['skeleton'],
-		health: () => 100 + (this.level * this.con),
-		maxHealth: () => 100 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(20, 35),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [smallBone, largeBone, muddyGloves, crackedBone]
-			const probability = [10, 10, 10, 10]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(5, 8)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(10, 18)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A skeleton animated by magic`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'swings its bony arm at you!',
-		missPhrase: 'swings its bony arm at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 100, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 5000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return skeleton
-}
-
-function giantRat(area) {
-	let giantRat = {
-		color: `red`,
-		picture: "images/monsters/animals/giant rat/giant rat.png",
-		entersTheRoomPhrase: `squeeks in!`,
-		advancePhrase: `scurries toward you..`,
-		deathPhrase: `wimpers as it flops over dead`,
-		entersExitsRoomPhrase: `scurries`,
-		hostile: true,
-		combat: false,
-		armor: 0,
-		damageTypes: ['slashing'],		
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		strikePhrase: 'bares its fangs at you and bites!',
-		missPhrase: 'bites at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		slashingArmor: 5,
-		piercingArmor: 5,
-		bluntArmor: 5,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Giant Rat',
-		refName: 'giantRat',
-		keywords: ['giant', 'rat', 'giant rat'],
-		level: () => {
-			let level = randomNumberRange(5, 10)
-			return level
-		},
-		health: () => 50 + (this.level * this.con),
-		maxHealth: () => 50 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => 5,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			return randomNumberRange(10, 15)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [ratTail, ratSkin, lightHide]
-			const probability = [20, 20, 20]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(8, 12)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A big ole rat`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 1000, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 5000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return giantRat
-}
-function graveWorm(area) {
-	let graveWorm = {
-		color: `red`,
-		picture: "images/monsters/insects/graveworm/graveworm.png",
-		entersTheRoomPhrase: `squishes in!`,
-		advancePhrase: `writhes toward you..`,
-		deathPhrase: `turns into a pile of pink mess`,
-		entersExitsRoomPhrase: `writhes`,
-		hostile: true,
-		combat: false,
-		armor: 0,
-		damageTypes: ['piercing'],		
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 1,
-		piercingArmor: 1,
-		bluntArmor: 1,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Grave Worm',
-		refName: 'graveWorm',
-		keywords: ['grave', 'worm', 'grave worm'],
-		health: () => 40 + (this.level * this.con),
-		maxHealth: () => 40 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			// const goldAmount = {
-			// 	probability1: randomNumberRange(1, 3),
-			// }
-			// return enemyGoldDrops(goldAmount)
-			return randomNumberRange(10, 15)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [muddyGloves, wormGuts]
-			const probability = [20, 20]
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(5, 6)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(2, 5)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A thick, pink grave worm. Disgusting.`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'bites at you!',
-		missPhrase: 'bites at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 1000, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 4000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return graveWorm
-}
-function cultist(area) {
-	let cultist = {
-		color: `red`,
-		picture: "images/monsters/humanoids/cultist/cultist.png",
-		entersTheRoomPhrase: `looms in!`,
-		advancePhrase: `strides toward you..`,
-		deathPhrase: `collapses into a pile of robes`,
-		entersExitsRoomPhrase: `strides`,
-		hostile: true,
-		combat: false,
-		armor: 0,
-		damageTypes: ['slashing', 'piercing'], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 10,
-		piercingArmor: 10,
-		bluntArmor: 10,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Cultist',
-		refName: 'cultist',
-		keywords: ['cultist'],
-		level: () => {
-			let level = randomNumberRange(6, 7)
-			return level
-		},
-		health: () => 100 + (this.level * this.con),
-		maxHealth: () => 100 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 0,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		damageCalculation: function() {
-			return randomNumberRange(8, 16)
-		},
-		itemDrops: [],
-		gold: function () {
-			return randomNumberRange(15, 40)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  [boneDagger, leatherGrips, cultRobes, crucifix]
-			const probability = [20, 20, 20, 20]
-			if (!pushItem.find(item => item.refName == 'cultTexts')) {
-				itemDrops.push(cultTexts)
-				probability.push(100)
-			}
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A hooded figure holding a sharp dagger at its side.`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'slashes at you with a dagger!',
-		missPhrase: 'slashes at you with a dagger and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 1000, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 5000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return cultist
-}
-
-function bandit(area) {
-	let bandit = {
-		color: `red`,
-		entersTheRoomPhrase: `sneaks in!`,
-		advancePhrase: `advances toward you..`,
-		deathPhrase: `falls to the ground dead`,
-		entersExitsRoomPhrase: `sneaks`,
-		hostile: true,
-		combat: false,
-		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 100,
-			ranged: 0,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 10,
-		piercingArmor: 10,
-		bluntArmor: 10,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Bandit',
-		refName: 'bandit',
-		keywords: ['bandit'],
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 10,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			return randomNumberRange(25, 50)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  []
-			const probability = []
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(5, 6)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(3, 7)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A cloaked, hooded Bandit.`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'slashes his daggers at you!',
-		missPhrase: 'slashes his daggers at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 1000, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 5000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return bandit
-}
-function outlaw(area) {
-	let outlaw = {
-		color: `red`,
-		entersTheRoomPhrase: `sneaks in!`,
-		advancePhrase: `advances toward you..`,
-		deathPhrase: `clutches his wounds as he falls to the ground`,
-		entersExitsRoomPhrase: `sneaks`,
-		hostile: true,
-		combat: false,
-		armor: 1,
-		damageTypes: [], //if it has any, should be slashing, piercing, and or blunt
-		attackTypes: { //this is the type and percentage chance of each type of attack occuring
-			melee: 50,
-			ranged: 50,
-			meleeAbility: 0,
-			rangedAbility: 0,
-		},
-		slashingArmor: 15,
-		piercingArmor: 15,
-		bluntArmor: 15,
-		statusEffects: {},
-		roomId: area.id,
-		randomItemDrops: Math.floor(Math.random() * 4) + 1,
-		name: 'Bandit',
-		refName: 'bandit',
-		keywords: ['bandit'],
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
-		enemyAttackPower: () => 7,
-		accuracy: () => this.dex,
-		dodge: () => 10,
-		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
-		itemDrops: [],
-		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(5, 15),
-			}
-			return enemyGoldDrops(goldAmount)
-		},
-		itemDropsRoll: function () {
-			const itemDrops =  []
-			const probability = []
-			enemyItemDrops(itemDrops, probability, this)
-		},
-		x: function () {return currentArea.x},
-		y: function () {return currentArea.y},
-		z: function () {return currentArea.z},
-		level: () => {
-			let level = randomNumberRange(5, 6)
-			return level
-		},
-		str: () => 1 + this.level,
-		dex: () => 1 + this.level,
-		agi: () => 1 + this.level,
-		int: () => 1 + this.level,
-		wis: () => 1 + this.level,
-		con: () => 5 + this.level,
-		isAlive: function() {
-			return this.health > 0
-		},
-		shouldEngagePlayer: function(enemy, attackType) {
-			if (enemy.combat == true) {return false}
-			if (player.isAlive == false) {return false}
-			if (attackType == 'ranged' || attackType == 'rangedAbility') {return false}
-			if (enemy.combat == false && coordinatesMatch(enemy, player) && player.isStealthed == false) {
-				return true
-			} else if (player.stealth.level > enemy.level) {
-				return false
-			} else if (player.stealth.level < enemy.level) {
-				player.isStealthed = false
-			} else {
-				return false
-			}
-		},
-		shouldAttackPlayer: function(enemy) { //change to attack type
-			if (!coordinatesMatch(enemy, player)) {return}
-			let attackType = determineEnemyAttackType(enemy)
-			console.log(attackType, ' ATTACK TYPE')
-			return attackType
-		},
-		damageCalculation: function() {
-			return randomNumberRange(3, 7)
-		},
-			hitChance: function(enemy) {
-			let enemyHitChance = calculateEnemyHitChance(enemy)
-			let hitRoll = Math.floor(Math.random() * 100) + 1
-			return enemyHitChance >= hitRoll
-		},
-		rangedAbilityCalculation: {
-		},
-		meleeAbilityCalculation: {
-		},
-		desc: function () {
-			let description = `A cloaked, hooded Bandit.`
-			enemyDescription(this, description)
-		},
-		death: function (enemy) {
-			enemyDeath(enemy)
-		},
-		strikePhrase: 'slashes his daggers at you!',
-		missPhrase: 'slashes his daggers at you and misses!',
-		rangedAttackPhrase: '',
-		rangedMissPhrase: '',
-		id: function () {
-			for (let i = 0; i < 50; i++) {
-				if (!pushMonster[i]) {
-					return i
-				}
-			}
-		},
-		enemyMove: async function (enemy) {
-			if (!player.isAlive) {
-				enemyMovesRandomly(enemy);
-			} else if (enemyIsOneRoomFromPlayer(enemy)) {
-				enemyMoveOneRoom(enemy);
-			} else {
-				switch (enemy.moveSwitch) {
-					case 0:
-						enemyMoveOneRoom(enemy);
-						break;
-					case 1:
-						enemyMovesRandomly(enemy);
-						break;
-					case 2:
-						// Additional logic for moveSwitch 2 if needed
-						break;
-					default:
-						// Handle unexpected moveSwitch values
-						break;
-				}
-			}
-		},
-		moveSwitch: 0,
-		enemyBehaviorInterval: undefined,
-		behaviorInterval: false,
-		mainInterval: 1000, //probably delete this I think it was used in an old function
-		enemyMoveSpeed: 5000,
-		enemyBehavior: function () {
-			despawnAfter5Minutes(this)
-			monsterBehavior(this)
-		},
-	}
-	return outlaw
-}
 
 function enemyIsOneRoomFromPlayer(enemy) {
 	let playerCoords = {
@@ -51077,9 +51460,13 @@ async function enemySwing(enemy) { //CALCULATE ENEMY ATTACK FUNCTION IS USED
 		if (enemy.health > 0) {
 			// enemy.strikePhrase(swingObject.totalDamage, swingObject.damageType, swingObject.mitigationAmount)
 			console.log(swingObject)
+			if (enemy.swing) {
+				enemy.swing()
+			}
 			strikePhraseFunc(enemy.name, enemy.color, swingObject.totalDamage, swingObject.damageType, swingObject.mitigationAmount, enemy.strikePhrase)
 			applyDamageToPlayer(swingObject.totalDamage)
 			if (player.hardenedSkin.level > 0) {player.hardenedSkin.activate(enemy)}
+			if (player.battleRage.level > 0) {player.battleRage.activate(enemy)}
 		} else {
 			return
 		}
@@ -52131,7 +52518,7 @@ function deathResetUI() {
 
 function applyDamageToPlayer(damage) {
 	damage = Math.floor(damage)
-	player.health = player.health - damage
+	player.health = player.health - damage < 0 ? 0 : player.health - damage
 	updatePlayerStats()
 	displayPlayerHealthFunc()
 	if (player.health <= 0) {playerDeath()}
@@ -52148,13 +52535,28 @@ function performPreemptiveStrike() {
 
 }
 
-
+function enemyPicksUpItemsAndGold(enemy, area) {
+	if (!coordinatesMatch(enemy, player)) {
+		// quickMessage(`enemy should pick up stuff`)
+		enemy.gold += area.gold
+		area.gold = 0
+		pushItem.forEach(item => {
+			if (item.roomId == enemy.roomId) {
+				quickMessage(`Item picked up, should be in monster inventory`)
+				enemy.itemDrops.push(item)
+				pushItem.splice(pushItem.indexOf(item), 1)
+			}
+		})
+	}
+}
 
 
 
 function enemyMoveOneRoom(enemy) {
 	if (!enemy.isAlive()) {return}
 	let enemyArea = allAreas.find(area => area.x == enemy.x && area.y == enemy.y && area.z == enemy.z)
+	enemyPicksUpItemsAndGold(enemy, enemyArea)
+	enemy.roomId = enemyArea.id
 	let canMonsterExit = enemyArea.descriptions.zoneExits.toLowerCase()
 	let line = lineFunc()
 	if (coordinatesMatch(enemy, player) && player.isStealthed == false && player.isAlive) {
@@ -52369,6 +52771,8 @@ function enemyMoveOneRoom(enemy) {
 			}
 		}
 	}
+	let newEnemyArea = allAreas.find(area => area.x == enemy.x && area.y == enemy.y && area.z == enemy.z)
+	enemy.roomId = newEnemyArea.id
 }
 
 function enemyAlwaysFindsPlayer(enemy) {
@@ -52434,8 +52838,10 @@ function enemyAlwaysFindsPlayer(enemy) {
 }
 
 function enemyMovesRandomly(enemy) {
-	const currentRoom = allAreas.find(area => area.x == enemy.x && area.y == enemy.y && area.z == enemy.z)
-	const availableDirections = currentRoom.descriptions.zoneExits.split(' ')
+	const enemyArea = allAreas.find(area => area.x == enemy.x && area.y == enemy.y && area.z == enemy.z)
+	enemyPicksUpItemsAndGold(enemy, enemyArea)
+	enemy.roomId = enemyArea.id
+	const availableDirections = enemyArea.descriptions.zoneExits.split(' ')
 	let directionEntersFrom
 	let directionMovesTo
 
@@ -52496,7 +52902,7 @@ function enemyMovesRandomly(enemy) {
 				console.log('figure out what went wrong here')
 		}
 
-		const futureArea = allAreas.find(area => area.x == currentRoom.x + dx && area.y == currentRoom.y + dy && area.z == currentRoom.z + dz)
+		const futureArea = allAreas.find(area => area.x == enemyArea.x + dx && area.y == enemyArea.y + dy && area.z == enemyArea.z + dz)
 
 		if (futureArea && futureArea.hostile == true) {
 			enemy.x += dx
@@ -52510,7 +52916,7 @@ function enemyMovesRandomly(enemy) {
 				let line1 = lineFunc()
 				customizeEachWord(`${enemy.name} `, enemy.color, line1)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} in from the ${directionEntersFrom}`, 'white', line1)
-			} else if (!coordinatesMatch(enemy, player) && coordinatesMatch(currentRoom, player)) {
+			} else if (!coordinatesMatch(enemy, player) && coordinatesMatch(enemyArea, player)) {
 				let line1 = lineFunc()
 				customizeEachWord(`${enemy.name} `, enemy.color, line1)
 				customizeEachWord(`${enemy.entersExitsRoomPhrase} to the ${directionMovesTo}`, 'white', line1)
@@ -52521,6 +52927,8 @@ function enemyMovesRandomly(enemy) {
 		}
 		// Optionally add an else statement for handling non-hostile areas
 	}
+	let newEnemyArea = allAreas.find(area => area.x == enemy.x && area.y == enemy.y && area.z == enemy.z)
+	enemy.roomId = newEnemyArea.id
 }
 
 function npcMovesRandomly2(npc) {
@@ -53193,11 +53601,6 @@ function monsterGen(enemy) {
 		this.y = enemy.y()
 		this.z = enemy.z()
 		this.level = enemy.level()
-		this.str = enemy.str()
-		this.dex = enemy.dex()
-		this.agi = enemy.agi()
-		this.int = enemy.int()
-		this.wis = enemy.wis()
 		this.con = enemy.con()
 		this.entersTheRoomPhrase = enemy.entersTheRoomPhrase
 		this.advancePhrase = enemy.advancePhrase
@@ -53255,11 +53658,6 @@ function monsterGen(enemy) {
 				this.y,
 				this.z,
 				this.level,
-				this.str,
-				this.dex,
-				this.agi,
-				this.int,
-				this.wis,
 				this.con,
 				this.entersTheRoomPhrase,
 				this.advancePhrase,
@@ -53439,11 +53837,6 @@ class Monster {
 		y,
 		z,
 		level,
-		str,
-		dex,
-		agi,
-		int,
-		wis,
 		con,
 		entersTheRoomPhrase,
 		advancePhrase,
@@ -53500,11 +53893,6 @@ class Monster {
 		this.y = y
 		this.z = z
 		this.level = level
-		this.str = str
-		this.dex = dex
-		this.agi = agi
-		this.int = int
-		this.wis = wis
 		this.con = con
 		this.entersTheRoomPhrase = entersTheRoomPhrase
 		this.advancePhrase = advancePhrase
@@ -54743,10 +55131,10 @@ function startKnight(event) {
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
-		// pack('right')
-		// pack('left')
-		// unpack('sword')
-		// unpack('shield')
+		pack('right')
+		pack('left')
+		unpack('sword')
+		unpack('shield')
 	}
 }
 
@@ -55314,9 +55702,9 @@ function startHuman(event) {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Human'
 		player.race = 'Human'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
+		preRace.raceFlatHealthBonus = 10
+		preRace.raceHealthMultiplier = 10.0
+		preRace.raceFlatManaBonus = 1
 		preRace.raceManaMultiplier = 1.0
 		preRace.maxHealth = 10
 		preRace.maxMana = 10
@@ -55324,6 +55712,7 @@ function startHuman(event) {
 		preRace.str = 1
 		preRace.dex = 1
 		preRace.agi = 1
+		preRace.int = 1
 		applyHumanRaceDescription()
 
 
@@ -55350,6 +55739,7 @@ function startDwarf(event) {
 
 		preRace.str = 1
 		preRace.con = 2
+		preRace.wis = 2
 		
 		applyDwarfRaceDescription()
 
@@ -55423,8 +55813,8 @@ function startHalfMinotaur() {
 		preRace.raceFlatHealthBonus = 2
 		preRace.raceHealthMultiplier = 1.0
 		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 2.0
-		preRace.maxHealth = 10
+		preRace.raceManaMultiplier = 1.0
+		preRace.maxHealth = 5
 		preRace.maxMana = 1
 
 		preRace.str = 2
@@ -55450,12 +55840,12 @@ function startTiefling() {
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
 
-		preRace.str = 1
 		preRace.agi = 1
-		preRace.con = 1
+		preRace.int = 1
+		preRace.wis = 1
 
 		preRace.maxHealth = 5
-		preRace.maxMana = 5
+		preRace.maxMana = 15
 
 		applyTieflingRaceDescription()
 		combineClassAndRaceValues()
@@ -55506,7 +55896,7 @@ function startGnome() {
 
 		preRace.int = 1
 		preRace.wis = 2
-		preRace.mys = 2
+		preRace.mys = 1
 
 		preRace.maxHealth = 5
 		preRace.maxMana = 20
@@ -55585,7 +55975,8 @@ function startDragonKin() {
 		preRace.raceFlatManaBonus = 10
 		preRace.raceManaMultiplier = 2.0
 
-		preRace.str = 2
+		preRace.str = 1
+		preRace.dex = 1
 		preRace.int = 1
 		preRace.mys = 1
 
@@ -55814,7 +56205,7 @@ function displayClassSelection() {
 	const berserkerSelectDiv = document.createElement('div')
 	const berserkerHeadingDiv = document.createElement('div')
 	berserkerHeadingDiv.textContent = 'Berserker'
-	berserkerSelectDiv.classList.add('class-option', 'berserker')
+	berserkerSelectDiv.classList.add('class-option', 'berserker', 'warrior')
 
 	berserkerSelectDiv.addEventListener('click', startBerserker)
 	berserkerSelectDiv.appendChild(berserkerHeadingDiv)
@@ -55824,7 +56215,7 @@ function displayClassSelection() {
 	const fighterSelectDiv = document.createElement('div')
 	const fighterHeadingDiv = document.createElement('div')
 	fighterHeadingDiv.textContent = 'Fighter'
-	fighterSelectDiv.classList.add('class-option', 'fighter')
+	fighterSelectDiv.classList.add('class-option', 'fighter', 'warrior')
 
 	fighterSelectDiv.addEventListener('click', startFighter)
 	fighterSelectDiv.appendChild(fighterHeadingDiv)
@@ -55834,7 +56225,7 @@ function displayClassSelection() {
 	const knightSelectDiv = document.createElement('div')
 	const knightHeadingDiv = document.createElement('div')
 	knightHeadingDiv.textContent = 'Knight'
-	knightSelectDiv.classList.add('class-option', 'knight')
+	knightSelectDiv.classList.add('class-option', 'knight', 'warrior')
 
 	knightSelectDiv.addEventListener('click', startKnight)
 	knightSelectDiv.appendChild(knightHeadingDiv)
@@ -55844,7 +56235,7 @@ function displayClassSelection() {
 	const assassinSelectDiv = document.createElement('div')
 	const assassinHeadingDiv = document.createElement('div')
 	assassinHeadingDiv.textContent = 'Assassin'
-	assassinSelectDiv.classList.add('class-option', 'assassin')
+	assassinSelectDiv.classList.add('class-option', 'assassin', 'sinistral-icon')
 	
 	assassinSelectDiv.addEventListener('click', startAssassin)
 	assassinSelectDiv.appendChild(assassinHeadingDiv)
@@ -55855,7 +56246,7 @@ function displayClassSelection() {
 	const thiefSelectDiv = document.createElement('div')
 	const thiefHeadingDiv = document.createElement('div')
 	thiefHeadingDiv.textContent = 'Thief'
-	thiefSelectDiv.classList.add('class-option', 'thief')
+	thiefSelectDiv.classList.add('class-option', 'thief', 'sinistral-icon')
 
 	thiefSelectDiv.addEventListener('click', startThief)
 	thiefSelectDiv.appendChild(thiefHeadingDiv)
@@ -55865,7 +56256,7 @@ function displayClassSelection() {
 	const shadowbladeSelectDiv = document.createElement('div')
 	const shadowbladeHeadingDiv = document.createElement('div')
 	shadowbladeHeadingDiv.textContent = 'Shadowblade'
-	shadowbladeSelectDiv.classList.add('class-option', 'shadowblade')
+	shadowbladeSelectDiv.classList.add('class-option', 'shadowblade', 'sinistral-icon')
 
 	shadowbladeSelectDiv.addEventListener('click', startShadowblade)
 	shadowbladeSelectDiv.appendChild(shadowbladeHeadingDiv)
@@ -55876,7 +56267,7 @@ function displayClassSelection() {
 	const martialMonkSelectDiv = document.createElement('div')
 	const martialMonkHeadingDiv = document.createElement('div')
 	martialMonkHeadingDiv.textContent = 'Martial Monk'
-	martialMonkSelectDiv.classList.add('class-option', 'martialMonk')
+	martialMonkSelectDiv.classList.add('class-option', 'martialMonk', 'monk')
 
 	martialMonkSelectDiv.addEventListener('click', startMartialMonk)
 	martialMonkSelectDiv.appendChild(martialMonkHeadingDiv)
@@ -55886,7 +56277,7 @@ function displayClassSelection() {
 	const mysticMonkSelectDiv = document.createElement('div')
 	const mysticMonkHeadingDiv = document.createElement('div')
 	mysticMonkHeadingDiv.textContent = 'Mystic Monk'
-	mysticMonkSelectDiv.classList.add('class-option', 'mysticMonk')
+	mysticMonkSelectDiv.classList.add('class-option', 'mysticMonk', 'monk')
 
 	mysticMonkSelectDiv.addEventListener('click', startMysticMonk)
 	mysticMonkSelectDiv.appendChild(mysticMonkHeadingDiv)
@@ -55896,7 +56287,7 @@ function displayClassSelection() {
 	const elementalMonkSelectDiv = document.createElement('div')
 	const elementalMonkHeadingDiv = document.createElement('div')
 	elementalMonkHeadingDiv.textContent = 'Elemental Monk'
-	elementalMonkSelectDiv.classList.add('class-option', 'elementalMonk')
+	elementalMonkSelectDiv.classList.add('class-option', 'elementalMonk', 'monk')
 
 	elementalMonkSelectDiv.addEventListener('click', startElementalMonk)
 	elementalMonkSelectDiv.appendChild(elementalMonkHeadingDiv)
@@ -56384,7 +56775,7 @@ function applyKnightClassDescription() {
 	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
 	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
 	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
-	const descriptionText = `Knights prefer fighting with a one handed weapon and shield. They are the most durable class, and are also able to deal significant damage of their own. At later levels, they excel at ataking on multiple enemies at once. Their skills and abilities allow them to get stronger as the fight continues.`
+	const descriptionText = `Knights prefer fighting with a one handed weapon and shield. They are the most durable class, and are also able to deal significant damage of their own. At later levels, they excel at ataking on multiple enemies at once. Knights find their home in the Warrior's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Knight`
 	const classDescription = document.querySelector('.classDescription')
@@ -56496,7 +56887,7 @@ function applyThiefClassDescription() {
 	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
 	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
 	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
-	const descriptionText = `Thieves use daggers alongside their poison abilities. Applying poison to enemies, they are able to increase damage of their other abilties. Thieves follow the leadership of the Sinistral's Guild.`
+	const descriptionText = `Thieves can use daggers or one handed weapons alongside their poison abilities. Applying poison to enemies, they are able to increase damage of their other abilties. Thieves follow the leadership of the Sinistral's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Thief`
 	const classDescription = document.querySelector('.classDescription')
@@ -56552,7 +56943,7 @@ function applyShadowbladeClassDescription() {
 	let wisdom = preClass.wis > 1 ? `Wisdom: +${preClass.wis - 1}` : ``
 	let mysticism = preClass.mys > 1 ? `Mysticism: +${preClass.mys - 1}` : ``
 	let constitution = preClass.con > 1 ? `Constitution: +${preClass.con - 1}` : ``
-	const descriptionText = `Shadowblades use daggers and can even use the shadows to deal additional damage when attacking. Shadowblades follow the leadership of the Sinistral's Guild.`
+	const descriptionText = `Shadowblades can train in either dagger or one handed weapon skill. Shadowblades follow the leadership of the Sinistral's Guild.`
 	const classHeading = document.querySelector('.classHeading')
 	classHeading.textContent = `Shadowblade`
 	const classDescription = document.querySelector('.classDescription')
@@ -58221,6 +58612,6 @@ function gameStart() {
 	updateScroll()
 	updatePlayerStats()
 	// player.gold = 1000
-	recall(1, 6, -2)
+	recall(0, 0, -2)
 }
 gameStart()

@@ -1394,73 +1394,118 @@ body {
 	margin-left: 0.5em;
 }
 
-.berserker,
-.fighter,
+.warrior {
+	font-family: sylfae;
+	text-align: center;
+}
+.berserker {
+	background: rgb(101, 27, 27)url('images/class icons/berserker/berserker.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.berserker.selected {
+	background: rgb(69, 18, 18)url('images/class icons/berserker/berserker.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.fighter {
+	background: rgb(101, 27, 27)url('images/class icons/fighter/fighter.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.fighter.selected {
+	background:rgb(69, 18, 18)url('images/class icons/fighter/fighter.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
 .knight {
-	/* background-image: url('images/warrior-select-icon-grey-255.png'); */
-	font-family: sylfae;
-	text-align: center;
-	background: brown;
+	background: rgb(101, 27, 27)url('images/class icons/knight/knight.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
-.berserker.selected,
-.fighter.selected,
 .knight.selected {
-	/* background-image: url('images/warrior-select-icon-255.png'); */
-	font-family: sylfae;
-	text-align: center;
-	background: rgb(101, 27, 27);
+	background: rgb(69, 18, 18)url('images/class icons/knight/knight.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
-.assassin,
-.thief,
+
+.sinistral-icon {
+	font-family: sylfae;
+	text-align: center;
+}
+.assassin {
+	background:rgb(216, 216, 0) url('images/class icons/assassin/assassin.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.assassin.selected {
+	background:rgb(158, 158, 0) url('images/class icons/assassin/assassin.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.thief {
+	background:rgb(216, 216, 0) url('images/class icons/thief/thief.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.thief.selected {
+	background:rgb(158, 158, 0)  url('images/class icons/thief/thief.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
 .shadowblade {
-	/* background-image: url('images/warrior-select-icon-grey-255.png'); */
-	font-family: sylfae;
-	text-align: center;
-	background: rgb(216, 216, 0);
+	background:rgb(216, 216, 0) url('images/class icons/shadowblade/shadowblade.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
-.assassin.selected,
-.thief.selected,
 .shadowblade.selected {
-	/* background-image: url('images/warrior-select-icon-255.png'); */
-	font-family: sylfae;
-	text-align: center;
-	background: rgb(143, 143, 0);
+	background:rgb(158, 158, 0)  url('images/class icons/shadowblade/shadowblade.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 
 
-.martialMonk,
-.mysticMonk,
+.monk {
+	font-family: sylfae;
+	text-align: center;
+}
+.martialMonk {
+	background: rgb(0, 171, 162) url('images/class icons/martial monk/martial monk.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.martialMonk.selected {
+	background: rgb(0, 102, 97) url('images/class icons/martial monk/martial monk.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.mysticMonk {
+	background: rgb(0, 171, 162) url('images/class icons/mystic monk/mystic monk.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+.mysticMonk.selected {
+	background: rgb(0, 102, 97) url('images/class icons/mystic monk/mystic monk.png');
+	background-repeat: no-repeat;
+	background-size: cover;
+}
 .elementalMonk {
-	/* background-image: url('images/monk-select-icon-grey-255.png'); */
-	font-family: sylfae;
-	text-align: center;
-	background: rgb(33, 255, 244);
+	background: rgb(0, 171, 162) url('images/class icons/elemental monk/elemental monk.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
-.martialMonk.selected,
-.mysticMonk.selected,
 .elementalMonk.selected {
-	/* background-image: url('images/monk-select-icon-255.png'); */
-	font-family: sylfae;
-	text-align: center;
-	background: rgb(0, 171, 162);
+	background:  rgb(0, 102, 97)  url('images/class icons/elemental monk/elemental monk.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
+
+
+
 .pyromancer {
-	/* background-image: url('images/mage-select-icon-grey-255.png'); */
+	background: rgb(215, 67, 37) url('images/class icons/pyromancer/pyromancer.png');
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(215, 67, 37);
 	background-repeat: no-repeat;
 	background-size: cover;
 }
@@ -1468,15 +1513,14 @@ body {
 	/* background-image: url('images/mage-select-icon-255.png'); */
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(166, 40, 15);
+	background: rgb(166, 40, 15)url('images/class icons/pyromancer/pyromancer.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .cryoMage {
-	/* background-image: url('images/mage-select-icon-grey-255.png'); */
+	background:rgb(69, 112, 255) url('images/class icons/cryo mage/cryo mage.png');
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(69, 112, 255);
 	background-repeat: no-repeat;
 	background-size: cover;
 }
@@ -1484,15 +1528,14 @@ body {
 	/* background-image: url('images/mage-select-icon-255.png'); */
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(24, 61, 183);
+	background: rgb(24, 61, 183)url('images/class icons/cryo mage/cryo mage.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .lightningMagus {
-	/* background-image: url('images/mage-select-icon-grey-255.png'); */
+	background: rgb(255, 209, 83) url('images/class icons/lightning magus/lightning magus.png');
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(255, 209, 83);
 	background-repeat: no-repeat;
 	background-size: cover;
 }
@@ -1500,15 +1543,14 @@ body {
 	/* background-image: url('images/mage-select-icon-255.png'); */
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(204, 157, 27);
+	background: rgb(204, 157, 27)url('images/class icons/lightning magus/lightning magus.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
 .ranger {
-	/* background-image: url('images/ranger-select-icon-grey-255.png'); */
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(0, 163, 76);
+	background: rgb(0, 163, 76) url('images/class icons/ranger/ranger.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
@@ -1516,7 +1558,7 @@ body {
 	/* background-image: url('images/ranger-select-icon-255.png'); */
 	font-family: sylfae;
 	text-align: center;
-	background: rgb(0, 85, 40);
+	background: rgb(0, 85, 40)url('images/class icons/ranger/ranger.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 }
