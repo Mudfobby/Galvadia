@@ -58612,6 +58612,6 @@ function gameStart() {
 	updateScroll()
 	updatePlayerStats()
 	// player.gold = 1000
-	recall(0, 0, -2)
+	recall('0', '0', '-2')
 }
 gameStart()
