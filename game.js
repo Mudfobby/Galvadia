@@ -3694,6 +3694,10 @@ function read(objectThatIsRead) {
 ////////////////GOD MODE FUNCTIONS////////////////GOD MODE FUNCTIONS////////////////GOD MODE FUNCTIONS////////////////GOD MODE FUNCTIONS
 ////////////////GOD MODE FUNCTIONS////////////////GOD MODE FUNCTIONS////////////////GOD MODE FUNCTIONS////////////////GOD MODE FUNCTIONS
 function recall(playerX, playerY, playerZ) {
+	player.combat = false
+	pushMonster.forEach(enemy => {
+		enemy.combat = false
+	})
 	console.log(playerX, playerY, playerZ)
 	// if (!playerX && !playerY && !playerZ && egbert.questSequence.fifteenth == true && player.level <= 10) {
 	// }
@@ -3718,7 +3722,7 @@ function recall(playerX, playerY, playerZ) {
 		blankSpace()
 		areaCompiler(currentArea)
 		updateScroll()
-		
+		return
 	} 
 	if (playerX == 'graveyard') {
 		currentArea = graveyard1
@@ -3792,7 +3796,7 @@ function revive() {
 	updatePlayerStats()
 	recall(-7, 4, 0)
 }
-async function unlock(secondCommand) {
+async function unlock(secondCommand) {	
 	let direction = () => {
 		if (secondCommand == 'nw') {
 			return 'northwest'
@@ -3899,7 +3903,7 @@ function pickupItem(secondCommand, thirdCommand) {
 			blankSpace()
 			itemPickedUp.roomId = 'backpack'
 			player.backpack = backpackObjects.map(items => items.name)
-		} else if (itemPickedUp == undefined) {
+		} else if (secondCommand != 'gold' && itemPickedUp == undefined) {
 			blankSpace()
 			customizeEachWord(`There is no ${secondCommand} to pick up`, 'white', line1)
 			blankSpace()
@@ -4723,7 +4727,7 @@ const showInventory = () => {
 	const backpackContents = pushItem.filter(item => item.roomId == 'backpack').sort((a, b) => (a.name > b.name ? 1 : -1))
 	const backpack1Through20 = backpackContents.filter((item, index) => index <= 9 && item.roomId == 'backpack')
 	const backpack21Through40 = backpackContents.filter((item, index) => index >= 10 && index <= 19 && item.roomId == 'backpack')
-	const backpack41Through60 = pushItem.filter((item, index) => index >= 39 && index <= 49 && item.roomId == 'backpack')
+	const backpack41Through60 = backpackContents.filter((item, index) => index >= 20 && index <= 29 && item.roomId == 'backpack')
 
 	if (backpack1Through20[0]) {
 		backpack1Through20.forEach((item, i, arr) => {
@@ -4769,12 +4773,36 @@ const showInventory = () => {
 			backpackSlotAndItemContainer1.classList.add('backpack-slot-and-item-container')
 		})
 	}
+	if (backpack41Through60[0]) {
+		backpack41Through60.forEach((item, i, arr) => {
+			let slotNumber = i + 21
+			const backpackSlotAndItemContainer1 = document.createElement('div')
+			const slot1Div = document.createElement('div')
+			const item1Div = document.createElement('div')
+
+			item1Div.classList.add('backpack-item-name')
+			const slot1 = document.createTextNode(`${slotNumber}. `)
+			const item1 = document.createTextNode(`${item.name}`)
+
+			slot1Div.appendChild(slot1)
+			item1Div.appendChild(item1)
+
+			item1Div.classList.add(item.color)
+
+			backpackSlotAndItemContainer1.appendChild(slot1Div)
+			backpackSlotAndItemContainer1.appendChild(item1Div)
+			backpackColumn3.appendChild(backpackSlotAndItemContainer1) //
+			backpackSlotAndItemContainer1.classList.add('backpack-slot-and-item-container')
+		})
+	}
 	backpackContainer.appendChild(backpackHeading)
 	backpackContainer.appendChild(backpackColumnsContainer)
 	backpackColumnsContainer.appendChild(backpackColumn1)
 	backpackColumnsContainer.appendChild(backpackColumn2)
+	backpackColumnsContainer.appendChild(backpackColumn3)
 	backpackColumn1.classList.add('backpack-column-1')
 	backpackColumn2.classList.add('backpack-column-2')
+	backpackColumn3.classList.add('backpack-column-3')
 
 	backpackHeading.appendChild(backpackHeadingTextNode)
 	equipmentAndBackpackContainer.appendChild(backpackContainer)
@@ -5886,12 +5914,12 @@ function calculateAbilityDamageAgainstEnemyArmor(enemy, damage, penetrationType)
 	let abilityDamage = damage
 	if (enemy.armor > 0) {
 		const damageAfterMitigation = abilityDamage * (1000 / (1000 + enemy.armor)) <= 0 ? 0 : Math.floor(abilityDamage * (1000 / (1000 + enemy.armor)))
-		return damageAfterMitigation
+		return Math.ceil(damageAfterMitigation)
 	} else if (enemy.armor == 0) {
 		let enemyArmor = penetrationType == 'slashingPen' ? enemy.slashingArmor : penetrationType == 'piercingPen' ? enemy.piercingArmor : enemy.bluntArmor
 		let armorAfterPen = enemyArmor - player[penetrationType] <= 0 ? 0 : enemyArmor - player[penetrationType]
 		const damageAfterMitigation = (abilityDamage - armorAfterPen) * (1000 / (1000 + armorAfterPen)) <= 0 ? 0 : (abilityDamage - armorAfterPen) * (1000 / (1000 + armorAfterPen))
-		return Math.floor(damageAfterMitigation)
+		return Math.ceil(damageAfterMitigation)
 	}
 }
 function calculatePenetrationRoll() {
@@ -6684,6 +6712,7 @@ let player = {
 		con: 0,
 		attackPower: 0,
 		spellPower: 0,
+		mysticPower: 0,
 		weaponSpeed: 0,
 		maxHealth: 0,
 		maxMana: 0,
@@ -6728,14 +6757,11 @@ let player = {
 	magicShield: 0,
 	spellPower: 0,
 	mysticPower: 0,
-	classFlatHealthBonus: 0,
-	classHealthMultiplier: 0,
-	classFlatManaBonus: 0,
-	classManaMultiplier: 0,
-	raceFlatHealthBonus: 0,
+	healthMultiplier: 0,
+	manaMultiplier: 0,
+	healthMultiplier: 0,
 	raceHealthMultiplier: 0,
-	raceFlatManaBonus: 0,
-	raceManaMultiplier: 0,
+	manaMultiplier: 0,
 	fireProficiency: 1.0,
 	iceProficiency: 1.0,
 	lightningProficiency: 1.0,
@@ -7186,7 +7212,17 @@ const vigor = {
 	type: 'skill',
 	color: 'green',
 	healthMultiplier: function() {
-		return Math.ceil(this.level * 0.25)
+		if (player.vigor.level == 1) { return 0.2}
+		if (player.vigor.level == 2) { return 0.4}
+		if (player.vigor.level == 3) { return 0.6}
+		if (player.vigor.level == 4) { return 0.8}
+		if (player.vigor.level == 5) { return 1.0}
+		if (player.vigor.level == 6) { return 1.2}
+		if (player.vigor.level == 7) { return 1.4}
+		if (player.vigor.level == 8) { return 1.6}
+		if (player.vigor.level == 9) { return 1.8}
+		if (player.vigor.level >= 10) { return 2.0}
+		else {return 0}	
 	},
 	goldToUpgrade: function () {
 		return 9 * this.level
@@ -7208,7 +7244,17 @@ const devotion = {
 	name: 'Devotion',
 	type: 'skill',
 	manaMultiplier: function() {
-		return Math.ceil(this.level * 0.25)
+		if (player.devotion.level == 1) { return 0.1}
+		if (player.devotion.level == 2) { return 0.2}
+		if (player.devotion.level == 3) { return 0.3}
+		if (player.devotion.level == 4) { return 0.4}
+		if (player.devotion.level == 5) { return 0.5}
+		if (player.devotion.level == 6) { return 0.6}
+		if (player.devotion.level == 7) { return 0.7}
+		if (player.devotion.level == 8) { return 0.8}
+		if (player.devotion.level == 9) { return 0.9}
+		if (player.devotion.level >= 10) { return 1.0}
+		else {return 0}
 	},	
 	goldToUpgrade: function () {
 		return 9 * this.level
@@ -8690,10 +8736,10 @@ const fistsOfFury = {
 	},
 }
 player.fistsOfFury = { ...fistsOfFury }
-const fistsOfCalm = {
+const fistsOfPrecision = {
 	level: 0,
-	name: `Fists of Calm`,
-	refName: 'fistsOfCalm',
+	name: `Fists of Precision`,
+	refName: 'fistsOfPrecision',
 	cooldown: 0,
 	type: 'skill',
 	color: 'green',
@@ -8703,11 +8749,16 @@ const fistsOfCalm = {
 		//Titan Fist
 		//Dragon Fist
 		//God Fist
-		if (this.level == 1) {player.rightFight.topDamage += 2}
-		if (this.level == 2) {player.rightFight.topDamage += 3}
-		if (this.level == 3) {player.rightFight.topDamage += 4}
-		if (this.level == 4) {player.rightFight.topDamage += 5}
-		if (this.level == 5) {player.rightFight.topDamage += 6}
+		if (this.level == 1) {player.rightFist.topDamage += 2}
+		if (this.level == 1) {player.leftFist.topDamage += 2}
+		if (this.level == 2) {player.rightFist.topDamage += 3}
+		if (this.level == 2) {player.leftFist.topDamage += 3}
+		if (this.level == 3) {player.rightFist.topDamage += 4}
+		if (this.level == 3) {player.leftFist.topDamage += 4}
+		if (this.level == 4) {player.rightFist.topDamage += 5}
+		if (this.level == 4) {player.leftFist.topDamage += 5}
+		if (this.level == 5) {player.rightFist.topDamage += 6}
+		if (this.level == 5) {player.leftFist.topDamage += 6}
 	},
 	goldToUpgrade: function () {
 		return 9 * this.level
@@ -8722,7 +8773,7 @@ const fistsOfCalm = {
 		blankSpace()
 	},
 }
-player.fistsOfFury = { ...fistsOfFury }
+player.fistsOfPrecision = { ...fistsOfPrecision }
 const wayOfTheFist = {
 	level: 0,
 	name: `Way Of The Fist`,
@@ -8854,27 +8905,34 @@ const ripslash = {
 	cooldown: 8000,
 	windUp: 6,
 	numberOfSwings: function() {
-		if (this.level == 1) { return 2}
-		if (this.level == 2) { return 2}
-		if (this.level == 3) { return 3}
-		if (this.level == 4) { return 3}
-		if (this.level == 5) { return 4}
-		if (this.level >= 6) { return 4}
+		if (this.level == 1) { return 1 }
+		if (this.level == 2) { return 1 }
+		if (this.level == 3) { return 1 }
+		if (this.level == 4) { return 2 }
+		if (this.level == 5) { return 2 }
+		if (this.level == 6) { return 2 }
+		if (this.level == 7) { return 3 }
+		if (this.level == 8) { return 3 }
+		if (this.level == 9) { return 3 }
+		if (this.level >= 10) { return 3 }
+		else {return 1 }
 	},
 	resourceCost: 1,
 	resourceName: 'might',
 	weaponTypesUsed: ['oneHanded', 'twoHanded'],
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight()
-		let levelModifier
+		let levelModifier = 1
 		if (this.level == 1) { levelModifier = 1.5 }
-		if (this.level == 2) { levelModifier = 2.0 }
-		//level 3 now hits 2 times
-		if (this.level == 3) { levelModifier = 2.0 }
-		if (this.level == 4) { levelModifier = 2.5 }
-		//level 5 now hits 3 times
-		if (this.level == 5) { levelModifier = 2.5 }
-		if (this.level >= 6) { levelModifier = 3.0 }
+		if (this.level == 2) { levelModifier = 1.7 }
+		if (this.level == 3) { levelModifier = 1.9 }
+		if (this.level == 4) { levelModifier = 1.9 }
+		if (this.level == 5) { levelModifier = 2.1 }
+		if (this.level == 6) { levelModifier = 2.1 }
+		if (this.level == 7) { levelModifier = 2.1 }
+		if (this.level == 8) { levelModifier = 2.3 }
+		if (this.level == 9) { levelModifier = 2.3 }
+		if (this.level >= 10) { levelModifier = 2.5 }
 		let baseAndLevelDamage = (baseDamage * levelModifier)
 		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
 		let totalDamage = baseAndLevelDamage + bleedBonusDamage
@@ -8937,7 +8995,7 @@ const ripslash = {
 		return 9 * this.level
 	},
 	pointsToUpgrade: function () {
-		return this.level + 1
+		return this.level * 10
 	},
 }
 player.ripslash = { ...ripslash }
@@ -8954,10 +9012,14 @@ const cyclone = {
 	numberOfTargets: function() {
 		if (this.level == 1) { return 2}
 		if (this.level == 2) { return 2}
-		if (this.level == 3) { return 3}
+		if (this.level == 3) { return 2}
 		if (this.level == 4) { return 3}
-		if (this.level == 5) { return 4}
-		if (this.level >= 6) { return 4}
+		if (this.level == 5) { return 3}
+		if (this.level == 6) { return 3}
+		if (this.level == 7) { return 4}
+		if (this.level == 8) { return 4}
+		if (this.level == 9) { return 4}
+		if (this.level >= 10) { return 5}
 	},
 	resourceName: 'might',
 	resourceCost: 2,
@@ -8966,15 +9028,15 @@ const cyclone = {
 		let baseDamage = baseAttackDamageRight()
 		let levelModifier
 		if (this.level == 1) { levelModifier = 1.25 }
-		if (this.level == 2) { levelModifier = 1.75 }
-		//level 3: now hits 3 targets
-		if (this.level == 3) { levelModifier = 1.75 }
-		if (this.level == 4) { levelModifier = 2.25 }
-		//level 5: now hits 4 targets
-		if (this.level == 5) { levelModifier = 2.25 }
-		if (this.level == 6) { levelModifier = 2.75 }
-		//level 7: now hits 5 targets
-		if (this.level >= 7) { levelModifier = 2.75}
+		if (this.level == 2) { levelModifier = 1.40 }
+		if (this.level == 3) { levelModifier = 1.55 }
+		if (this.level == 4) { levelModifier = 1.55 }
+		if (this.level == 5) { levelModifier = 1.70 }
+		if (this.level == 6) { levelModifier = 1.85 }
+		if (this.level == 7) { levelModifier = 1.85 }
+		if (this.level == 8) { levelModifier = 2.0 }
+		if (this.level == 9) { levelModifier = 2.15 }
+		if (this.level >= 10) { levelModifier = 2.30 }
 		let baseAndLevelDamage = (baseDamage * levelModifier)
 		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
 		let totalDamage = baseAndLevelDamage + bleedBonusDamage
@@ -9057,14 +9119,18 @@ const cataclysm = {
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight()
 		let levelModifier
-		if (this.level == 1) { levelModifier = 1.5 }
-		if (this.level == 2) { levelModifier = 2.0 }
+		if (this.level == 1) { levelModifier = 1.7 }
+		if (this.level == 2) { levelModifier = 1.9 }
 		//level 3 now hits 2 times
-		if (this.level == 3) { levelModifier = 2.0 }
-		if (this.level == 4) { levelModifier = 2.5 }
+		if (this.level == 3) { levelModifier = 2.1 }
+		if (this.level == 4) { levelModifier = 2.3 }
 		//level 5 now hits 3 times
 		if (this.level == 5) { levelModifier = 2.5 }
-		if (this.level >= 6) { levelModifier = 3.0 }
+		if (this.level == 6) { levelModifier = 2.7 }
+		if (this.level == 7) { levelModifier = 2.9 }
+		if (this.level == 8) { levelModifier = 3.1 }
+		if (this.level == 9) { levelModifier = 3.3 }
+		if (this.level >= 10) { levelModifier = 3.5 }
 		let basePlusLevelDamage = (baseDamage * levelModifier)
 		let bleedBonusDamage = calculateBleedBonus(enemy, basePlusLevelDamage)
 		let totalDamage = basePlusLevelDamage + bleedBonusDamage
@@ -9197,12 +9263,25 @@ const dualStrike = {
 	weaponTypesUsed: ['oneHanded', 'daggers'],
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		let bleedBonusDamage = calculateBleedBonus(enemy, baseDamage)
-		let totalDamage = Math.ceil(baseDamage + bleedBonusDamage)
-		console.log(baseDamage, ' DUAL STRIKE BASE DAMAGE')
-		console.log(bleedBonusDamage, ' DUALSTRIKE BONUS DAMAGE')
-		console.log(totalDamage, ' DUAL STRIKE TOTAL DAMAGE')
-		return totalDamage
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.75 }
+		if (this.level == 2) { levelModifier = 2.25 }
+		if (this.level == 3) { levelModifier = 2.75 }
+		if (this.level == 4) { levelModifier = 3.25 }
+		if (this.level == 5) { levelModifier = 3.75 }
+		if (this.level == 6) { levelModifier = 4.25 }
+		if (this.level == 7) { levelModifier = 4.75 }
+		if (this.level == 8) { levelModifier = 5.25 }
+		if (this.level == 9) { levelModifier = 5.50 }
+		if (this.level >= 10) { levelModifier = 5.75 }
+		let baseAndLevelDamage = (baseDamage * levelModifier)
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
+		let totalDamage = baseAndLevelDamage + bleedBonusDamage
+		console.log(baseDamage, ' RIPSLASH BASE DAMAGE')
+		console.log(baseAndLevelDamage, ' RIPSLASH BASE + LEVEL DAMAGE')
+		console.log(bleedBonusDamage, ' BLEED BONUS DAMAGE (ONLY THE BLEED PERCENTAGE -- NOT ADDED TO ANY BASE DAMAGE)')
+		console.log(totalDamage, ' TOTAL DAMAGE')
+		return Math.ceil(totalDamage)
 	},
 	debuff: {
 		name: 'Fury',
@@ -9289,10 +9368,26 @@ const bladeBlitz = {
 	},
 	weaponTypesUsed: ['daggers', 'oneHanded'],
 	damage: function (weapon) {
-		let baseDamageRight = baseAttackDamageRight()
-		let baseDamageLeft = baseAttackDamageLeft()
-		let baseDamage = Math.ceil((baseDamageRight + baseDamageLeft) * 0.5)
-		return baseDamage
+		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.5 }
+		if (this.level == 2) { levelModifier = 1.7 }
+		if (this.level == 3) { levelModifier = 1.9 }
+		if (this.level == 4) { levelModifier = 1.9 }
+		if (this.level == 5) { levelModifier = 2.1 }
+		if (this.level == 6) { levelModifier = 2.1 }
+		if (this.level == 7) { levelModifier = 2.1 }
+		if (this.level == 8) { levelModifier = 2.3 }
+		if (this.level == 9) { levelModifier = 2.3 }
+		if (this.level >= 10) { levelModifier = 2.5 }
+		let baseAndLevelDamage = (baseDamage * levelModifier)
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
+		let totalDamage = baseAndLevelDamage + bleedBonusDamage
+		console.log(baseDamage, ' RIPSLASH BASE DAMAGE')
+		console.log(baseAndLevelDamage, ' RIPSLASH BASE + LEVEL DAMAGE')
+		console.log(bleedBonusDamage, ' BLEED BONUS DAMAGE (ONLY THE BLEED PERCENTAGE -- NOT ADDED TO ANY BASE DAMAGE)')
+		console.log(totalDamage, ' TOTAL DAMAGE')
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -9387,9 +9482,26 @@ const shred = {
 	resourceCost: 0,
 	weaponTypesUsed: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
-		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		let totalDamage = baseDamage
-		return totalDamage
+		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.5 }
+		if (this.level == 2) { levelModifier = 1.7 }
+		if (this.level == 3) { levelModifier = 1.9 }
+		if (this.level == 4) { levelModifier = 1.9 }
+		if (this.level == 5) { levelModifier = 2.1 }
+		if (this.level == 6) { levelModifier = 2.1 }
+		if (this.level == 7) { levelModifier = 2.1 }
+		if (this.level == 8) { levelModifier = 2.3 }
+		if (this.level == 9) { levelModifier = 2.3 }
+		if (this.level >= 10) { levelModifier = 2.5 }
+		let baseAndLevelDamage = (baseDamage * levelModifier)
+		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
+		let totalDamage = baseAndLevelDamage + bleedBonusDamage
+		console.log(baseDamage, ' RIPSLASH BASE DAMAGE')
+		console.log(baseAndLevelDamage, ' RIPSLASH BASE + LEVEL DAMAGE')
+		console.log(bleedBonusDamage, ' BLEED BONUS DAMAGE (ONLY THE BLEED PERCENTAGE -- NOT ADDED TO ANY BASE DAMAGE)')
+		console.log(totalDamage, ' TOTAL DAMAGE')
+		return Math.ceil(totalDamage)
 	},
 	debuff: {
 		name: 'Shred',
@@ -9398,7 +9510,7 @@ const shred = {
 		slashingArmor: -5,
 		piercingArmor: -5,
 		bluntArmor: -5,
-		stacks: 0,
+		stacks: 1,
 		duration: 20000,
 		maxStacks: function() {
 			return 5
@@ -9481,7 +9593,10 @@ const valorStrike = {
 		if (this.level == 4) {return 1.25}
 		if (this.level == 5) {return 1.30}
 		if (this.level == 6) {return 1.35}
-		if (this.level >= 7) {return 1.40}
+		if (this.level == 7) {return 1.40}
+		if (this.level == 8) {return 1.45}
+		if (this.level == 9) {return 1.50}
+		if (this.level >= 10) {return 1.55}
 	},
 	damage: function () {
 		let baseDamage = baseAttackDamageRight()
@@ -9494,6 +9609,8 @@ const valorStrike = {
 		if (this.level == 6) { levelModifier = 1.5}
 		if (this.level == 7) { levelModifier = 1.6}
 		if (this.level == 8) { levelModifier = 1.7}
+		if (this.level == 9) { levelModifier = 1.8}
+		if (this.level >= 10) { levelModifier = 1.9}
 		let bonusModifier = this.valorBonus()
 		let baseAndLevelDamage = baseDamage * levelModifier
 		let totalDamage = baseAndLevelDamage * bonusModifier
@@ -9580,6 +9697,25 @@ const shieldSlam = {
 		return this.level + 1
 	},
 	weaponTypesUsed: ['shields'],
+	damage: function () {
+		let baseAttackDamage = baseAttackDamageRight()
+		let baseWeightDamage = baseWeightDamage()
+		let baseDamage = baseAttackDamage + baseWeightDamage
+		let levelModifier
+		if (this.level == 1) { levelModifier = 1.0}
+		if (this.level == 2) { levelModifier = 1.25}
+		if (this.level == 3) { levelModifier = 1.50}
+		if (this.level == 4) { levelModifier = 1.75}
+		if (this.level == 5) { levelModifier = 2.0}
+		if (this.level == 6) { levelModifier = 2.25}
+		if (this.level == 7) { levelModifier = 2.50}
+		if (this.level == 8) { levelModifier = 2.75}
+		if (this.level == 9) { levelModifier = 3.0}
+		if (this.level >= 10) { levelModifier = 3.25}
+		let baseAndLevelDamage = baseDamage * levelModifier
+		let totalDamage = baseAndLevelDamage
+		return Math.ceil(totalDamage)
+	},
 	debuff: {
 		name: 'Shield Slam',
 		refName: 'shieldSlam',
@@ -9610,23 +9746,6 @@ const shieldSlam = {
 		maxStacks: function() {
 			return 1
 		},
-	},
-	damage: function () {
-		let baseAttackDamage = baseAttackDamageRight()
-		let baseWeightDamage = baseWeightDamage()
-		let baseDamage = baseAttackDamage + baseWeightDamage
-		let levelModifier
-		if (this.level == 1) { levelModifier = 1.0}
-		if (this.level == 2) { levelModifier = 1.25}
-		if (this.level == 3) { levelModifier = 1.50}
-		if (this.level == 4) { levelModifier = 1.75}
-		if (this.level == 5) { levelModifier = 2.0}
-		if (this.level == 6) { levelModifier = 2.25}
-		if (this.level == 7) { levelModifier = 2.50}
-		if (this.level == 8) { levelModifier = 2.75}
-		let baseAndLevelDamage = baseDamage * levelModifier
-		let totalDamage = baseAndLevelDamage
-		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -9731,6 +9850,8 @@ const boomingMight = {
 		if (this.level == 6) { levelModifier = 2.25}
 		if (this.level == 7) { levelModifier = 2.50}
 		if (this.level == 8) { levelModifier = 2.75}
+		if (this.level == 9) { levelModifier = 3.0}
+		if (this.level >= 10) { levelModifier = 3.25}
 		let baseAndLevelDamage = baseDamage * levelModifier
 		let totalDamage = baseAndLevelDamage 
 		return Math.ceil(totalDamage)
@@ -9810,9 +9931,21 @@ const ambush = {
 	color: 'sinistral-color',
 	multiplier: 2.0,
 	damage: function () {
-		//triple damage of both weapons combined
-		let damage = (baseAttackDamageLeft() + baseAttackDamageRight()) * 2
-		return Math.ceil(damage)
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let levelModifier
+		if (this.level == 1) { levelModifier = 2.0}
+		if (this.level == 2) { levelModifier = 2.3}
+		if (this.level == 3) { levelModifier = 2.6}
+		if (this.level == 4) { levelModifier = 2.9}
+		if (this.level == 5) { levelModifier = 3.2}
+		if (this.level == 6) { levelModifier = 3.5}
+		if (this.level == 7) { levelModifier = 3.8}
+		if (this.level == 8) { levelModifier = 4.1}
+		if (this.level == 9) { levelModifier = 4.4}
+		if (this.level >= 10) { levelModifier = 4.7}
+		let baseAndLevelDamage = baseDamage * levelModifier
+		let totalDamage = baseAndLevelDamage
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
@@ -9886,8 +10019,21 @@ const backstab = {
 	rightWeaponTypes: ['daggers'],
 	leftWeaponTypes: ['daggers'],
 	damage: function () {
-		let damage = baseAttackDamageRight() * 1.5
-		return Math.ceil(damage) 
+		let baseDamage = baseAttackDamageRight()
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.5}
+		if (this.level == 2) { levelModifier = 2.0}
+		if (this.level == 3) { levelModifier = 2.5}
+		if (this.level == 4) { levelModifier = 3.0}
+		if (this.level == 5) { levelModifier = 3.5}
+		if (this.level == 6) { levelModifier = 4.0}
+		if (this.level == 7) { levelModifier = 4.5}
+		if (this.level == 8) { levelModifier = 5.0}
+		if (this.level == 9) { levelModifier = 5.5}
+		if (this.level >= 10) { levelModifier = 6.0}
+		let baseAndLevelDamage = baseDamage * levelModifier
+		let totalDamage = baseAndLevelDamage
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
@@ -9969,10 +10115,22 @@ const guillotine = {
 	leftWeaponTypes: ['daggers'],
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		let bonusEnemyMissingHealthModifier = ((enemy.maxHealth - enemy.health) / enemy.maxHealth)
-		let bonusDamage = baseDamage * bonusEnemyMissingHealthModifier
-		let totalDamage = Math.ceil(baseDamage + bonusDamage)
-		return totalDamage
+		let bonusEnemyMissingHealthModifier = ((enemy.maxHealth - enemy.health) / enemy.maxHealth) + 1
+		let baseDamageAndBonusDamage = baseDamage * bonusEnemyMissingHealthModifier
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.0}
+		if (this.level == 2) { levelModifier = 1.25}
+		if (this.level == 3) { levelModifier = 1.50}
+		if (this.level == 4) { levelModifier = 1.75}
+		if (this.level == 5) { levelModifier = 2.0}
+		if (this.level == 6) { levelModifier = 2.25}
+		if (this.level == 7) { levelModifier = 2.50}
+		if (this.level == 8) { levelModifier = 2.75}
+		if (this.level == 9) { levelModifier = 3.25}
+		if (this.level >= 10) { levelModifier = 3.5}
+		let baseAndLevelDamage = baseDamageAndBonusDamage * levelModifier
+		let totalDamage = baseAndLevelDamage
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
@@ -10049,8 +10207,20 @@ const venomBlade = {
 	damage: function (enemy) {
 		//5 and 5 = 10
 		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
-		let bonusDamage = enemy.debuffs?.poison ? baseDamage * (enemy.debuffs?.poison.stacks * 0.2) : 0
-		let totalDamage = baseDamage + bonusDamage
+		let bonusDamage = enemy.debuffs?.poison ? (enemy.debuffs?.poison.stacks * 0.2) + 1 : 0
+		let baseAndBonusDamage = baseDamage + bonusDamage
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.0}
+		if (this.level == 2) { levelModifier = 1.1}
+		if (this.level == 3) { levelModifier = 1.2}
+		if (this.level == 4) { levelModifier = 1.3}
+		if (this.level == 5) { levelModifier = 1.4}
+		if (this.level == 6) { levelModifier = 1.5}
+		if (this.level == 7) { levelModifier = 1.6}
+		if (this.level == 8) { levelModifier = 1.7}
+		if (this.level == 9) { levelModifier = 1.8}
+		if (this.level >= 10) { levelModifier = 1.9}
+		let totalDamage = baseAndBonusDamage * levelModifier
 		return Math.ceil(totalDamage)
 	},
 	// debuff: {
@@ -10132,7 +10302,18 @@ const contagion = {
 	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageLeft()
-		let totalDamage = baseDamage
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.0}
+		if (this.level == 2) { levelModifier = 1.3}
+		if (this.level == 3) { levelModifier = 1.6}
+		if (this.level == 4) { levelModifier = 1.9}
+		if (this.level == 5) { levelModifier = 2.2}
+		if (this.level == 6) { levelModifier = 2.5}
+		if (this.level == 7) { levelModifier = 2.8}
+		if (this.level == 8) { levelModifier = 3.1}
+		if (this.level == 9) { levelModifier = 3.4}
+		if (this.level >= 10) { levelModifier = 3.7}
+		let totalDamage = baseDamage * levelModifier
 		return Math.ceil(totalDamage)
 	},
 	debuff: {
@@ -10269,15 +10450,22 @@ const bane = {
 	rightWeaponTypes: ['daggers', 'oneHanded'],
 	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
-		let poisonStacks = 0
-		let bonusDamage = 0
-		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		if (enemy.debuffs?.poison?.stacks) {
-			poisonStacks = enemy.debuffs.poison.stacks
-			bonusDamage = baseDamage * (enemy.debuffs.poison.stacks * 0.75)
-		} 
+		let poisonStacks = enemy.debuffs?.poison?.stacks ? (enemy.debuffs.poison.stacks * 0.2) + 1 : 0
+		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
+		let baseAndBonusDamage = baseDamage * poisonStacks
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.25}
+		if (this.level == 2) { levelModifier = 1.75}
+		if (this.level == 3) { levelModifier = 2.25}
+		if (this.level == 4) { levelModifier = 2.75}
+		if (this.level == 5) { levelModifier = 3.25}
+		if (this.level == 6) { levelModifier = 3.5}
+		if (this.level == 7) { levelModifier = 2.8}
+		if (this.level == 8) { levelModifier = 3.1}
+		if (this.level == 9) { levelModifier = 3.4}
+		if (this.level >= 10) { levelModifier = 3.7}
 		//Percent Bonus Damage currently set to 20% bonus damage per stack
-		let totalDamage = baseDamage + bonusDamage
+		let totalDamage = baseAndBonusDamage * levelModifier
 		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
@@ -10298,7 +10486,7 @@ const bane = {
 		customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
 		customizeEachWord(`sinking your `, `sinistral-ability-text-color`, line1)
 		customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
-		customizeEachWord(`into its back! Your blade siphons the poison from the enemy, draining some of its life force!`, `sinistral-ability-text-color`, line1)
+		customizeEachWord(`into its back! Your blade siphons the poison from the enemy, draining its life force!`, `sinistral-ability-text-color`, line1)
 		customizeEachWord(`${this.name} `, this.color, line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
@@ -10348,8 +10536,21 @@ const shadowDaggers = {
 		return 2 + this.level
 	},
 	damage: function (enemy) {
-		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		return Math.ceil(baseDamage)
+		let baseDamage = baseAttackDamageRight()
+		let levelModifier = 1
+		if (this.level == 1) { levelModifier = 1.2}
+		if (this.level == 2) { levelModifier = 1.4}
+		if (this.level == 3) { levelModifier = 1.6}
+		if (this.level == 4) { levelModifier = 1.8}
+		if (this.level == 5) { levelModifier = 2.0}
+		if (this.level == 6) { levelModifier = 2.2}
+		if (this.level == 7) { levelModifier = 2.4}
+		if (this.level == 8) { levelModifier = 2.6}
+		if (this.level == 9) { levelModifier = 2.8}
+		if (this.level >= 10) { levelModifier = 3.0}
+		//Percent Bonus Damage currently set to 20% bonus damage per stack
+		let totalDamage = baseDamage * levelModifier
+		return Math.ceil(totalDamage)	
 	},
 	debuff: [
 		{
@@ -10450,32 +10651,40 @@ const shadowsurge = {
 	rightWeaponTypes: ['daggers', 'oneHanded'],
 	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy, doesPlayerShadowStep) {
-		let baseDamage = baseAttackDamageRight()
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
 		let totalDamage = 0
 		if (doesPlayerShadowStep) {
 			//Calculate damage for shadowstep
-			let bonusDamageMod = enemy.debuffs?.shadowMark?.stacks ? enemy.debuffs.shadowMark.stacks : 0
-			let bonusDamageTotal = (baseDamage * 0.33) * bonusDamageMod
-			totalDamage = baseDamage + bonusDamageTotal
+			let levelMultiplier
+			if (player.shadowsurge.level == 1) { levelMultiplier = 1.25}
+			if (player.shadowsurge.level == 2) { levelMultiplier = 1.35}
+			if (player.shadowsurge.level == 3) { levelMultiplier = 1.45}
+			if (player.shadowsurge.level == 4) { levelMultiplier = 1.55}
+			if (player.shadowsurge.level == 5) { levelMultiplier = 1.65}
+			if (player.shadowsurge.level == 6) { levelMultiplier = 1.75}
+			if (player.shadowsurge.level == 7) { levelMultiplier = 1.85}
+			if (player.shadowsurge.level == 8) { levelMultiplier = 1.95}
+			if (player.shadowsurge.level == 9) { levelMultiplier = 2.05}
+			if (player.shadowsurge.level == 10) { levelMultiplier = 2.15}
+			totalDamage = baseDamage * levelMultiplier
 		} else {
 			//Calculate damage for shadowsurge
-			let bonusDamageMod = enemy.debuffs?.shadowMark?.stacks ? enemy.debuffs.shadowMark.stacks : 0
-			let bonusDamageTotal = (baseDamage * 1.20) * bonusDamageMod
-			totalDamage = baseDamage + bonusDamageTotal
-
+			let levelMultiplier
+			let shadowMarkMultiplier = enemy.debuffs?.shadowMark?.stacks ? enemy.debuffs.shadowMark.stacks * 0.2 : 0
+			if (player.shadowsurge.level == 1) { levelMultiplier = 1.1 }
+			if (player.shadowsurge.level == 2) { levelMultiplier = 1.2 }
+			if (player.shadowsurge.level == 3) { levelMultiplier = 1.3 }
+			if (player.shadowsurge.level == 4) { levelMultiplier = 1.4 }
+			if (player.shadowsurge.level == 5) { levelMultiplier = 1.5 }
+			if (player.shadowsurge.level == 6) { levelMultiplier = 1.6 }
+			if (player.shadowsurge.level == 7) { levelMultiplier = 1.7 }
+			if (player.shadowsurge.level == 8) { levelMultiplier = 1.8 }
+			if (player.shadowsurge.level == 9) { levelMultiplier = 1.9 }
+			if (player.shadowsurge.level == 10) { levelMultiplier = 2.0 }
+			totalDamage = (levelMultiplier + shadowMarkMultiplier) * baseDamage
 		}
 		return Math.ceil(totalDamage)
 	},
-	regularDamage: function(enemy) {
-		//base regular damage is combined weapon damage
-		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		let totalDamage = 0
-		//Calculate damage for shadowsurge
-		let bonusDamageMod = enemy.debuffs?.shadowMark?.stacks ? enemy.debuffs.shadowMark.stacks : 0
-		let bonusDamageTotal = (baseDamage * 1.20) * bonusDamageMod
-		totalDamage = baseDamage + bonusDamageTotal
-		return Math.ceil(totalDamage)
-	}, 
 	buff: {
 		name: 'Shadowbane',
 		refName: 'shadowbane',
@@ -10682,93 +10891,6 @@ const shadowNova = {
 }
 player.shadowNova = { ...shadowNova }
 
-// const empoweringStrike = {
-// 	level: 1,
-// 	requiredPlayerLevel: function() {
-// 		if (player.empoweringStrike.level == 0) {
-// 			return 5
-// 		} else if (player.empoweringStrike.level == 1) {
-// 			return 10
-// 		} else if (player.empoweringStrike.level == 2) {
-// 			return 15
-// 		}
-// 	},
-// 	name: 'Empowering Strike',
-// 	refName: 'empoweringStrike',
-// 	cooldown: 1000,
-// 	cooldownSet: 1000,
-// 	type: 'ability',
-// 	color: 'activate-skill',
-// 	multiplier: 1.5,
-// 	resourceName: 'focus',
-// 	resourceCost: 0,
-// 	weaponTypesUsed: ['unarmed'],
-// 	rightWeaponTypes: ['unarmed'],
-// 	leftWeaponTypes: ['unarmed'],
-// 	damage: function () {
-// 		let currentAttackPower = player.currentWeaponSkill.attackPower
-// 		let currentWeaponSkillBotModifier = player.currentWeaponSkill.botMultiplier
-// 		let currentWeaponSkillTopModifier = player.currentWeaponSkill.topMultiplier
-// 		let totalBotDamage = player.currentRightHandWeapon().botDamage == undefined ? player.currentLeftHandWeapon.botDamage : player.currentRightHandWeapon().botDamage
-// 		let totalTopDamage = player.currentRightHandWeapon().topDamage == undefined ? player.currentRightHandWeapon.topDamage : player.currentRightHandWeapon().topDamage
-// 		let lowDamage = Math.floor(currentAttackPower * currentWeaponSkillBotModifier * totalBotDamage * (1 + this.level * 0.1))
-// 		let highDamage = Math.floor(currentAttackPower * currentWeaponSkillTopModifier * totalTopDamage * (1 + this.level * 0.1))
-// 		let totalDamage = randomNumberRange(lowDamage, highDamage)
-// 		let buffs = {
-// 			refName: 'empoweringStrike',
-// 			duration: 10000,
-// 			str: 10,
-// 			dex: 10,
-// 		}
-// 		applyBuff(buffs)
-// 		loseResource(this.resourceName, this.resourceCost)
-// 		return totalDamage
-// 	},
-// 	abilityWeaponsCheck: function(weapon1, weapon2) {
-// 		if (weapon1 == undefined && weapon2 == undefined) {
-// 			let line1 = lineFunc()
-// 			customizeEachWord(`You cannot perform ${this.name} while wielding these weapons`, 'white', line1)
-// 			blankSpace()
-// 			return true
-// 		}
-// 	},
-// 	flavorText: function(enemy, weapon, damage) {
-// 		let line1 = lineFunc()
-// 		let line2 = lineFunc()
-// 		blankSpace()
-// 		customizeEachWord(`You deliver an `, 'white', line1)
-// 		customizeEachWord(`${this.name} `, 'orange', line1)
-// 		customizeEachWord(`to the `, 'white', line1)
-// 		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
-// 		customizeEachWord(`! `, 'white', line1)
-// 		customizeEachWord(`You hit for `, 'green', line2)
-// 		customizeEachWord(`${damage} `, 'light-blue', line2)
-// 		customizeEachWord(`damage`, 'green', line2)
-// 		blankSpace()
-// 	},
-// 	flavorTextMiss: function(enemy, weapon, damage) {
-// 		let line1 = lineFunc()
-// 		blankSpace()
-// 		customizeEachWord(`You `, 'light-blue', line1)
-// 		customizeEachWord(`dash behind the `, 'white', line1)
-// 		customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-// 		customizeEachWord(`attempting to  `, 'white', line1)
-// 		customizeEachWord(`${this.name} `, this.color, line1)
-// 		customizeEachWord(`it with your `, 'white', line1)
-// 		customizeEachWord(`${weapon.name}`, `${weapon.color}`, line1)
-// 		customizeEachWord(`, but you narrowly `, 'white', line1)
-// 		customizeEachWord(`miss`, 'red', line1)
-// 		customizeEachWord(`!`, 'white', line1)
-// 		blankSpace()
-// 	},
-// 	goldToUpgrade: function () {
-// 		return 9 * this.level
-// 	},
-// 	pointsToUpgrade: function () {
-// 		return this.level + 1
-// 	},
-// }
-// player.empoweringStrike = { ...empoweringStrike }
 const catalyst = {
 	level: 1,
 	name: 'Catalyst',
@@ -10786,35 +10908,75 @@ const catalyst = {
 	leftWeaponTypes: ['unarmed'],
 	duration: 10000,
 	damage: function (enemy) {
-		baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		penetrationType = calculatePenetrationRoll()
-		penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
-		damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemy, baseDamage, penetrationType)
-		damageBlocked = baseDamage - damageAfterArmor
-		let quickJabBaseDamage = baseDamage * 2
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let penetrationType = calculatePenetrationRoll()
+		let penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
+		// damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemy, baseDamage, penetrationType)
+		// damageBlocked = baseDamage - damageAfterArmor
+		let quickJabLevelMultiplier
+		let colossusPunchLevelMultiplier
+		let gigasUppercutLevelMultiplier
+		let atmaShockLevelMultiplier
+		if (player.catalyst.level == 1) {quickJabLevelMultiplier = 1.1 
+										colossusPunchLevelMultiplier = 1.3
+										gigasUppercutLevelMultiplier  = 1.5
+										atmaShockLevelMultiplier = 1.75	}		
+		if (player.catalyst.level == 2) {quickJabLevelMultiplier = 1.2
+										colossusPunchLevelMultiplier = 1.4
+										gigasUppercutLevelMultiplier  = 1.6
+										atmaShockLevelMultiplier = 1.85	}		
+		if (player.catalyst.level == 3) {quickJabLevelMultiplier = 1.3 
+										colossusPunchLevelMultiplier = 1.5
+										gigasUppercutLevelMultiplier  = 1.7
+										atmaShockLevelMultiplier = 1.95	}		
+		if (player.catalyst.level == 4) {quickJabLevelMultiplier = 1.4 
+										colossusPunchLevelMultiplier = 1.6
+										gigasUppercutLevelMultiplier  = 1.8
+										atmaShockLevelMultiplier = 2.05	}		
+		if (player.catalyst.level == 5) {quickJabLevelMultiplier = 1.5 
+										colossusPunchLevelMultiplier = 1.7
+										gigasUppercutLevelMultiplier  = 1.9
+										atmaShockLevelMultiplier = 2.15	}		
+		if (player.catalyst.level == 6) {quickJabLevelMultiplier = 1.6 
+										colossusPunchLevelMultiplier = 1.8
+										gigasUppercutLevelMultiplier  = 2.0
+										atmaShockLevelMultiplier = 2.25	}		
+		if (player.catalyst.level == 7) {quickJabLevelMultiplier = 1.7 
+										colossusPunchLevelMultiplier = 1.9
+										gigasUppercutLevelMultiplier  = 2.1
+										atmaShockLevelMultiplier = 2.35	}		
+		if (player.catalyst.level == 8) {quickJabLevelMultiplier = 1.8 
+										colossusPunchLevelMultiplier = 2.0
+										gigasUppercutLevelMultiplier  = 2.2
+										atmaShockLevelMultiplier = 2.45	}		
+		if (player.catalyst.level == 9) {quickJabLevelMultiplier = 1.9
+										colossusPunchLevelMultiplier = 2.1
+										gigasUppercutLevelMultiplier  = 2.3
+										atmaShockLevelMultiplier = 2.55	}		
+		if (player.catalyst.level == 10) {quickJabLevelMultiplier = 2.0 
+										colossusPunchLevelMultiplier = 2.2
+										gigasUppercutLevelMultiplier  = 2.4
+										atmaShockLevelMultiplier = 2.1	}		
+
+		let quickJabBaseDamage = Math.ceil(baseDamage * quickJabLevelMultiplier)
 		let quickJabDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, quickJabBaseDamage, penetrationType)
 		let quickJabDamageBlocked = quickJabBaseDamage - quickJabDamageAfterMitigation
+		console.log(quickJabBaseDamage)
+		console.log(quickJabDamageAfterMitigation)
+		console.log(quickJabDamageBlocked)
 
-		let colossusPunchBaseDamage = baseDamage * 2
+		let colossusPunchBaseDamage = Math.ceil(baseDamage * colossusPunchLevelMultiplier)
 		let colossusPunchDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, colossusPunchBaseDamage, penetrationType)
 		let colossusPunchDamageBlocked = colossusPunchBaseDamage - colossusPunchDamageAfterMitigation
 
-		let gigasUpprcutBaseDamage = baseDamage * 3
-		let gigasUppercutDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, gigasUpprcutBaseDamage, penetrationType)
-		let gigasUppercutDamageBlocked = gigasUpprcutBaseDamage - gigasUppercutDamageAfterMitigation
+		let gigasUppercutBaseDamage = Math.ceil(baseDamage * gigasUppercutLevelMultiplier)
+		let gigasUppercutDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, gigasUppercutBaseDamage, penetrationType)
+		let gigasUppercutDamageBlocked = gigasUppercutBaseDamage - gigasUppercutDamageAfterMitigation
 
-		let atmaShockBaseDamage = baseDamage * 2
+		let atmaShockBaseDamage = Math.ceil(baseDamage * atmaShockLevelMultiplier)
 		let atmaShockDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, atmaShockBaseDamage, penetrationType)
 		let atmaShockDamageBlocked = atmaShockBaseDamage - atmaShockDamageAfterMitigation
-		// let totalDamage = damageAfterArmor
-		// let currentAttackPower = player.currentWeaponSkill.attackPower
-		// let currentWeaponSkillBotModifier = player.currentWeaponSkill.botMultiplier
-		// let currentWeaponSkillTopModifier = player.currentWeaponSkill.topMultiplier
-		// let totalBotDamage = player.currentRightHandWeapon().botDamage != undefined ? player.currentRightHandWeapon().botDamage : player.currentLeftHandWeapon().botDamage
-		// let totalTopDamage = player.currentRightHandWeapon().topDamage != undefined ? player.currentRightHandWeapon().topDamage : player.currentLeftHandWeapon().topDamage
-		// let lowDamage = Math.floor(currentAttackPower * currentWeaponSkillBotModifier * totalBotDamage * (1 + this.level * 0.1))
-		// let highDamage = Math.floor(currentAttackPower * currentWeaponSkillTopModifier * totalTopDamage * (1 + this.level * 0.1))
-		// let totalDamage = randomNumberRange(lowDamage, highDamage)
+
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		let line3 = lineFunc()
@@ -11031,26 +11193,70 @@ const tempest = {
 		damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemy, baseDamage, penetrationType)
 		damageBlocked = baseDamage - damageAfterArmor
 
-		let bonusMeteorKickDamage = (((enemy.health / enemy.maxHealth) * -1) + 1).toFixed(2)
+		let meteorKickLevelMultiplier
+		let behemothBashLevelMultiplier
+		let flyingKneeLevelMultiplier
+		let hurricaneKickLevelMultiplier
+		if (player.tempest.level == 1) {meteorKickLevelMultiplier = 1.1 
+										behemothBashLevelMultiplier = 1.3
+										flyingKneeLevelMultiplier  = 1.5
+										hurricaneKickLevelMultiplier = 1.75	}		
+		if (player.tempest.level == 2) {meteorKickLevelMultiplier = 1.2
+										behemothBashLevelMultiplier = 1.4
+										flyingKneeLevelMultiplier  = 1.6
+										hurricaneKickLevelMultiplier = 1.85	}		
+		if (player.tempest.level == 3) {meteorKickLevelMultiplier = 1.3 
+										behemothBashLevelMultiplier = 1.5
+										flyingKneeLevelMultiplier  = 1.7
+										hurricaneKickLevelMultiplier = 1.95	}		
+		if (player.tempest.level == 4) {meteorKickLevelMultiplier = 1.4 
+										behemothBashLevelMultiplier = 1.6
+										flyingKneeLevelMultiplier  = 1.8
+										hurricaneKickLevelMultiplier = 2.05	}		
+		if (player.tempest.level == 5) {meteorKickLevelMultiplier = 1.5 
+										behemothBashLevelMultiplier = 1.7
+										flyingKneeLevelMultiplier  = 1.9
+										hurricaneKickLevelMultiplier = 2.15	}		
+		if (player.tempest.level == 6) {meteorKickLevelMultiplier = 1.6 
+										behemothBashLevelMultiplier = 1.8
+										flyingKneeLevelMultiplier  = 2.0
+										hurricaneKickLevelMultiplier = 2.25	}		
+		if (player.tempest.level == 7) {meteorKickLevelMultiplier = 1.7 
+										behemothBashLevelMultiplier = 1.9
+										flyingKneeLevelMultiplier  = 2.1
+										hurricaneKickLevelMultiplier = 2.35	}		
+		if (player.tempest.level == 8) {meteorKickLevelMultiplier = 1.8 
+										behemothBashLevelMultiplier = 2.0
+										flyingKneeLevelMultiplier  = 2.2
+										hurricaneKickLevelMultiplier = 2.45	}		
+		if (player.tempest.level == 9) {meteorKickLevelMultiplier = 1.9
+										behemothBashLevelMultiplier = 2.1
+										flyingKneeLevelMultiplier  = 2.3
+										hurricaneKickLevelMultiplier = 2.55	}		
+		if (player.tempest.level == 10) {meteorKickLevelMultiplier = 2.0 
+										behemothBashLevelMultiplier = 2.2
+										flyingKneeLevelMultiplier  = 2.4
+										hurricaneKickLevelMultiplier = 2.1	}
+
+		let bonusMeteorKickDamage = Math.ceil((((enemy.health / enemy.maxHealth) * -1) + 1).toFixed(2))
 		let meteorKickBaseDamage = Math.ceil((baseDamage * bonusMeteorKickDamage) + baseDamage)
 		let meteorKickDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, meteorKickBaseDamage, penetrationType)
 		let meteorKickDamageBlocked = meteorKickBaseDamage - meteorKickDamageAfterMitigation
 
-		let behemothBashBaseDamage = baseDamage 
+		let behemothBashBaseDamage = baseDamage * behemothBashLevelMultiplier
 		let behemothBashDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, behemothBashBaseDamage, penetrationType)
 		let behemothBashDamageBlocked = behemothBashBaseDamage - behemothBashDamageAfterMitigation
 
-		let flyingKneeBaseDamage = baseDamage
+		let flyingKneeBaseDamage = baseDamage * flyingKneeLevelMultiplier
 		let flyingKneeDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, flyingKneeBaseDamage, penetrationType)
 		let flyingKneeDamageBlocked = flyingKneeBaseDamage - flyingKneeDamageAfterMitigation
 
-		let hurricaneKickBaseDamage = baseDamage
+		let hurricaneKickBaseDamage = baseDamage * hurricaneKickLevelMultiplier
 		let hurricaneKickDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, hurricaneKickBaseDamage, penetrationType)
 		let hurricaneKickDamageBlocked = hurricaneKickBaseDamage - hurricaneKickDamageAfterMitigation
 		
 		let buff = {}
 		let debuff = {}
-		let line0 = lineFunc()
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		let line3 = lineFunc()
@@ -11264,6 +11470,22 @@ const blazingFist = {
 	weaponTypesUsed: ['unarmed'],
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
+	damage: function() {
+		let baseDamage = ((baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5) + player.mysticPower
+		let levelMultiplier
+		if (player.blazingFist.level == 1) { levelMultiplier = 1.1}
+		if (player.blazingFist.level == 2) { levelMultiplier = 1.2}
+		if (player.blazingFist.level == 3) { levelMultiplier = 1.3}
+		if (player.blazingFist.level == 4) { levelMultiplier = 1.4}
+		if (player.blazingFist.level == 5) { levelMultiplier = 1.5}
+		if (player.blazingFist.level == 6) { levelMultiplier = 1.6}
+		if (player.blazingFist.level == 7) { levelMultiplier = 1.7}
+		if (player.blazingFist.level == 8) { levelMultiplier = 1.8}
+		if (player.blazingFist.level == 9) { levelMultiplier = 1.9}
+		if (player.blazingFist.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
+	},
 	debuff: {
 		name: 'Blazing Fist',
 		refName: 'blazingFist',
@@ -11282,9 +11504,22 @@ const blazingFist = {
 		elementType: 'fire',
 		color: 'fire',
 		damage: function(enemy) {
-			let baseDamage = baseAttackDamageRight()
-			let mysticismMultiplier = 2.0
-			let totalDamage = baseDamage + mysticismMultiplier
+			// let baseDamage = ((baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5) + player.mysticPower
+			let botDamage = player.mysticPower * player.blazingFist.botMultiplier
+			let topDamage = player.mysticPower * player.blazingFist.topMultiplier
+			let baseDamage = randomNumberRange(botDamage, topDamage)
+			let levelMultiplier
+			if (player.blazingFist.level == 1) { levelMultiplier = 1.1}
+			if (player.blazingFist.level == 2) { levelMultiplier = 1.2}
+			if (player.blazingFist.level == 3) { levelMultiplier = 1.3}
+			if (player.blazingFist.level == 4) { levelMultiplier = 1.4}
+			if (player.blazingFist.level == 5) { levelMultiplier = 1.5}
+			if (player.blazingFist.level == 6) { levelMultiplier = 1.6}
+			if (player.blazingFist.level == 7) { levelMultiplier = 1.7}
+			if (player.blazingFist.level == 8) { levelMultiplier = 1.8}
+			if (player.blazingFist.level == 9) { levelMultiplier = 1.9}
+			if (player.blazingFist.level >= 10) { levelMultiplier = 2.0}
+			let totalDamage = baseDamage * levelMultiplier
 			let damageAfterResist = calculateMagicDamageWithResist(totalDamage, enemy.fireResist)			
 			let damageBlocked = totalDamage - damageAfterResist
 			let damageObject = {
@@ -11295,23 +11530,6 @@ const blazingFist = {
 			}
 			return damageObject		
 		},
-	},
-	damage: function(enemy) {
-		let baseDamage = baseAttackDamageRight()
-		let mysticismMultiplier = 2.0
-		let totalDamage = baseDamage + mysticismMultiplier
-		let damageAfterResist = calculateMagicDamageWithResist(totalDamage, enemy.waterResist)			
-		let damageBlocked = totalDamage - damageAfterResist
-		let damageObject = {
-			// damage: Math.ceil(totalDamage),
-			penetrationType: 'water',
-			damageAfterResist: damageAfterResist,
-			damageBlocked: damageBlocked
-		}
-		return damageObject		
-	},
-	damage: function () {
-		return baseAttackDamageRight() + baseAttackDamageLeft() + player.mysticPower
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -11372,6 +11590,22 @@ const tidalFist = {
 	weaponTypesUsed: ['unarmed'],
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
+	damage: function() {
+		let baseDamage = ((baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5) + player.mysticPower
+		let levelMultiplier
+		if (player.tidalFist.level == 1) { levelMultiplier = 1.1}
+		if (player.tidalFist.level == 2) { levelMultiplier = 1.2}
+		if (player.tidalFist.level == 3) { levelMultiplier = 1.3}
+		if (player.tidalFist.level == 4) { levelMultiplier = 1.4}
+		if (player.tidalFist.level == 5) { levelMultiplier = 1.5}
+		if (player.tidalFist.level == 6) { levelMultiplier = 1.6}
+		if (player.tidalFist.level == 7) { levelMultiplier = 1.7}
+		if (player.tidalFist.level == 8) { levelMultiplier = 1.8}
+		if (player.tidalFist.level == 9) { levelMultiplier = 1.9}
+		if (player.tidalFist.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
+	},
 	debuff: {
 		name: 'tidalFist',
 		refName: 'tidalFist',
@@ -11390,9 +11624,21 @@ const tidalFist = {
 		elementType: 'water',
 		color: 'water',
 		damage: function(enemy) {
-			let baseDamage = baseAttackDamageRight()
-			let mysticismMultiplier = 2.0
-			let totalDamage = baseDamage + mysticismMultiplier
+			let botDamage = player.mysticPower * player.tidalFist.botMultiplier
+			let topDamage = player.mysticPower * player.tidalFist.topMultiplier
+			let baseDamage = randomNumberRange(botDamage, topDamage)
+			let levelMultiplier
+			if (player.tidalFist.level == 1) { levelMultiplier = 1.1}
+			if (player.tidalFist.level == 2) { levelMultiplier = 1.2}
+			if (player.tidalFist.level == 3) { levelMultiplier = 1.3}
+			if (player.tidalFist.level == 4) { levelMultiplier = 1.4}
+			if (player.tidalFist.level == 5) { levelMultiplier = 1.5}
+			if (player.tidalFist.level == 6) { levelMultiplier = 1.6}
+			if (player.tidalFist.level == 7) { levelMultiplier = 1.7}
+			if (player.tidalFist.level == 8) { levelMultiplier = 1.8}
+			if (player.tidalFist.level == 9) { levelMultiplier = 1.9}
+			if (player.tidalFist.level == 10) { levelMultiplier = 2.0}
+			let totalDamage = baseDamage * levelMultiplier
 			let damageAfterResist = calculateMagicDamageWithResist(totalDamage, enemy.waterResist)			
 			let damageBlocked = totalDamage - damageAfterResist
 			let damageObject = {
@@ -11403,9 +11649,6 @@ const tidalFist = {
 			}
 			return damageObject		
 		},
-	},
-	damage: function () {
-		return baseAttackDamageRight() + baseAttackDamageLeft() + player.mysticPower
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -11488,16 +11731,29 @@ const quakeFist = {
 			duration: 15000,
 			stacks: 0,
 			maxStacks: function() {
-				return player.tidalFist.level
+				return player.quakeFist.level
 			},
 			// type: 'seal',
 			color: 'dark-red',
 		},
 		damage: function(enemy) {
-			let baseDamage = baseAttackDamageRight()
-			let mysticismMultiplier = 2.0
-			let totalDamage = baseDamage + mysticismMultiplier
-			let damageAfterResist = calculateMagicDamageWithResist(totalDamage, enemy.earthResist)			
+			// let baseDamage = ((baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5) + player.mysticPower
+			let botDamage = player.mysticPower * player.quakeFist.botMultiplier
+			let topDamage = player.mysticPower * player.quakeFist.topMultiplier
+			let baseDamage = randomNumberRange(botDamage, topDamage)
+			let levelMultiplier
+			if (player.quakeFist.level == 1) { levelMultiplier = 1.1}
+			if (player.quakeFist.level == 2) { levelMultiplier = 1.2}
+			if (player.quakeFist.level == 3) { levelMultiplier = 1.3}
+			if (player.quakeFist.level == 4) { levelMultiplier = 1.4}
+			if (player.quakeFist.level == 5) { levelMultiplier = 1.5}
+			if (player.quakeFist.level == 6) { levelMultiplier = 1.6}
+			if (player.quakeFist.level == 7) { levelMultiplier = 1.7}
+			if (player.quakeFist.level == 8) { levelMultiplier = 1.8}
+			if (player.quakeFist.level == 9) { levelMultiplier = 1.9}
+			if (player.quakeFist.level >= 10) { levelMultiplier = 2.0}
+			let totalDamage = baseDamage * levelMultiplier
+			let damageAfterResist = calculateMagicDamageWithResist(totalDamage, enemy.earth)			
 			let damageBlocked = totalDamage - damageAfterResist
 			let damageObject = {
 				// damage: Math.ceil(totalDamage),
@@ -11508,9 +11764,21 @@ const quakeFist = {
 			return damageObject		
 		},
 	},
-	damage: function () {
-		let currentAttackPower = player.currentWeaponSkill.attackPower + player.mysticPower
-		return currentAttackPower
+	damage: function() {
+		let baseDamage = ((baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5) + player.mysticPower
+		let levelMultiplier
+		if (player.quakeFist.level == 1) { levelMultiplier = 1.1}
+		if (player.quakeFist.level == 2) { levelMultiplier = 1.2}
+		if (player.quakeFist.level == 3) { levelMultiplier = 1.3}
+		if (player.quakeFist.level == 4) { levelMultiplier = 1.4}
+		if (player.quakeFist.level == 5) { levelMultiplier = 1.5}
+		if (player.quakeFist.level == 6) { levelMultiplier = 1.6}
+		if (player.quakeFist.level == 7) { levelMultiplier = 1.7}
+		if (player.quakeFist.level == 8) { levelMultiplier = 1.8}
+		if (player.quakeFist.level == 9) { levelMultiplier = 1.9}
+		if (player.quakeFist.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -11588,9 +11856,22 @@ const lightningFist = {
 		elementType: 'lightning',
 		color: 'lightning',
 		damage: function(enemy) {
-			let baseDamage = baseAttackDamageRight()
-			let mysticismMultiplier = 2.0
-			let totalDamage = baseDamage + mysticismMultiplier
+			// let baseDamage = ((baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5) + player.mysticPower
+			let botDamage = player.mysticPower * player.lightningFist.botMultiplier
+			let topDamage = player.mysticPower * player.lightningFist.topMultiplier
+			let baseDamage = randomNumberRange(botDamage, topDamage)
+			let levelMultiplier
+			if (player.lightningFist.level == 1) { levelMultiplier = 1.1}
+			if (player.lightningFist.level == 2) { levelMultiplier = 1.2}
+			if (player.lightningFist.level == 3) { levelMultiplier = 1.3}
+			if (player.lightningFist.level == 4) { levelMultiplier = 1.4}
+			if (player.lightningFist.level == 5) { levelMultiplier = 1.5}
+			if (player.lightningFist.level == 6) { levelMultiplier = 1.6}
+			if (player.lightningFist.level == 7) { levelMultiplier = 1.7}
+			if (player.lightningFist.level == 8) { levelMultiplier = 1.8}
+			if (player.lightningFist.level == 9) { levelMultiplier = 1.9}
+			if (player.lightningFist.level >= 10) { levelMultiplier = 2.0}
+			let totalDamage = baseDamage * levelMultiplier
 			let damageAfterResist = calculateMagicDamageWithResist(totalDamage, enemy.lightningResist)			
 			let damageBlocked = totalDamage - damageAfterResist
 			let damageObject = {
@@ -11602,9 +11883,21 @@ const lightningFist = {
 			return damageObject		
 		},
 	},
-	damage: function () {
-		let currentAttackPower = player.currentWeaponSkill.attackPower + player.mysticPower
-		return currentAttackPower
+	damage: function() {
+		let baseDamage = ((baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5) + player.mysticPower
+		let levelMultiplier
+		if (player.lightningFist.level == 1) { levelMultiplier = 1.1}
+		if (player.lightningFist.level == 2) { levelMultiplier = 1.2}
+		if (player.lightningFist.level == 3) { levelMultiplier = 1.3}
+		if (player.lightningFist.level == 4) { levelMultiplier = 1.4}
+		if (player.lightningFist.level == 5) { levelMultiplier = 1.5}
+		if (player.lightningFist.level == 6) { levelMultiplier = 1.6}
+		if (player.lightningFist.level == 7) { levelMultiplier = 1.7}
+		if (player.lightningFist.level == 8) { levelMultiplier = 1.8}
+		if (player.lightningFist.level == 9) { levelMultiplier = 1.9}
+		if (player.lightningFist.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -11656,8 +11949,8 @@ const elementalTempest = {
 	cooldown: 1000,
 	cooldownSet: 1000,
 	color: 'monk-color',
-	topMultiplier: 1.5,
-	botMultiplier: 1.0,
+	topMultiplier: 2.0,
+	botMultiplier: 1.5,
 	resourceName: 'focus',
 	resourceCost: 0,
 	weaponTypesUsed: ['unarmed'],
@@ -11674,27 +11967,43 @@ const elementalTempest = {
 		type: 'seal',
 		color: 'lightning',
 	},
-	damage: function () {
-		let currentAttackPower = player.currentWeaponSkill.attackPower + player.mysticPower
-		return currentAttackPower
+	damage: function() {
+		let baseDamagePhysical = baseAttackDamageRight() + baseAttackDamageLeft()
+		let mysticPowerBot = player.mysticPower * player.elementalTempest.botMultiplier
+		let mysticPowerTop = player.mysticPower * player.elementalTempest.topMultiplier
+		let baseDamageMystic = randomNumberRange(mysticPowerBot, mysticPowerTop)
+		let baseDamage = baseDamagePhysical + baseDamageMystic
+		let levelMultiplier
+		if (player.elementalTempest.level == 1) { levelMultiplier = 1.1}
+		if (player.elementalTempest.level == 2) { levelMultiplier = 1.2}
+		if (player.elementalTempest.level == 3) { levelMultiplier = 1.3}
+		if (player.elementalTempest.level == 4) { levelMultiplier = 1.4}
+		if (player.elementalTempest.level == 5) { levelMultiplier = 1.5}
+		if (player.elementalTempest.level == 6) { levelMultiplier = 1.6}
+		if (player.elementalTempest.level == 7) { levelMultiplier = 1.7}
+		if (player.elementalTempest.level == 8) { levelMultiplier = 1.8}
+		if (player.elementalTempest.level == 9) { levelMultiplier = 1.9}
+		if (player.elementalTempest.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
 	},
 	aquaVoltDamage: function() {
-		let baseDamage = baseAttackDamageRight()
-		let mysticPowerMultiplier = player.mysticPower * 3
-		let mainDamage = Math.ceil(baseDamage * mysticPowerMultiplier)
-		return mainDamage
+		let mysticPowerBot = player.mysticPower * player.elementalTempest.botMultiplier
+		let mysticPowerTop = player.mysticPower * player.elementalTempest.topMultiplier
+		let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+		return Math.ceil(totalDamage)
 	},
 	thunderBlazeDamage: function() {
-		let baseDamage = baseAttackDamageRight()
-		let mysticPowerMultiplier = player.mysticPower * 3
-		let mainDamage = Math.ceil(baseDamage * mysticPowerMultiplier)
-		return mainDamage
+		let mysticPowerBot = player.mysticPower * player.elementalTempest.botMultiplier
+		let mysticPowerTop = player.mysticPower * player.elementalTempest.topMultiplier
+		let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+		return Math.ceil(totalDamage)
 	},
 	hydroplosionDamage: function() {
-		let baseDamage = baseAttackDamageRight()
-		let mysticPowerMultiplier = player.mysticPower * 3
-		let mainDamage = Math.ceil(baseDamage * mysticPowerMultiplier)
-		return mainDamage
+		let mysticPowerBot = player.mysticPower * player.elementalTempest.botMultiplier
+		let mysticPowerTop = player.mysticPower * player.elementalTempest.topMultiplier
+		let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -11826,12 +12135,10 @@ const transcendence = {
 		name: 'Transcendence',
 		refName: 'transcendence',
 		damage: function() {
-			//base damage is 200% of mystic power
-			let baseDamage = player.mysticPower * 2
-			let botDamage = player.transcendence.botMultiplier * baseDamage
-			let topDamage = player.transcendence.topMultiplier * baseDamage
-			let totalDamage = randomNumberRange(botDamage, topDamage)
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
+			let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			return Math.ceil(totalDamage)
 		},
 		type: 'enchantment',
 		skillEnhanced: {
@@ -11842,7 +12149,7 @@ const transcendence = {
 		},
 		buff: true,
 		seal: true,
-		duration: 20000,
+		duration: 30000,
 		color: 'fire',
 		elementType: 'fire',
 		resistType: 'fireResist',
@@ -11867,17 +12174,15 @@ const transcendence = {
 		name: 'Transcendence',
 		refName: 'transcendence',
 		damage: function() {
-			//base damage is 200% of mystic power
-			let baseDamage = player.mysticPower * 2
-			let botDamage = player.transcendence.botMultiplier * baseDamage
-			let topDamage = player.transcendence.topMultiplier * baseDamage
-			let totalDamage = randomNumberRange(botDamage, topDamage)
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
+			let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			return Math.ceil(totalDamage)
 		},
 		type: 'enchantment',
 		buff: true,
 		seal: true,
-		duration: 20000,
+		duration: 30000,
 		color: 'water',
 		elementType: 'water',
 		resistType: 'waterResist',
@@ -11902,17 +12207,15 @@ const transcendence = {
 		name: 'Transcendence',
 		refName: 'transcendence',
 		damage: function() {
-			//base damage is 200% of mystic power
-			let baseDamage = player.mysticPower * 2
-			let botDamage = player.transcendence.botMultiplier * baseDamage
-			let topDamage = player.transcendence.topMultiplier * baseDamage
-			let totalDamage = randomNumberRange(botDamage, topDamage)
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
+			let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			return Math.ceil(totalDamage)
 		},
 		type: 'enchantment',
 		buff: true,
 		seal: true,
-		duration: 20000,
+		duration: 30000,
 		color: 'fire',
 		elementType: 'fire',
 		resistType: 'fireResist',
@@ -11937,12 +12240,10 @@ const transcendence = {
 		name: 'Transcendence',
 		refName: 'transcendence',
 		damage: function() {
-			//base damage is 200% of mystic power
-			let baseDamage = player.mysticPower * 2
-			let botDamage = player.transcendence.botMultiplier * baseDamage
-			let topDamage = player.transcendence.topMultiplier * baseDamage
-			let totalDamage = randomNumberRange(botDamage, topDamage)
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
+			let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			return Math.ceil(totalDamage)
 		},
 		type: 'enchantment',
 		buff: true,
@@ -11972,12 +12273,10 @@ const transcendence = {
 		name: 'Transcendence',
 		refName: 'transcendence',
 		damage: function() {
-			//base damage is 200% of mystic power
-			let baseDamage = player.mysticPower * 2
-			let botDamage = player.transcendence.botMultiplier * baseDamage
-			let topDamage = player.transcendence.topMultiplier * baseDamage
-			let totalDamage = randomNumberRange(botDamage, topDamage)
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
+			let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			return Math.ceil(totalDamage)
 		},
 		type: 'enchantment',
 		buff: true,
@@ -12007,12 +12306,10 @@ const transcendence = {
 		name: 'Transcendence',
 		refName: 'transcendence',
 		damage: function() {
-			//base damage is 200% of mystic power
-			let baseDamage = player.mysticPower * 2
-			let botDamage = player.transcendence.botMultiplier * baseDamage
-			let topDamage = player.transcendence.topMultiplier * baseDamage
-			let totalDamage = randomNumberRange(botDamage, topDamage)
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
+			let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			return Math.ceil(totalDamage)
 		},
 		type: 'enchantment',
 		buff: true,
@@ -12049,19 +12346,25 @@ const transcendence = {
 	flavorTextAquaVolt: function(avatar) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You consume the energy of Aqua Volt! Energy swirls around you, engulfing you with ${avatar}!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`You consume the energy of `, `monk-ability-text-color`, line1)
+		customizeEachWord(`Aqua Volt`, `aquaVolt`, line1)
+		customizeEachWord(`! Energy swirls around you, engulfing you with ${avatar}!`, `monk-ability-text-color`, line1)
 		blankSpace()
 	},
 	flavorTextThunderBlaze: function(avatar) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You consume the energy of Thunder Blaze! Energy swirls around you, engulfing you with ${avatar}!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`You consume the energy of `, `monk-ability-text-color`, line1)
+		customizeEachWord(`Thunder Blaze`, `thunderBlaze`, line1)
+		customizeEachWord(`! Energy swirls around you, engulfing you with ${avatar}!`, `monk-ability-text-color`, line1)
 		blankSpace()
 	},
 	flavorTextHydroplosion: function(avatar) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You consume the energy of Hydroplosion! Energy swirls around you, engulfing you with ${avatar}!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`You consume the energy of `, `monk-ability-text-color`, line1)
+		customizeEachWord(`Hydroplosion`, `hydroplosion`, line1)
+		customizeEachWord(`! Energy swirls around you, engulfing you with ${avatar}!`, `monk-ability-text-color`, line1)
 		blankSpace()
 	},
 	goldToUpgrade: function () {
@@ -12081,24 +12384,24 @@ const callOfWind = {
 	cooldownSet: 1000,
 	type: 'ability',
 	color: 'monk-color',
-	multiplier: 1.5,
+	topMultiplier: 1.5,
+	botMultiplier: 1.0,
 	resourceName: 'focus',
 	resourceCost: 5,
+	cooldown: 3000,
+	cooldownSet: 3000,
 	weaponTypesUsed: ['unarmed'],
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
 	damageRanged: function (enemy) {
-		let baseDamage = baseAttackDamageRight()
-		let mysticPowerMultiplier = player.mysticPower * 2
-		let bonusDamage = 0
-		let totalDamage = baseDamage + mysticPowerMultiplier
+		let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
+		let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
+		let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
 		return Math.ceil(totalDamage)
 	},
 	damageCombat: function (enemy) {
-		let baseDamage = baseAttackDamageRight()
-		let bonusDamage = 0
-		let totalDamage = baseDamage + bonusDamage
-		return Math.ceil(totalDamage)
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		return Math.ceil(baseDamage)
 	},
 	debuff: {
 		name: 'Call Of Wind',
@@ -12147,7 +12450,9 @@ const callOfWind = {
 		blankSpace()
 		customizeEachWord(`You command the wind surrounding the enemy to pull you in. You speed through the air at the `, 'monk-ability-text-color', line1)
 		customizeEachWord(`${enemy.name} `, enemy.color, line1)
-		customizeEachWord(`delivering a flying side-kick to its mid-section!`, `monk-ability-text-color`, line1)
+		customizeEachWord(`delivering to it a `, `monk-ability-text-color`, line1)
+		customizeEachWord(`Flying Side-Kick`, this.color, line1)
+		customizeEachWord(`!`, `white`, line1)
 		customizeEachWord(`${this.name} `, this.color, line2)
 		customizeEachWord(`hits for `, 'green', line2)
 		customizeEachWord(`${damage} `, 'light-blue', line2)
@@ -12158,16 +12463,28 @@ const callOfWind = {
 		customizeEachWord(`)`, 'white', line2)		
 		blankSpace()
 	},
-	flavorTextMissRanged: function(enemy, ) {
+	flavorTextMissRanged: function(enemy) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You throw a ball of wind at the enemy but miss `, 'monk-ability-text-color', line1)
+		customizeEachWord(`You fire a ball of energy charged `, 'monk-ability-text-color', line1)
+		customizeEachWord(`wind `, 'wind', line1)
+		customizeEachWord(`at the `, 'monk-ability-text-color', line1)
+		customizeEachWord(`${enemy.name} `,  enemy.color, line1)
+		customizeEachWord(`,but `, 'monk-ability-text-color', line1)
+		customizeEachWord(`miss`, 'red', line1)
+		customizeEachWord(`!`, 'monk-ability-text-color', line1)
 		blankSpace()
 	},
-	flavorTextMissCombat: function(enemy, ) {
+	flavorTextMissCombat: function(enemy) {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`You fly toward the enemy, but miss with your attack!`, 'monk-ability-text-color', line1)
+		customizeEachWord(`You fly toward the `, 'monk-ability-text-color', line1)
+		customizeEachWord(`${enemy.name} `,  enemy.color, line1)
+		customizeEachWord(`with a `, 'monk-ability-text-color', line1)
+		customizeEachWord(`Flying Side-Kick`, this.color, line1)
+		customizeEachWord(`, but `, 'white', line1)
+		customizeEachWord(`miss`, 'red', line1)
+		customizeEachWord(`!`, 'monk-ability-text-color', line1)
 		blankSpace()
 	},
 	goldToUpgrade: function () {
@@ -12193,9 +12510,19 @@ const knuckleBlitz = {
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
 	damage: function (enemy) {
-		let baseDamage = baseAttackDamageRight() + baseAttackDamageRight()
-		let bonusModifier = 2.5
-		let totalDamage = baseDamage * bonusModifier
+		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
+		let levelMultiplier
+		if (player.knuckleBlitz.level == 1) { levelMultiplier = 1.1}
+		if (player.knuckleBlitz.level == 2) { levelMultiplier = 1.2}
+		if (player.knuckleBlitz.level == 3) { levelMultiplier = 1.3}
+		if (player.knuckleBlitz.level == 4) { levelMultiplier = 1.4}
+		if (player.knuckleBlitz.level == 5) { levelMultiplier = 1.5}
+		if (player.knuckleBlitz.level == 6) { levelMultiplier = 1.6}
+		if (player.knuckleBlitz.level == 7) { levelMultiplier = 1.7}
+		if (player.knuckleBlitz.level == 8) { levelMultiplier = 1.8}
+		if (player.knuckleBlitz.level == 9) { levelMultiplier = 1.9}
+		if (player.knuckleBlitz.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
 		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
@@ -12468,8 +12795,22 @@ const fireSeal = {
 		name: 'Fire Seal',
 		refName: 'fireSeal',
 		damage: function() {
-			let damage = baseAttackDamageRight() + (player.mysticPower * 2.5)
-			return damage
+			let mysticPowerBot = player.mysticPower * player.fireSeal.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.fireSeal.topMultiplier
+			let baseDamageMystic = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			let levelMultiplier
+			if (player.fireSeal.level == 1) { levelMultiplier = 1.25}
+			if (player.fireSeal.level == 2) { levelMultiplier = 1.50}
+			if (player.fireSeal.level == 3) { levelMultiplier = 1.75}
+			if (player.fireSeal.level == 4) { levelMultiplier = 2.0}
+			if (player.fireSeal.level == 5) { levelMultiplier = 2.25}
+			if (player.fireSeal.level == 6) { levelMultiplier = 2.50}
+			if (player.fireSeal.level == 7) { levelMultiplier = 2.75}
+			if (player.fireSeal.level == 8) { levelMultiplier = 3.0}
+			if (player.fireSeal.level == 9) { levelMultiplier = 3.25}
+			if (player.fireSeal.level >= 10) { levelMultiplier = 3.5}
+			let totalDamage = baseDamageMystic * levelMultiplier
+			return Math.ceil(totalDamage)
 		},
 		duration: 30000,
 		stacks: 0,
@@ -12517,12 +12858,22 @@ const fireSeal = {
 		name: 'Fire Enchant',
 		refName: 'fireEnchant',
 		damage: function() {
-			//base damage is 200% of mystic power
-			let baseDamage = player.mysticPower * 2
-			let botDamage = player.fireSeal.botMultiplier * baseDamage
-			let topDamage = player.fireSeal.topMultiplier * baseDamage
-			let totalDamage = randomNumberRange(botDamage, topDamage)
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.fireSeal.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.fireSeal.topMultiplier
+			let baseDamageMystic = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			let levelMultiplier
+			if (player.fireSeal.level == 1) { levelMultiplier = 1.1}
+			if (player.fireSeal.level == 2) { levelMultiplier = 1.2}
+			if (player.fireSeal.level == 3) { levelMultiplier = 1.3}
+			if (player.fireSeal.level == 4) { levelMultiplier = 1.4}
+			if (player.fireSeal.level == 5) { levelMultiplier = 1.5}
+			if (player.fireSeal.level == 6) { levelMultiplier = 1.6}
+			if (player.fireSeal.level == 7) { levelMultiplier = 1.7}
+			if (player.fireSeal.level == 8) { levelMultiplier = 1.8}
+			if (player.fireSeal.level == 9) { levelMultiplier = 1.9}
+			if (player.fireSeal.level >= 10) { levelMultiplier = 2.0}
+			let totalDamage = baseDamageMystic * levelMultiplier
+			return Math.ceil(totalDamage)
 		},
 		type: 'enchantment',
 		buff: true,
@@ -12549,8 +12900,20 @@ const fireSeal = {
 		}
 	},
 	damage: function () {
-		let damage = baseAttackDamageRight()
-		return Math.ceil(damage)
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let levelMultiplier
+		if (player.fireSeal.level == 1) { levelMultiplier = 1.1}
+		if (player.fireSeal.level == 2) { levelMultiplier = 1.2}
+		if (player.fireSeal.level == 3) { levelMultiplier = 1.3}
+		if (player.fireSeal.level == 4) { levelMultiplier = 1.4}
+		if (player.fireSeal.level == 5) { levelMultiplier = 1.5}
+		if (player.fireSeal.level == 6) { levelMultiplier = 1.6}
+		if (player.fireSeal.level == 7) { levelMultiplier = 1.7}
+		if (player.fireSeal.level == 8) { levelMultiplier = 1.8}
+		if (player.fireSeal.level == 9) { levelMultiplier = 1.9}
+		if (player.fireSeal.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -12616,10 +12979,22 @@ const waterSeal = {
 		name: 'Water Seal',
 		refName: 'waterSeal',
 		damage: function() {
-			let damage = baseAttackDamageRight()
-			let mysticPowerMultiplier = (player.mysticPower * 2)
-			let totalDamage = mysticPowerMultiplier + damage
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.waterSeal.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.waterSeal.topMultiplier
+			let baseDamageMystic = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			let levelMultiplier
+			if (player.waterSeal.level == 1) { levelMultiplier = 1.25}
+			if (player.waterSeal.level == 2) { levelMultiplier = 1.50}
+			if (player.waterSeal.level == 3) { levelMultiplier = 1.75}
+			if (player.waterSeal.level == 4) { levelMultiplier = 2.0}
+			if (player.waterSeal.level == 5) { levelMultiplier = 2.25}
+			if (player.waterSeal.level == 6) { levelMultiplier = 2.50}
+			if (player.waterSeal.level == 7) { levelMultiplier = 2.75}
+			if (player.waterSeal.level == 8) { levelMultiplier = 3.0}
+			if (player.waterSeal.level == 9) { levelMultiplier = 3.25}
+			if (player.waterSeal.level >= 10) { levelMultiplier = 3.5}
+			let totalDamage = baseDamageMystic * levelMultiplier
+			return Math.ceil(totalDamage)
 		},
 		duration: 30000,
 		stacks: 0,
@@ -12658,8 +13033,22 @@ const waterSeal = {
 			return 1
 		},
 		heal: function() {
-			//try healing for 10% of mystic power
-			return Math.ceil(player.mysticPower * 0.1)		
+			let mysticPowerBot = player.mysticPower * player.waterSeal.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.waterSeal.topMultiplier
+			let baseDamageMystic = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			let levelMultiplier
+			if (player.waterSeal.level == 1) { levelMultiplier = 1.25}
+			if (player.waterSeal.level == 2) { levelMultiplier = 1.50}
+			if (player.waterSeal.level == 3) { levelMultiplier = 1.75}
+			if (player.waterSeal.level == 4) { levelMultiplier = 2.0}
+			if (player.waterSeal.level == 5) { levelMultiplier = 2.25}
+			if (player.waterSeal.level == 6) { levelMultiplier = 2.50}
+			if (player.waterSeal.level == 7) { levelMultiplier = 2.75}
+			if (player.waterSeal.level == 8) { levelMultiplier = 3.0}
+			if (player.waterSeal.level == 9) { levelMultiplier = 3.25}
+			if (player.waterSeal.level >= 10) { levelMultiplier = 3.5}
+			let totalHeal = (baseDamageMystic * levelMultiplier) * 0.1
+			return Math.ceil(totalHeal)	
 		},
 		duration: 20000,
 		flavorText: function(enemy, heal) {
@@ -12669,22 +13058,20 @@ const waterSeal = {
 		}
 	},
 	damage: function () {
-		//SET THESE UP:
-		//INITIAL HIT DAMAGE
-		//FIRE SEAL ON HIT DAMAGE
-		//GIVE BASE MYSTICISM
-		//SET COLOR OF ELEMENTAL DAMAGE IN THE WEAPONSWING FUNCTION 
-		let currentAttackPower = player.currentWeaponSkill.attackPower + player.mysticPower
-
-		let currentWeaponSkillBotModifier = player.currentWeaponSkill.botMultiplier
-		let currentWeaponSkillTopModifier = player.currentWeaponSkill.topMultiplier
-		let totalBotDamage = player.currentRightHandWeapon().botDamage == undefined ? player.currentLeftHandWeapon.botDamage : player.currentRightHandWeapon().botDamage
-		let totalTopDamage = player.currentRightHandWeapon().topDamage == undefined ? player.currentRightHandWeapon.topDamage : player.currentRightHandWeapon().topDamage
-		let lowDamage = Math.floor(currentAttackPower * currentWeaponSkillBotModifier * totalBotDamage * (1 + this.level * 0.1))
-		let highDamage = Math.floor(currentAttackPower * currentWeaponSkillTopModifier * totalTopDamage * (1 + this.level * 0.1))
-		let totalDamage = randomNumberRange(lowDamage, highDamage)
-
-		return totalDamage
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let levelMultiplier
+		if (player.waterSeal.level == 1) { levelMultiplier = 1.1}
+		if (player.waterSeal.level == 2) { levelMultiplier = 1.2}
+		if (player.waterSeal.level == 3) { levelMultiplier = 1.3}
+		if (player.waterSeal.level == 4) { levelMultiplier = 1.4}
+		if (player.waterSeal.level == 5) { levelMultiplier = 1.5}
+		if (player.waterSeal.level == 6) { levelMultiplier = 1.6}
+		if (player.waterSeal.level == 7) { levelMultiplier = 1.7}
+		if (player.waterSeal.level == 8) { levelMultiplier = 1.8}
+		if (player.waterSeal.level == 9) { levelMultiplier = 1.9}
+		if (player.waterSeal.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -12750,10 +13137,22 @@ const earthSeal = {
 		name: 'Earth Seal',
 		refName: 'earthSeal',
 		damage: function() {
-			let damage = baseAttackDamageRight()
-			let mysticPowerMultiplier = (player.mysticPower * 2)
-			let totalDamage = mysticPowerMultiplier + damage
-			return totalDamage
+			let mysticPowerBot = player.mysticPower * player.fireSeal.botMultiplier
+			let mysticPowerTop = player.mysticPower * player.fireSeal.topMultiplier
+			let baseDamageMystic = randomNumberRange(mysticPowerBot, mysticPowerTop)
+			let levelMultiplier
+			if (player.fireSeal.level == 1) { levelMultiplier = 1.25}
+			if (player.fireSeal.level == 2) { levelMultiplier = 1.50}
+			if (player.fireSeal.level == 3) { levelMultiplier = 1.75}
+			if (player.fireSeal.level == 4) { levelMultiplier = 2.0}
+			if (player.fireSeal.level == 5) { levelMultiplier = 2.25}
+			if (player.fireSeal.level == 6) { levelMultiplier = 2.50}
+			if (player.fireSeal.level == 7) { levelMultiplier = 2.75}
+			if (player.fireSeal.level == 8) { levelMultiplier = 3.0}
+			if (player.fireSeal.level == 9) { levelMultiplier = 3.25}
+			if (player.fireSeal.level >= 10) { levelMultiplier = 3.5}
+			let totalDamage = baseDamageMystic * levelMultiplier
+			return Math.ceil(totalDamage)
 		},
 		duration: 30000,
 		stacks: 0,
@@ -12801,8 +13200,20 @@ const earthSeal = {
 		// },
 	},
 	damage: function () {
-		let damage = baseAttackDamageRight() + player.mysticPower
-		return Math.ceil(damage)
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let levelMultiplier
+		if (player.earthSeal.level == 1) { levelMultiplier = 1.1}
+		if (player.earthSeal.level == 2) { levelMultiplier = 1.2}
+		if (player.earthSeal.level == 3) { levelMultiplier = 1.3}
+		if (player.earthSeal.level == 4) { levelMultiplier = 1.4}
+		if (player.earthSeal.level == 5) { levelMultiplier = 1.5}
+		if (player.earthSeal.level == 6) { levelMultiplier = 1.6}
+		if (player.earthSeal.level == 7) { levelMultiplier = 1.7}
+		if (player.earthSeal.level == 8) { levelMultiplier = 1.8}
+		if (player.earthSeal.level == 9) { levelMultiplier = 1.9}
+		if (player.earthSeal.level >= 10) { levelMultiplier = 2.0}
+		let totalDamage = baseDamage * levelMultiplier
+		return Math.ceil(totalDamage)
 	},
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1 == undefined && weapon2 == undefined) {
@@ -13518,21 +13929,20 @@ const piercingArrow = {
 			let bonusMultiplier = 1.0
 			if (this.timer != 0) {
 				if (this.timer < this.windUp * 0.05) {
-					quickMessage(`You hit for 3.0x damage!`)
+					// quickMessage(`You hit for 3.0x damage!`)
 					bonusMultiplier = 3.0
 				}
 				else if (this.timer < this.windUp * 0.1) {
 					bonusMultiplier = 2.5
-					quickMessage(`You hit for 2.5x damage!`)
+					// quickMessage(`You hit for 2.5x damage!`)
 				}
 				else if (this.timer < this.windUp * 0.2) {
 					bonusMultiplier = 2.0
-					quickMessage(`You hit for 2.0x damage!`)
-
+					// quickMessage(`You hit for 2.0x damage!`)
 				}
 				else if (this.timer < this.windUp * 0.3) {
 					bonusMultiplier = 1.75
-					quickMessage(`You hit for 1.75x damage!`)
+					// quickMessage(`You hit for 1.75x damage!`)
 				}
 				else if (this.timer < this.windUp * 0.4) {
 					bonusMultiplier = 1.6
@@ -13943,28 +14353,28 @@ player.aimedShot = {...aimedShot}
 // 	},
 // }
 
-const dualWield = {
-	level: 0,
-	name: 'Dual Wield',
-	refName: 'dualWield',
-	type: 'skill',
-	attackPower: 0,
-	topMultiplier: 0.4,
-	botMultiplier: 0.4,
-	speed: 4,
-	accuracy: -30,
-	slashingPen: 0,
-	piercingPen: 0,
-	bluntPen: 0,
-	color: 'passive-skill',
-	goldToUpgrade: function () {
-		return 9 * this.level
-	},
-	pointsToUpgrade: function () {
-		return this.level + 1
-	},
-}
-player.dualWield = { ...dualWield }
+// const dualWield = {
+// 	level: 0,
+// 	name: 'Dual Wield',
+// 	refName: 'dualWield',
+// 	type: 'skill',
+// 	attackPower: 0,
+// 	topMultiplier: 0.4,
+// 	botMultiplier: 0.4,
+// 	speed: 4,
+// 	accuracy: -30,
+// 	slashingPen: 0,
+// 	piercingPen: 0,
+// 	bluntPen: 0,
+// 	color: 'passive-skill',
+// 	goldToUpgrade: function () {
+// 		return 9 * this.level
+// 	},
+// 	pointsToUpgrade: function () {
+// 		return this.level + 1
+// 	},
+// }
+// player.dualWield = { ...dualWield }
 const unarmed = {
 	id: 1,
 	name: 'Martial Arts',
@@ -14137,10 +14547,23 @@ const fireflames = {
 	color: 'fire',
 	conjureBarColor: 'fire-conjure',
 	type: 'fire',
+	resourceCost: function() {
+		if (player.fireflames.level == 1) {return 10}
+		if (player.fireflames.level == 2) {return 20}
+		if (player.fireflames.level == 3) {return 30}
+		if (player.fireflames.level == 4) {return 40}
+		if (player.fireflames.level == 5) {return 50}
+		if (player.fireflames.level == 6) {return 60}
+		if (player.fireflames.level == 7) {return 70}
+		if (player.fireflames.level == 8) {return 80}
+		if (player.fireflames.level == 9) {return 90}
+		if (player.fireflames.level == 10) {return 100}
+	},
+	resourceName: 'mana', 
 	conjureTime: 2000,
 	channelTime: 2000,
 	damage: function(enemy) {
-		let baseDamage = 10
+		let baseDamage = 0
 		let burnStacks = enemy?.debuffs?.burn?.stacks ? enemy?.debuffs?.burn?.stacks : 0
 		let botDamage = player.spellPower * this.botMod + baseDamage
 		let topDamage = player.spellPower * this.topMod + baseDamage
@@ -14838,8 +15261,8 @@ const flashbolt = {
 	color: 'lightning',
 	conjureBarColor: 'lightning-conjure',
 	type: 'lightning',
-	conjureTime: 1000,
-	channelTime: 1000,
+	conjureTime: 2000,
+	channelTime: 2000,
 	damage: function() {
 		let baseDamage = 10
 		let botDamage = player.spellPower * this.botMod + baseDamage
@@ -14980,8 +15403,8 @@ const chainLightning = {
 	color: 'lightning',
 	conjureBarColor: 'lightning-conjure',
 	type: 'lightning',
-	conjureTime: 1000,
-	channelTime: 1000,
+	conjureTime: 2000,
+	channelTime: 2000,
 	damage: function() {
 		let baseDamage = 30
 		let botDamage = player.spellPower * this.botMod + baseDamage
@@ -15145,40 +15568,6 @@ const gigavolt = {
 			spell.flavorTextCast(enemy, damageAfterMagicResist, damageResisted)
 			applyDamageToEnemy(enemy, damageAfterMagicResist)
 		})
-		//if there is more than 1 enemy and it does not have shock debuff
-		// if (allEnemies.length > 1 && enemy?.debuffs?.shock) {
-		// 	let indexOfTarget = allEnemies.indexOf(enemy)
-		// 	//Find the next target without a shock debuff as indexes increase - Finds first monster to the right
-		// 	for (let i = indexOfTarget; i < allEnemies.length; i++) {
-		// 		let enemyToCheck = allEnemies[i + 1]
-		// 		if (enemyToCheck && !enemyToCheck?.debuffs?.shock) {
-		// 			applyDebuff(enemyToCheck, spell.debuff)
-		// 			break
-		// 		}
-		// 	}
-		// 	//Find the next target without a shock debuff as indexes decrease - Finds first monster to the left
-		// 	for (let i = indexOfTarget; i < allEnemies.length; i--) {
-		// 		let enemyToCheck = allEnemies[i - 1]
-		// 		if (enemyToCheck && !enemyToCheck?.debuffs?.shock) {
-		// 			applyDebuff(enemyToCheck, spell.debuff)
-		// 			break
-		// 		}
-		// 		if (i == -1) {
-		// 			break
-		// 		}
-		// 	}
-		// }
-		// for (let i = 0; i < allEnemies.length; i++) {
-		// 	let enemyTarget = allEnemies[i]
-		// 	let mainTargetIndex = allEnemies.indexOf(enemy)
-		// 	if (enemyTarget?.debuffs?.shock && i != mainTargetIndex) {
-		// 		let enemyLightningResist = enemyTarget.lightningResist
-		// 		let damageObject = calculateMagicDamage(enemyTarget, spell, enemyLightningResist)
-		// 		let { damageAfterMagicResist, damageResisted } = damageObject
-		// 		spell.flavorTextCast(enemyTarget, damageAfterMagicResist, damageResisted)
-		// 		applyDamageToEnemy(enemyTarget, damageAfterMagicResist)
-		// 	}
-		// }
 	},
 	flavorTextConjure: function () {
 		let line1 = document.createElement('div')
@@ -15601,14 +15990,22 @@ function updateResource() {
 	resourceText.innerHTML = resource ? `${capitalizeFirstLetter(resourceName)}: ${player[resource]}/${player[maxResource]}` : ``
 }
 function updateHealth() {
-	// player.maxHealth = Math.ceil(player.raceFlatHealthBonus + player.classFlatHealthBonus) + preClass.maxHealth + preRace.maxHealth + player.mods.maxHealth
-	player.maxHealth = Math.ceil((player.classHealthMultiplier + player.raceHealthMultiplier + player.vigor.healthMultiplier() + player.mods.maxHealth) * (((player.con + player.mods.con) * 5) + player.level) + (player.raceFlatHealthBonus + player.classFlatHealthBonus) * player.level) + preClass.maxHealth + preRace.maxHealth + player.mods.maxHealth
+	let healthFromConstitution = (player.con + player.mods.con) * 5
+	let multipliers = preClass.healthMultiplier + player.vigor.healthMultiplier()
+	let flatBonuses = preRace.maxHealth + preClass.maxHealth + player.mods.maxHealth
+
+	player.maxHealth = Math.ceil((healthFromConstitution * multipliers) + flatBonuses)
 	const percent = (player.health / player.maxHealth) * 100 > 100 ? 100 : (player.health / player.maxHealth) * 100 
 	healthBar.style.width = `${percent}%`
 	healthText.innerHTML = `Health: ${player.health}/${player.maxHealth}`
 }
+
 function updateMana() {
-	player.maxMana = Math.ceil((player.classManaMultiplier + player.raceManaMultiplier + player.devotion.manaMultiplier() + player.mods.maxMana) * (player.wis + player.mods.wis + player.level) + (player.raceFlatManaBonus + player.classFlatManaBonus) * player.level) + preClass.maxMana + player.mods.maxMana
+	let manaFromWisdom = (player.wis + player.mods.wis) * 10
+	let multipliers = preClass.manaMultiplier + player.devotion.manaMultiplier()
+	let flatBonuses = preRace.maxMana + preClass.maxMana + player.mods.maxMana
+
+	player.maxMana = Math.ceil((manaFromWisdom * multipliers) + flatBonuses)
 	const percent = (player.mana / player.maxMana) * 100
 	manaBar.style.width = `${percent}%`
 	manaText.innerHTML = `Mana: ${player.mana}/${player.maxMana}`
@@ -15699,11 +16096,7 @@ function updateBows() {
 	player.bows.speed += player.weight * 0.1
 
 }
-function updateMysticPower() {
-	let mys = player.mys + player.mods.mys
-	let contributingAttributes = (mys * 2) + player.int + player.wis
-	player.mysticPower = Math.ceil(contributingAttributes)
-}
+
 
 function updateShields() {
 	let str = player.str + player.mods.str
@@ -15806,7 +16199,15 @@ function updateSpeed() {
 	player.currentWeaponSkill.speed = player.currentWeaponSkill.speed + (player.weight * 0.1)
 }
 function updateSpellPower() {
-	player.spellPower = Math.ceil(Math.pow(player.int * 2 + player.wis, 1.3) + player.mods.spellPower)
+	let int = player.int + player.mods.int
+	let wis = player.wis + player.mods.wis
+	player.spellPower = Math.ceil(Math.pow(((int * 2) + wis) * 2, 1.3) + player.mods.spellPower)
+}
+function updateMysticPower() {
+	let mys = player.mys + player.mods.mys
+	let int = player.int + player.mods.int
+	player.mysticPower = Math.ceil(Math.pow(((mys * 2) + int) * 2, 1.3) + player.mods.mysticPower)
+
 }
 function updateAdvanceSpeed() {
 	player.advanceTimer = player.advanceTimer - player.initiation.reduction() < 1 ? 1 : player.advanceTimer - player.initiation.reduction()
@@ -17412,8 +17813,9 @@ const ragnar = {
 	z: 0,
 	name: 'Ragnar',
 	refName: 'ragnar',
+	picture: 'images/npcs/male/warriors/fighters/ragnar/ragnar.png',
 	nameColor: 'ragnar-name',
-	prefix: 'Fighter Commander, ',
+	prefix: 'Lord of War, ',
 	prefixColor: 'warrior-color',
 	keywords: ['ragnar'],
 	occupation: `Fighter Class Trainer`,
@@ -17521,8 +17923,9 @@ const magvello = {
 	z: 0,
 	name: 'Magvello',
 	refName: 'magvello',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'red',
-	prefix: 'Berserker War Commander, ',
+	prefix: 'Howling Blade, ',
 	prefixColor: 'warrior-color-dark',
 	keywords: ['magvello'],
 	occupation: `Berserker Class Trainer`,
@@ -17541,7 +17944,7 @@ const magvello = {
 			quickMessage(`You must be a Berserker in order to train with Magvello`)
 		}
 	},
-	skillsOffered: [ripslash, cyclone, cataclysm, charge, twoHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, battleRage, weaponTempering, armorTempering, counterAttack, tactics, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft],
+	skillsOffered: [ripslash, cyclone, cataclysm, charge, twoHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, bluntExpertise, battleRage, weaponTempering, armorTempering, counterAttack, tactics, initiation, brutalBlows, multipleStrikes, stunningBlows, vigor, warcraft, tauntingShout, defender],
 	skillsMaxLevel: {
 		ripslash: 5,
 		cyclone: 5,
@@ -17558,11 +17961,14 @@ const magvello = {
 		armorTempering: 5,
 		counterAttack: 5,
 		tactics: 5,
+		initiation: 5,
 		brutalBlows: 5,
 		multipleStrikes: 5,
 		stunningBlows: 5,
 		vigor: 5,
 		warcraft: 5,
+		tauntingShout: 5,
+		defender: 5,
 	},
 	questSequence: {
 		first: false,
@@ -17961,8 +18367,9 @@ let greaves = {
 	z: -1,
 	name: 'Greaves',
 	refName: 'greaves',
+	picture: 'images/npcs/male/warriors/knights/greaves/greaves.png',
 	nameColor: 'blue',
-	prefix: 'Knight Commander, ',
+	prefix: 'Hand of Justice, ',
 	prefixColor: 'warrior-color-light',
 	keywords: ['greaves'],
 	occupation: `Knight's Guild Master`,
@@ -18393,7 +18800,7 @@ const delverick = {
 			quickMessage(`You must be a Martial Monk in order to train with Delverick`)
 		}
 	},
-	skillsOffered: [catalyst, tempest, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
+	skillsOffered: [catalyst, tempest, unarmed, fistsOfFury, fistsOfPrecision, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
 		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin, wayOfTheFist],
 	skillsMaxLevel: {
 		//flying kick
@@ -18469,7 +18876,7 @@ const maelius = {
 			quickMessage(`You must be a Mystic Monk in order to train with Maelius`)
 		}
 	},
-	skillsOffered: [fireSeal, waterSeal, earthSeal, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
+	skillsOffered: [fireSeal, waterSeal, earthSeal, unarmed, fistsOfFury, fistsOfPrecision, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
 		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin, wayOfTheFist],
 	skillsMaxLevel: {
 		fireSeal: 5,
@@ -18544,7 +18951,7 @@ const fearecia = {
 			quickMessage(`You must be an Elemental Monk in order to train with Fearecia`)
 		}
 	},
-	skillsOffered: [blazingFist, tidalFist, quakeFist, unarmed, fistsOfFury, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
+	skillsOffered: [blazingFist, tidalFist, quakeFist, unarmed, fistsOfFury, fistsOfPrecision, preemptiveStrike, extraStrike, elementalFist, stunningBlows,
 		dodging, toughness, multipleStrikes, warcraft, precision, vigor, hardenedSkin, wayOfTheFist],
 	skillsMaxLevel: {
 		blazingFist: 5,
@@ -21245,7 +21652,7 @@ function increaseStat(secondCommand) {
 	} else if (player.attributePoints > 0) {
 		let line1 = document.createElement('div')
 		customizeEachWord(`You have increased your `, 'white', line1)
-		customizeEachWord(`${secondCommand} `, 'light-blue', line1)
+		customizeEachWord(`${secondCommand.toUpperCase()} `, 'green', line1)
 		customizeEachWord(`by 1!`, 'white', line1)
 		player.attributePoints = player.attributePoints - 1
 		player[stat]++
@@ -23419,7 +23826,7 @@ let crossroads_shops_and_fields = new AreaMaker(
 		areaNameClass: brown,
 		areaName: `Training Fields Central`,
 		zoneType: 'galvadia_training_fields',
-		desc: `You stand in a large, open area surrounded by yellow fields. Numerous trainers are here instructing and keeping close eye on those in the fields. Some prospects sit here, resting before going back in. Others look nervous.`,
+		desc: `You stand in a large, open area surrounded by yellow fields. Numerous trainers are here instructing and keeping close eye on those in the fields. Some prospects sit here, resting before going back in; others look nervous.`,
 		zoneExitsBool: {
 			north: true,
 			east: 'blocked',
@@ -23831,7 +24238,7 @@ let fields5 = new AreaMaker(
 		areaNameClass: 'training-fields',
 		areaName: `Amidst A Small Glade In The Middle Of The Fields`,
 		zoneType: 'galvadia_training_fields',
-		desc: `As you step farther into the field, you cross into a small glade of sorts. A tree in the middle provides shade for anyone in need of a rest. Flowers cover the ground here, as it's the only area around that's too overgrown to blossom. You see something shiny next to the tree among the roots.`,
+		desc: `As you step farther into the field, you cross into a small glade of sorts. A tree in the middle provides shade for anyone in need of a rest. Flowers cover the ground here, as it's the only area around that's not too overgrown to blossom. You see something shiny next to the tree among the roots.`,
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
@@ -24630,7 +25037,7 @@ let trainingHallsCommonRoom = new AreaMaker( //change name
 		areaNameClass: 'training-halls',
 		areaName: `Training Hall Common Room`, //change area name
 		zoneType: 'galvadia_training_halls_common_room',
-		desc: `You find yourself in the large, crowded common area of the Training Halls. The room is full of new trainees, some preparing for to test themselves and others taking a break from their training. You hear sounds of clashing metal and magic casting beyond the door to the north. Standing near the door is the Training Commander in charge of directing and testing trainees. `, //`CENTRAL TRAINING ROOM - new recruits practicing their stances and strikes. A burly guard stands at the western door`, //change area desc
+		desc: `You find yourself in the large, crowded common area of the Training Halls. The room is full of new trainees, some preparing for to test themselves and others taking a break from their training. You hear sounds of clashing metal and magic casting beyond the door to the north. Standing near the door is the Training Commander in charge of directing the students. `, //`CENTRAL TRAINING ROOM - new recruits practicing their stances and strikes. A burly guard stands at the western door`, //change area desc
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -32227,7 +32634,7 @@ let galvadiaShop2 = new AreaMaker(
 let galvadiaTownSquare = new AreaMaker(
 	0,
 	false,
-	[villagerRissah, deylani, timtim, sally, travellingWagon, strayCat, kasia, arnoldo],
+	[villagerRissah, deylani, timtim, sally, travellingWagon, strayCat, kasia],
 	false,
 	areaIdGenerator(),
 	-10,
@@ -38023,7 +38430,43 @@ function tempestFunction(secondCommand, thirdCommand) {
 	// initiateAbilityCooldown(ability)
 	updateScroll()
 }
-function callOfWindFunction(secondCommand, thirdCommand) {
+function callOfWindFunctionRanged(secondCommand, thirdCommand) {
+	let ability = player.callOfWind
+	let abilityName = ability.refName
+	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
+	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
+	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
+	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
+	if (doesPlayerHaveAbility(player[abilityName])) {return}
+	if (abilityWeaponsCheck(ability, weapon1, weapon2)) {return}
+	if (abilityResourceCheck(player[abilityName])) {return}
+	if (abilityCooldownCheck(player[abilityName])) {return}
+	// if (abilityCombatCheck()) {return}
+	let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
+	if (player.combat) {
+		let line1 = lineFunc()
+		customizeEachWord(`You cannot use this ability while engaged with an enemy.`, 'white', line1)
+		return
+	}
+	let hitChance = playerAbilityHitChance(targetEnemy)
+	if (hitChance == false) {
+		//miss text needs to be for throwing out call of wind
+		ability.flavorTextMissRanged(targetEnemy, weaponUsed)
+	} else if (hitChance == true) {
+		let baseDamage = player[abilityName].damageRanged(targetEnemy)
+		let penetrationType = 'wind'
+		let damageAfterResist = calculateMagicDamageWithResist(baseDamage, targetEnemy.windResist)
+		let damageResisted = baseDamage - damageAfterResist
+		ability.flavorTextRanged(targetEnemy, damageAfterResist, penetrationType, damageResisted)
+		applyDamageToEnemy(targetEnemy, damageAfterResist)
+		applyDebuff(targetEnemy, ability.debuff)
+	}
+	resourceConsumed(ability)
+	ability.cooldown = ability.cooldownSet
+	initiateAbilityCooldown(ability)
+	updateScroll()
+}
+function callOfWindFunctionCombat(secondCommand, thirdCommand) {
 	let ability = player.callOfWind
 	let abilityName = ability.refName
 	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
@@ -38037,10 +38480,18 @@ function callOfWindFunction(secondCommand, thirdCommand) {
 	// if (abilityCombatCheck()) {return}
 	let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
 	let targetEnemyWithDebuff = getAllEnemiesInRoom().find(enemy => enemy?.debuffs?.['callOfWind'])
+	if (!targetEnemyWithDebuff) {
+		let line1 = lineFunc()
+		customizeEachWord(`You can only use this ability against an enemy affected with `, 'white', line1)
+		customizeEachWord(`Call Of Wind`, ability.color, line1)
+		customizeEachWord(`.`, 'white', line1)
+		return
+	}
 	if (targetEnemyWithDebuff) {
 		let hitChance = playerAbilityHitChance(targetEnemyWithDebuff)
 		if (hitChance == false) {
-			//miss text needs to be for missing the in-combat ability
+			player.combat = true
+			targetEnemyWithDebuff.combat = true
 			ability.flavorTextMissCombat(targetEnemyWithDebuff, weaponUsed)
 		} else if (hitChance == true) {
 			player.combat = true
@@ -38055,24 +38506,9 @@ function callOfWindFunction(secondCommand, thirdCommand) {
 			removeDebuff(targetEnemy, ability.debuff)
 		}
 		resourceConsumed(ability)
-	} else {
-		let hitChance = playerAbilityHitChance(targetEnemy)
-		if (hitChance == false) {
-			//miss text needs to be for throwing out call of wind
-			ability.flavorTextMissRanged(targetEnemy, weaponUsed)
-		} else if (hitChance == true) {
-			let baseDamage = player[abilityName].damageRanged(targetEnemy)
-			let penetrationType = 'wind'
-			let damageAfterResist = calculateMagicDamageWithResist(baseDamage, targetEnemy.windResist)
-			let damageResisted = baseDamage - damageAfterResist
-			ability.flavorTextRanged(targetEnemy, damageAfterResist, penetrationType, damageResisted)
-			applyDamageToEnemy(targetEnemy, damageAfterResist)
-			applyDebuff(targetEnemy, ability.debuff)
-		}
-		resourceConsumed(ability)
-	}
-	// ability.cooldown = ability.cooldownSet
-	// initiateAbilityCooldown(ability)
+	} 
+	ability.cooldown = ability.cooldownSet
+	initiateAbilityCooldown(ability)
 	updateScroll()
 }
 function knuckleBlitzFunction(secondCommand, thirdCommand) {
@@ -38247,7 +38683,6 @@ function unleashedPowerFunction(secondCommand, thirdCommand) {
 		}
 	}
 	numberOfTargets = numberOfTargets > targetEnemies.length ? targetEnemies.length : numberOfTargets
-	quickMessage(`${numberOfTargets}`)
 	for (let i = 0; i < numberOfTargets; i++) {
 		let hitChance = playerAbilityHitChance(targetEnemies[i])
 		if (hitChance == false) {
@@ -39665,7 +40100,6 @@ function applyWeaponEnchant(weaponOrWeapons, enchantment) {
 		clearTimeout(weaponOrWeapons[1].enchantment[enchantmentName].timeout)
 		quickMessage(`Timeout is set just below`)
 		weaponOrWeapons[1].enchantment[enchantmentName].timeout = setTimeout(() => {
-			quickMessage(`Weapon 2 enchant should wear off here`)
 			clearTimeout(weaponOrWeapons[1].enchantment[enchantmentName].timeout)
 			delete weaponOrWeapons[1].enchantment[enchantmentName]
 			let line1 = lineFunc()
@@ -39673,7 +40107,6 @@ function applyWeaponEnchant(weaponOrWeapons, enchantment) {
 			customizeEachWord(`has worn off`, 'white', line1)		
 		}, duration)
 	} else {
-		quickMessage(`single weapon`)
 		let previousStacks = weaponOrWeapons?.enchantment[enchantmentName]?.stacks
 		weaponOrWeapons.enchantment[enchantmentName] = enchantmentToApply
 		if (previousStacks > weaponOrWeapons.enchantment[enchantmentName].stacks) {
@@ -39957,8 +40390,11 @@ function spellFunction(spell) {
 	if (checkIfDuplicateSpell(spell)) {
 		handleSpellChannel(spell)
 	} else {
-		handleSpellConjure(spell)
+		if (abilityResourceCheck(spell)) {return}
+			resourceConsumed(spell)
+			handleSpellConjure(spell)
 	}
+	updatePlayerStats()
 }
 
 function fireFunction() {
@@ -40317,10 +40753,13 @@ function initiateCastBar(spell) {
 	const castBar3Array = Array.from(castBar3.classList)
 	if (castBar1Array.some(item => item == spell.refName)) {
 		castBarToUse = castBar1
+		// castBarToUse.classList.remove('bar-1-full')
 	} else if (castBar2Array.some(item => item == spell.refName)) {
 		castBarToUse = castBar2
+		// castBarToUse.classList.remove('bar-2-full')
 	} else {
 		castBarToUse = castBar3
+		// castBarToUse.classList.remove('bar-3-full')
 	}
 	console.log(castBarToUse)
 	// const castingBar = document.querySelector('.bar-1')
@@ -42005,6 +42444,7 @@ function honedLongbow(monsterLevel) { //tier 4
 		},
 		roomId: currentArea.id,
 		name: 'Honed Longbow',
+		picture: 'images/weapons/bows/honed longbow/honed longbow.png',
 		color: 'green',
 		keywords: ['honed', 'longbow', 'honed lonbow'],
 		botDamage: randomNumberRange(9, 9),
@@ -42565,13 +43005,11 @@ function crescentDagger(monsterLevel) { //tier 4
 		botDamage: randomNumberRange(5, 5),
 		topDamage: randomNumberRange(7, 7),
 		mods: {
-			str: 0,
-			con: 0,
-			int: 0,
-			slashingPen: 1,
-			piercingPen: 1,
-			bluntPen: 0,
-			weight: 1,
+			agi: 5,
+			dex: 5,
+			slashingPen: 10,
+			piercingPen: 10,
+			weight: 5,
 		},
 		type: {
 			weapon: true,
@@ -43047,7 +43485,6 @@ function serratedAxe(monsterLevel) { //tier 4
 		},
 		roomId: currentArea.id,
 		name: 'Serrated Axe',
-		picture: 'images/weapons/one handed axes/serrated axe/serrated axe.png',
 		color: 'green',
 		keywords: ['serrated', 'axe', 'serrated axe'],
 		botDamage: randomNumberRange(7, 7),
@@ -43132,7 +43569,10 @@ function mace(monsterLevel) { //tier 2
 		},
 		roomId: currentArea.id,
 		name: 'Mace',
-		picture: 'images/weapons/one handed maces/mace/mace.png',
+		picture: {
+			left: 'images/weapons/one handed maces/mace/mace left.png',
+			right: 'images/weapons/one handed maces/mace/mace right.png'
+		},		
 		color: 'green',
 		keywords: ['mace'],
 		botDamage: randomNumberRange(4, 4),
@@ -43173,7 +43613,10 @@ function stoutedMace(monsterLevel) { //tier 3
 		},
 		roomId: currentArea.id,
 		name: 'Stouted Mace',
-		picture: 'images/weapons/one handed maces/stouted mace/stouted mace.png',
+		picture: {
+			left: 'images/weapons/one handed maces/stouted mace/stouted mace left.png',
+			right: 'images/weapons/one handed maces/stouted mace/stouted mace right.png'
+		},
 		color: 'green',
 		keywords: ['stouted', 'mace', 'stouted mace'],
 		botDamage: randomNumberRange(5, 5),
@@ -43479,6 +43922,7 @@ function sledgehammer(monsterLevel) { //tier 2
 		},
 		roomId: currentArea.id,
 		name: 'Sledgehammer',
+		picture: 'images/weapons/two handed maces/sledgehammer/sledgehammer.png',
 		color: 'green',
 		keywords: ['sledgehammer'],
 		botDamage: randomNumberRange(4, 4),
@@ -43561,6 +44005,7 @@ function beardedPoleAxe(monsterLevel) { //tier 3
 		},
 		roomId: currentArea.id,
 		name: 'Bearded Poleaxe',
+		picture: "images/weapons/two handed maces/maul/maul.png",
 		color: 'green',
 		keywords: ['bearded', 'poleaxe', 'bearded poleaxe'],
 		botDamage: randomNumberRange(8, 8),
@@ -43600,6 +44045,7 @@ function maul(monsterLevel) { //tier 3
 		},
 		roomId: currentArea.id,
 		name: 'Maul',
+		picture: 'images/weapons/two handed maces/maul/maul.png',
 		color: 'green',
 		keywords: ['maul'],
 		botDamage: randomNumberRange(8, 8),
@@ -43668,6 +44114,47 @@ function bastardSword(monsterLevel) { //tier 4
 		miss: (enemy, weapon) => twoHandedSwing1(enemy, weapon),
 		}
 	return bastardSword
+}
+function berserkBlade(monsterLevel) { //tier 4
+	let berserkBlade = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Berserk Blade',
+		picture: "images/weapons/two handed swords/berserk blade/berserk blade.png",
+		color: 'green',
+		keywords: ['berserk', 'blade', 'berserk blade'],
+		botDamage: randomNumberRange(12, 12),
+		topDamage: randomNumberRange(15, 15),
+		mods: {
+			slashingPen: 10,
+			piercingPen: 10,
+			weight: 15,
+		},
+		type: {
+			skillUsed: 'Two Handed',
+			damageType: `Slashing/piercing`,
+			weapon: true,
+			twoHanded: true,
+			sword: true,
+		},
+		enchantment: [],
+		skillUsed: 'twoHanded',
+		price: 1450,
+		sellValue: 124,
+		description: `This sword is a Warrior's Guild heirloom that is passed down only to those who have proven themselves to be fearless in the face of death.`,
+		desc: function () {
+			itemDescription(this)
+		},
+		swing: (enemy, weapon) => twoHandedSwing1(enemy, weapon),
+		miss: (enemy, weapon) => twoHandedSwing1(enemy, weapon),
+		}
+	return berserkBlade
 }
 function serratedPoleaxe(monsterLevel) { //tier 4
 	let serratedPoleaxe = {
@@ -46915,7 +47402,9 @@ function contagionEnemyDies(enemy) {
 }
 
 function applyThrillOfTheKill() {
-	player.thrillOfTheKill.activate()
+	if (player.thrillOfTheKill.level > 0) {
+		player.thrillOfTheKill.activate()
+	}
 }
  
  
@@ -47257,12 +47746,8 @@ function rat(area) {
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
 		gold: function () {
-			const goldAmount = {
-				probability1: 0,
-				probability2: 1,
-				probability3: 2
-			}
-			return enemyGoldDrops(goldAmount)
+			let goldAmount = randomNumberRange(2, 8)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [ratTail]
@@ -47467,7 +47952,7 @@ function mudling(area) {
 		damageCalculation: function() {
 			return randomNumberRange(3, 4)
 		},
-		gold: function () {
+		gold: function() {
 			return randomNumberRange(5, 8)
 		},
 		itemDropsRoll: function () {
@@ -48849,10 +49334,8 @@ function skeleton(area) {
 		},
 		itemDrops: [],
 		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(20, 35),
-			}
-			return enemyGoldDrops(goldAmount)
+			let goldAmount = randomNumberRange(20, 35)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [smallBone, largeBone, crackedBone]
@@ -49407,10 +49890,8 @@ function wildBoar(area) {
 		},
 		itemDrops: [],
 		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(20, 40),
-			}
-			return enemyGoldDrops(goldAmount)
+			let goldAmount = randomNumberRange(20, 40)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [rawBoarMeat, lightHide]
@@ -49549,10 +50030,8 @@ function stag(area) {
 			return randomNumberRange(8, 16)
 		},
 		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(20, 40),
-			}
-			return enemyGoldDrops(goldAmount)
+			let goldAmount = randomNumberRange(20, 40)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [brokenAntlers, lightHide, stagAntlers]
@@ -49687,7 +50166,7 @@ function impling(area) {
 		itemDrops: [],
 		gold: function () {
 			let goldAmount = randomNumberRange(35, 65)
-			return enemyGoldDrops(goldAmount)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [clothCap, silkFootwraps]
@@ -49993,7 +50472,7 @@ function koboldChild(area) {
 		itemDrops: [],
 		gold: function () {
 			let goldAmount = randomNumberRange(20, 50)
-			return enemyGoldDrops(goldAmount)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [littleBoneToy, dirtyRags, halfEatenFish, lightHide]
@@ -50131,7 +50610,7 @@ function koboldScoundrel(area) {
 		},
 		gold: function () {
 			let goldAmount = randomNumberRange(35, 80)
-			return enemyGoldDrops(goldAmount)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [rustySword, leatherGrips, dirtyRags, halfEatenFish, ironOre, lightHide]
@@ -50266,7 +50745,7 @@ function koboldSpearthrower(area) {
 		},
 		gold: function () {
 			let goldAmount = randomNumberRange(35, 80)
-			return enemyGoldDrops(goldAmount)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [boneTippedSpear, dirtyRags, halfEatenFish, copperOre, lightHide]
@@ -50435,7 +50914,7 @@ function koboldArcher(area) {
 		itemDrops: [],
 		gold: function () {
 			let goldAmount = randomNumberRange(35, 80)
-			return enemyGoldDrops(goldAmount)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [crudelyCarvedBow, crudeShiv, dirtyRags, halfEatenFish, koboldToothNecklace, copperOre]
@@ -50594,7 +51073,7 @@ function koboldDigger(area) {
 		itemDrops: [],
 		gold: function () {
 			let goldAmount = randomNumberRange(35, 80)
-			return enemyGoldDrops(goldAmount)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [dirtyRags, halfEatenFish, copperOre, pickaxe]
@@ -50754,10 +51233,8 @@ function koboldChief(area) {
 		},
 		itemDrops: [],
 		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(100, 200),
-			}
-			return enemyGoldDrops(goldAmount)
+			let goldAmount = randomNumberRange(100, 200)
+			return goldAmount		
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [ratHideTunic, ratHidePants, ratSkullHelm, copperOre, halfEatenFish, lightHide]
@@ -50937,10 +51414,8 @@ function outlaw(area) {
 		experience: () => Math.floor((this.health / 2) - player.level < 0 ? 0 : (this.health / 2) - player.level),
 		itemDrops: [],
 		gold: function () {
-			const goldAmount = {
-				probability1: randomNumberRange(19, 30),
-			}
-			return enemyGoldDrops(goldAmount)
+			let goldAmount = randomNumberRange(20, 40)
+			return goldAmount
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [crudeShiv, crudelyCarvedBow, shoulderguards, apple]
@@ -54634,6 +55109,8 @@ function colorText() {
 let preRace = {
 	maxHealth: 0,
 	maxMana: 0,
+	healthMultiplier: 0,
+	manaMultiplier: 0,
 	str: 0,
 	dex: 0,
 	agi: 0,
@@ -54668,7 +55145,9 @@ let preRace = {
 
 let preClass = {
 	maxHealth: 0,
+	healthMultiplier: 0,
 	maxMana: 0,
+	manaMultiplier: 0,
 	str: 0,
 	dex: 0,
 	agi: 0,
@@ -54707,15 +55186,11 @@ let playerBaseStats = {
 	maxMana: 0,
 	mana: 0,
 
-	classFlatHealthBonus: 0,
-	classHealthMultiplier: 0,
-	classFlatManaBonus: 0,
-	classManaMultiplier: 0,
+	healthMultiplier: 0,
+	manaMultiplier: 0,
 
-	raceFlatHealthBonus: 0,
 	raceHealthMultiplier: 0,
-	raceFlatManaBonus: 0,
-	raceManaMultiplier: 0,
+	manaMultiplier: 0,
 
 	str: 0,
 	con: 0,
@@ -54879,6 +55354,10 @@ function combineClassAndRaceValues() {
 	player.wis = preClass.wis + preRace.wis
 	player.mys = preClass.mys + preRace.mys
 	player.con = preClass.con + preRace.con
+
+	player.manaMultiplier = preClass.manaMultiplier + preRace.manaMultiplier
+	player.healthMultiplier = preClass.healthMultiplier + preRace.healthMultiplier
+
 	player.oneHanded.level = preClass.oneHanded + preRace.oneHanded
 	player.twoHanded.level = preClass.twoHanded + preRace.twoHanded
 	player.daggers.level = preClass.daggers + preRace.daggers
@@ -54985,10 +55464,8 @@ function startBerserker(event) {
 
 		player.playerClass = berserkerClass
 		player.guild = 'Warrior'
-		player.classFlatHealthBonus = 10
-		player.classHealthMultiplier = 3.0
-		player.classFlatManaBonus = 1.0
-		player.classManaMultiplier = 1.0
+		preClass.healthMultiplier = 3.0
+		preClass.manaMultiplier = 1.0
 		player.might = 5
 		player.maxMight = 5
 
@@ -55039,10 +55516,8 @@ function startFighter(event) {
 
 		player.playerClass = fighterClass
 		player.guild = 'Warrior'
-		player.classFlatHealthBonus = 10
-		player.classHealthMultiplier = 3.0
-		player.classFlatManaBonus = 1.0
-		player.classManaMultiplier = 1.0
+		preClass.healthMultiplier = 3.0
+		preClass.manaMultiplier = 1.0
 		player.might = 10
 		player.maxMight = 10
 
@@ -55096,10 +55571,8 @@ function startKnight(event) {
 		applyKnightClassDescription()
 		player.playerClass = knightClass
 		player.guild = 'Warrior'
-		player.classFlatHealthBonus = 10
-		player.classHealthMultiplier = 3.0
-		player.classFlatManaBonus = 1.0
-		player.classManaMultiplier = 1.0
+		preClass.healthMultiplier = 3.0
+		preClass.manaMultiplier = 1.0
 		player.might = 5
 		player.maxMight = 5
 
@@ -55154,10 +55627,8 @@ function startThief(event) {
 
 		player.playerClass = thiefClass
 		player.guild = 'Sinistral'
-		player.classFlatHealthBonus = 5
-		player.classHealthMultiplier = 1.5
-		player.classFlatManaBonus = 1
-		player.classManaMultiplier = 1.0
+		preClass.healthMultiplier = 1.5
+		preClass.manaMultiplier = 1.0
 
 		preClass.maxHealth = 5
 		preClass.maxMana = 5
@@ -55210,10 +55681,8 @@ function startAssassin(event) {
 
 		player.playerClass = assassinClass
 		player.guild = 'Sinistral'
-		player.classFlatHealthBonus = 5
-		player.classHealthMultiplier = 1.5
-		player.classFlatManaBonus = 1
-		player.classManaMultiplier = 1.0
+		preClass.healthMultiplier = 1.5
+		preClass.manaMultiplier = 1.0
 
 		preClass.maxHealth = 5
 		preClass.maxMana = 5
@@ -55266,12 +55735,10 @@ function startShadowblade(event) {
 
 		player.playerClass = shadowbladeClass
 		player.guild = 'Sinistral'
-		player.classFlatHealthBonus = 5
-		player.classHealthMultiplier = 1.5
-		player.classFlatManaBonus = 1
-		player.classManaMultiplier = 1.0
+		preClass.healthMultiplier = 1.5
+		preClass.manaMultiplier = 1.0
 
-		preClass.maxHealth = 4
+		preClass.maxHealth = 5
 		preClass.maxMana = 5
 
 		preClass.str = 1
@@ -55324,10 +55791,8 @@ function startMartialMonk(event) {
 
 		player.playerClass = martialMonkClass
 		player.guild = 'Monk'
-		player.classFlatHealthBonus = 10
-		player.classHealthMultiplier = 2.5
-		player.classFlatManaBonus = 2.0
-		player.classManaMultiplier = 1.3
+		preClass.healthMultiplier = 2.5
+		preClass.manaMultiplier = 1.0
 
 		preClass.maxHealth = 5
 		preClass.maxMana = 5
@@ -55379,10 +55844,8 @@ function startMysticMonk(event) {
 
 		player.playerClass = mysticMonkClass
 		player.guild = 'Monk'
-		player.classFlatHealthBonus = 10
-		player.classHealthMultiplier = 2.5
-		player.classFlatManaBonus = 2.0
-		player.classManaMultiplier = 1.3
+		preClass.healthMultiplier = 2.5
+		preClass.manaMultiplier = 1.0
 
 		preClass.maxHealth = 5
 		preClass.maxMana = 5
@@ -55434,10 +55897,8 @@ function startElementalMonk(event) {
 
 		player.playerClass = elementalMonkClass
 		player.guild = 'Monk'
-		player.classFlatHealthBonus = 10
-		player.classHealthMultiplier = 2.5
-		player.classFlatManaBonus = 2.0
-		player.classManaMultiplier = 1.3
+		preClass.healthMultiplier = 2.5
+		preClass.manaMultiplier = 1.0
 
 		preClass.maxHealth = 8
 		preClass.maxMana = 20
@@ -55489,10 +55950,8 @@ function startPyromancer(event) {
 		resourceBar.classList.add('pyromancer-resource-bar')
 		player.playerClass = pyromancerClass
 		player.guild = 'Mage'
-		player.classFlatHealthBonus = 0
-		player.classHealthMultiplier = 1.0
-		player.classFlatManaBonus = 3.0
-		player.classManaMultiplier = 3.0
+		preClass.healthMultiplier = 1.0
+		preClass.manaMultiplier = 2.0
 		preClass.maxHealth = 6
 		preClass.maxMana = 10
 
@@ -55542,10 +56001,8 @@ function startCryoMage(event) {
 		resourceBar.classList.add('cryo-mage-resource-bar')
 		player.playerClass = cryoMageClass
 		player.guild = 'Mage'
-		player.classFlatHealthBonus = 0
-		player.classHealthMultiplier = 1.0
-		player.classFlatManaBonus = 3.0
-		player.classManaMultiplier = 3.0
+		preClass.healthMultiplier = 1.0
+		preClass.manaMultiplier = 2.0
 		preClass.maxHealth = 6
 		preClass.maxMana = 10
 
@@ -55593,10 +56050,8 @@ function startLightningMagus(event) {
 		resourceBar.classList.add('lightning-magus-resource-bar')
 		player.playerClass = lightningMagusClass
 		player.guild = 'Mage'
-		player.classFlatHealthBonus = 0
-		player.classHealthMultiplier = 1.0
-		player.classFlatManaBonus = 3.0
-		player.classManaMultiplier = 3.0
+		preClass.healthMultiplier = 1.0
+		preClass.manaMultiplier = 2.0
 		preClass.maxHealth = 6
 		preClass.maxMana = 10
 
@@ -55646,10 +56101,8 @@ function startRanger(event) {
 
 		player.playerClass = rangerClass
 		player.guild = 'Ranger'
-		player.classFlatHealthBonus = 10
-		player.classHealthMultiplier = 2.0
-		player.classFlatManaBonus = 2.0
-		player.classManaMultiplier = 2.0
+		preClass.healthMultiplier = 2.0
+		preClass.manaMultiplier = 2.0
 
 		preClass.maxHealth = 4
 		preClass.maxMana = 10
@@ -55702,10 +56155,8 @@ function startHuman(event) {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Human'
 		player.race = 'Human'
-		preRace.raceFlatHealthBonus = 10
-		preRace.raceHealthMultiplier = 10.0
-		preRace.raceFlatManaBonus = 1
-		preRace.raceManaMultiplier = 1.0
+		preRace.healthMultiplier = 10.0
+		preRace.manaMultiplier = 0
 		preRace.maxHealth = 10
 		preRace.maxMana = 10
 
@@ -55730,10 +56181,8 @@ function startDwarf(event) {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Dwarf'
 		player.race = 'Dwarf'
-		preRace.raceFlatHealthBonus = 10
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 1.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 0
 		preRace.maxHealth = 10
 		preRace.maxMana = 5
 
@@ -55757,10 +56206,8 @@ function startElf(event) {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Elf'
 		player.race = 'Elf'
-		preRace.raceFlatHealthBonus = 10
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 1.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 0.5
 		preRace.maxHealth = 5
 		preRace.maxMana = 20
 
@@ -55783,10 +56230,8 @@ function startHalfElf(event) {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Half-Elf'
 		player.race = 'Half-Elf'
-		preRace.raceFlatHealthBonus = 10
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 1.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 1.0
 		preRace.maxHealth = 5
 		preRace.maxMana = 10
 
@@ -55810,10 +56255,8 @@ function startHalfMinotaur() {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Half-Minotaur'
 		player.race = 'Half-Minotaur'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 1.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 1.0
 		preRace.maxHealth = 5
 		preRace.maxMana = 1
 
@@ -55835,10 +56278,8 @@ function startTiefling() {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Human'
 		player.race = 'Tiefling'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 2.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 2.0
 
 		preRace.agi = 1
 		preRace.int = 1
@@ -55862,10 +56303,8 @@ function startCatline() {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Catline'
 		player.race = 'Catline'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 2.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 2.0
 
 		preRace.dex = 1
 		preRace.agi = 1
@@ -55889,17 +56328,15 @@ function startGnome() {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Gnome'
 		player.race = 'Gnome'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 2.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 2.0
 
 		preRace.int = 1
 		preRace.wis = 2
 		preRace.mys = 1
 
 		preRace.maxHealth = 5
-		preRace.maxMana = 20
+		preRace.maxMana = 10
 
 		applyGnomeRaceDescription()
 		combineClassAndRaceValues()
@@ -55916,10 +56353,8 @@ function startHalfling() {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Halfling'
 		player.race = 'Halfling'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 2.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 2.0
 
 		preRace.dex = 2
 		preRace.agi = 1
@@ -55942,10 +56377,8 @@ function startFaerie() {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Faerie'
 		player.race = 'Faerie'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 2.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 2.0
 
 		preRace.agi = 1
 		preRace.int = 1
@@ -55970,10 +56403,8 @@ function startDragonKin() {
 		let playerRace = document.getElementById('race')
 		playerRace.textContent = 'Dragonkin'
 		player.race = 'Dragonkin'
-		preRace.raceFlatHealthBonus = 2
-		preRace.raceHealthMultiplier = 1.0
-		preRace.raceFlatManaBonus = 10
-		preRace.raceManaMultiplier = 2.0
+		preRace.healthMultiplier = 1.0
+		preRace.manaMultiplier = 2.0
 
 		preRace.str = 1
 		preRace.dex = 1
@@ -56178,7 +56609,7 @@ function displayClassSelection() {
 
 	const confirmationMainDiv = document.createElement('div')
 	const confirmationMainNode = document.createTextNode(
-		'Select your class and race by clicking on the buttons on the left side. You can only select one class and one race. Your class is very important and will determine the majority of your gameplay. Class dictates which guild you can join as well as your secondary class paths. Your race is less impactful to your stats and gameplay, however, it can supplement your class based on the stats and extra abilities your race provides. Make sure to choose your class and race wisely as you will not be able to change it.'
+		'Select your class and race by clicking on the portrait. Your class will dictate which guild you join, and each class has their own unique sets of combat abilities. Your race is supplemental to your class, providing you with minor starting skills and small stat boosts.'
 	)
 	confirmationMainDiv.classList.add('character-confirmation')
 	confirmationMainDiv.appendChild(confirmationMainNode)
@@ -56649,7 +57080,7 @@ function displayRaceDetails() {
 	raceDetailsContainer.appendChild(raceDescriptionContainer)
 	raceDetailsContainer.appendChild(raceStartingStuffContainer)
 }
-const warriorsGuildDescription = `The classes of the Warrior's Guild include Berserkers, Fighters, and Knights. They each prefer their own weapon types, but share the affinity to wear mail and plate armor, and will also make use of leather armor when need be. Warriors thrive in combat, eventually able to stay in combat with multiple enemies for extended periods of time. Because of this, and their lack of cowardice, they take longer to recover from retreating.`
+const warriorsGuildDescription = `The classes of the Warrior's Guild include Berserkers, Fighters, and Knights. They each prefer their own weapon types, but share the affinity to wear mail and plate armor, and will also make use of leather armor if need be. Warriors thrive in combat, eventually able to stay in combat with multiple enemies for extended periods of time. Because of this, and their lack of cowardice, they take longer to recover from retreating.`
 const sinistralsGuildDescription = `Sinistrals include Asssassins, Thieves, and Shadowblades. All three use daggers as their weapon of choice, and prefer wearing leather armor.`
 const monksGuildDescription = `The Monk's Guild consists of Martial Monks, Mystic Monks, and Elemental Monks. They all prefer using their fists as their weapon of choice. Monk's specialize in fast, multiple strikes. The classes vary in their armor preference, but most choose leather with some exceptions to wear cloth if it enhances their Mysticism. Monk's are very well rounded with their abilities allowing them to be quick, tough, strong, and even able to heal themselves.`
 const magesGuildDescription = `Mages include Pyromancers, Cryo Mages, and the Lightning Magus. They each have powerful spells that affect both single and multiple targets. The only problem they face is dealing with elemental resistant enemies, but that can be dealt with by spell penetration. Early on, Mages might wear some leather for the armor value, but eventually move on to only wearing cloth armor to enhance their spell casting.`
@@ -58097,6 +58528,9 @@ function playerAbility1ShiftAndALt() {
 }
 function playerAbility2Shift() {
 	switch (player.playerClass.name) {
+		case 'Martial Monk':
+			callOfWindFunctionCombat()
+			break;
 		default:
 		quickMessage(`Nothing yet`)
 		break;
@@ -58191,7 +58625,7 @@ function playerAbility2() {
 			shadowDaggersFunction()
 			break;
 		case 'Martial Monk':
-			callOfWindFunction()
+			callOfWindFunctionRanged()
 			break;
 		case 'Mystic Monk':
 			mysticFistFunction()
@@ -58513,11 +58947,26 @@ function gameStart() {
 	weaponGen(trainingDagger())
 	weaponGen(trainingDagger())
 	weaponGen(trainingShield())
-	armorGen(muddyGloves())
-	// foodGen(rawBoarMeat())
-	// foodGen(rawBoarMeat())
-	// foodGen(boarSteak())
-	// foodGen(boarSteak())
+	weaponGen(stoutedMace())
+	weaponGen(stoutedMace())
+	weaponGen(mace())
+	weaponGen(mace())
+	weaponGen(gladius())
+	weaponGen(gladius())
+	weaponGen(crescentDagger())
+	weaponGen(crescentDagger())
+	weaponGen(fighterFists())
+	weaponGen(honedLongbow())
+	weaponGen(maul())
+	weaponGen(sledgehammer())
+	weaponGen(honedLongbow())
+	weaponGen(honedLongbow())
+	weaponGen(honedLongbow())
+	weaponGen(honedLongbow())
+	weaponGen(honedLongbow())
+	weaponGen(honedLongbow())
+	weaponGen(honedLongbow())
+	weaponGen(berserkBlade())
 	// questItemGen(copperOre())
 	// questItemGen(copperOre())
 	// questItemGen(copperOre())
@@ -58558,25 +59007,25 @@ function gameStart() {
 	pushItem[7].roomId = 'backpack'
 	pushItem[8].roomId = 'backpack'
 	pushItem[9].roomId = 'backpack'
-	// pushItem[10].roomId = 'backpack'
-	// pushItem[11].roomId = 'backpack'
-	// pushItem[12].roomId = 'backpack'
-	// pushItem[13].roomId = 'backpack'
-	// pushItem[14].roomId = 'backpack'
-	// pushItem[15].roomId = 'backpack'
-	// pushItem[16].roomId = 'backpack'
-	// pushItem[17].roomId = 'backpack'
-	// pushItem[18].roomId = 'backpack'
-	// pushItem[19].roomId = 'backpack'
-	// pushItem[20].roomId = 'backpack'
-	// pushItem[21].roomId = 'backpack'
-	// pushItem[22].roomId = 'backpack'
-	// pushItem[23].roomId = 'backpack'
-	// pushItem[24].roomId = 'backpack'
-	// pushItem[25].roomId = 'backpack'
-	// pushItem[26].roomId = 'backpack'
-	// pushItem[27].roomId = 'backpack'
-	// pushItem[28].roomId = 'backpack'
+	pushItem[10].roomId = 'backpack'
+	pushItem[11].roomId = 'backpack'
+	pushItem[12].roomId = 'backpack'
+	pushItem[13].roomId = 'backpack'
+	pushItem[14].roomId = 'backpack'
+	pushItem[15].roomId = 'backpack'
+	pushItem[16].roomId = 'backpack'
+	pushItem[17].roomId = 'backpack'
+	pushItem[18].roomId = 'backpack'
+	pushItem[19].roomId = 'backpack'
+	pushItem[20].roomId = 'backpack'
+	pushItem[21].roomId = 'backpack'
+	pushItem[22].roomId = 'backpack'
+	pushItem[23].roomId = 'backpack'
+	pushItem[24].roomId = 'backpack'
+	pushItem[25].roomId = 'backpack'
+	pushItem[26].roomId = 'backpack'
+	pushItem[27].roomId = 'backpack'
+	pushItem[28].roomId = 'backpack'
 	// pushItem[29].roomId = 'backpack'
 	// pushItem[30].roomId = 'backpack'
 	// pushItem[31].roomId = 'backpack'
@@ -58612,6 +59061,6 @@ function gameStart() {
 	updateScroll()
 	updatePlayerStats()
 	// player.gold = 1000
-	recall('0', '0', '-2')
+	recall()
 }
 gameStart()

@@ -636,7 +636,7 @@ body {
 }
 #masterArea {
 	display: flex;
-	background-image: url("images/background.png") !important;
+	/* background-image: url("images/background.png") !important; */
 
 	flex-direction: column;
 	white-space: pre-line;
