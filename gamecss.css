@@ -45,11 +45,14 @@ p {
 .mage-color {
 	color: rgb(162, 0, 162);
 }
-.ice-mage-color {
+.cryo-mage-color {
 	color: rgb(69, 112, 255);
 }
-.lightning-mage-color {
-	color: rgb(69, 112, 255);
+.lightning-magus-color {
+	color: rgb(255, 178, 69);
+}
+.pyromancer-color {
+	color: rgb(238, 58, 13);
 }
 .sinistral-color {
 	color: rgb(181, 181, 18);
@@ -789,14 +792,17 @@ body {
 .shop-column-1 {
 	display: flex;
 	width: 4em;
+	margin: 0 6px 0 6px;
 }
 .shop-column-2 {
 	display: flex;
 	width: 9em;
+	margin: 0 6px 0 6px;
 }
 .shop-column-3 {
 	display: flex;
 	width: 6em;
+	margin: 0 6px 0 6px;
 }
 
 .shop-heading {
@@ -1744,6 +1750,7 @@ body {
 
 .bottom-master-container {
 	display: flex;
+	flex-direction: column;
 	/* border: 2px solid blue; */
 	width: 1284px;
   }
@@ -1767,7 +1774,7 @@ body {
 }
   .bottom-content-container {
 	display: flex;
-	margin: 1.6em 1.6em 3em 1.6em;
+	margin: 1.6em 1.6em 0em 1.6em;
 	flex-grow: 1;
 	border: 3px ridge white;
   }
@@ -1877,7 +1884,7 @@ body {
   }
   .bars-and-buffs-container {
 	  display: flex;
-	  width: 246px;
+	  width: 190px;
 	  flex-direction: column;
 	  border: 2px ridge white;
   }
@@ -1928,7 +1935,7 @@ body {
 }
   .buffs-container {
 	  display: flex;
-	  width: 150px;
+	  width: 102px;
 	  flex-direction: column;
 	  border: 2px ridge white;
   }
@@ -2038,6 +2045,21 @@ body {
 	height: 100%;
 	width: 100%;
 }
+.health-text {
+	position: absolute;
+	font-weight: 900;
+	left: 50%;
+	transform: translate(-50%)
+}
+.magic-shield-bar {
+	position: absolute; /* Position the magic shield absolutely within the container */
+	font-weight: 900;
+	top: 0;
+	left: 0;
+	height: 100%; /* Set height to fill the container */
+	width: 20%; /* Initially hide the magic shield */
+	background-color: rgba(255, 255, 255, 0.5);
+}
 .mana-bar {
 	background-color: rgba(0, 72, 255, 0.574);
 	height: 100%;
@@ -2048,12 +2070,7 @@ body {
 	width: 100%; */
 }
 
-.health-text {
-	position: absolute;
-	font-weight: 900;
-	left: 50%;
-	transform: translate(-50%)
-}
+
 .mana-text {
 	position: absolute;
 	font-weight: 900;
@@ -2161,11 +2178,9 @@ body {
 	display: flex;
 	justify-content: center;
   }
-  .fire {
-	color: rgb(246, 71, 23);
-}
+
 .fire-conjure {
-	background-color: rgb(246, 71, 23)
+	background-color: rgb(246, 71, 23);
 }
 .ice-conjure {
 	background-color: rgb(46, 126, 255);
@@ -2173,14 +2188,20 @@ body {
 .lightning-conjure {
 	background-color: rgb(255, 229, 112);
 }
+.heal-conjure {
+	background-color: rgb(0, 255, 0);
+}
+.fire {
+	color: rgb(246, 71, 23);
+}
 .water {
 	color: blue;
 }
 .earth {
-	color: rgb(188, 113, 0)
+	color: rgb(188, 113, 0);
 }
 .wind {
-	color: rgb(136, 255, 136)
+	color: rgb(136, 255, 136);
 }
 .ice {
 	color: rgb(46, 126, 255);
@@ -2190,6 +2211,10 @@ body {
 }
 .shadow {
 	color: rgb(111, 0, 154);
+}
+
+.heal {
+	color: rgb(0, 255, 0);
 }
 .start-description,
 .race-description {
@@ -2394,3 +2419,22 @@ body {
 	background: rgb(255, 255, 172)
 }
 
+.exp-bar-container {
+	width: 1234px;
+	height: 19px;
+	margin-left: 1.6em;
+	border: 3px ridge white;
+}
+.exp-bar {
+	background-color: white;
+	height: 19px;
+	width: 50%;
+}
+
+.defensive-spell {
+	background: rgb(169, 236, 255)
+}
+
+.restorative-spell {
+	background: rgb(88, 255, 149);
+}
