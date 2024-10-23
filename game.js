@@ -1,8 +1,765 @@
-/*	NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES NOTES 
-1. Update UI to flexbox
-2. Have energy and mana for special attacks?
-3. Make a visual inventory on the right side and allow unpacking slot numbers like "unpack 1" or "unpack 2"
-*/
+// You stand in a large, open area surrounded by yellow fields. Numberous teachers are here instructing students and keeping an eye on the ones fighting in the fields.
+// Some prospects sit here resting before going back in while others look nervously at the fields.
+
+// The wide path into the fields is blotted with water, mud, and shreds of grass. A few prospects are hiding here, just around the corner and out of sight of monsters.
+
+// By The Cliffside -> Along The Cliffside -> At The End Of The Cliffside
+
+// By The Cliffside
+// The forest glade, high on the cliffside to the east, casts a shadow over the eastern edge of the field. To climb the cliff
+// would be impossible, unless of course you were athletic enough.
+
+// Along The Cliffside
+// The cracked rockface of the cliff has dotted the ground near the base with small boulders and piles of stone. Behind
+// the stone you can barely make out what looks
+
+///////////NPC AI MOVEMENT AREAS
+let allWeaponSkillMultipliers = 0.15
+let allWeaponSkillIncrements = 20
+let allNpcsArray = []
+
+let slugHost = {
+	glooper: {
+	},
+	wormburner: {
+	},
+	adam: {
+	},
+	sloppy: {
+	},
+	scoopy: {
+	},
+	scampy: {
+	},
+}
+
+let rouletteHost = {
+	number: null,
+	oddOrEven: null,
+	playerBetAmount: null,
+	winningAmount: null
+}
+function waitFunction(ms) {
+return new Promise(resolve => {
+	setTimeout(resolve, ms);
+});
+}
+
+function shuffleArray(array) {
+for (let i = array.length - 1; i > 0; i--) {
+	// Generate a random index from 0 to i
+	const j = Math.floor(Math.random() * (i + 1));
+	// Swap the elements at indices i and j
+	[array[i], array[j]] = [array[j], array[i]];
+}
+return array;
+}
+const slugs = ["glooper", "wormburner", "adam", "sloppy", "scoopy", "scampy"]
+
+////////////GLOBALS AND SUPPORT FUNCTIONS ABOVE
+//Slug racing
+function playerLoseGold(amount) {
+	player.gold -= amount
+}
+function playerGainGold(amount) {
+	player.gold += amount
+}
+function playerGainGoldWithMessage(goldGained) {
+	let line1 = lineFunc()
+	player.gold += goldGained
+	customizeEachWord(`You receive `, 'white', line1)
+	customizeEachWord(`${goldGained} `, 'yellow', line1)
+	customizeEachWord(`gold.`, 'white', line1)
+}
+function playerLoseGoldWithMessage(amount) {
+	player.gold -= amount
+}
+
+async function initiateSnailRace(amount, secondCommand) {
+	//slughost adds playerBet and playerSlug properties
+	//playerBet is the amount of gold bet. Storing this for calculating prize money
+	//playerSlug is self explanatory
+	await dialogueWait(200)
+	betHandler(amount, secondCommand)
+	await dialogueWait(4000)
+	slugRaceDialogue1()
+	await dialogueWait(1000)
+	slugRaceDialogue2()
+	await dialogueWait(1000)
+	slugRaceDialogue3()
+	await dialogueWait(1000)
+	slugRaceDialogue4()
+	await dialogueWait(1000)
+	slugRaceDialogue5()
+	slugRacingBetHandler()
+}
+
+async function snailRacingHandler(amount, secondCommand) {
+	let minPlayerGold = 100
+	let maxBet = 100
+	let minBet = 1
+	if (!isBetValid(amount, secondCommand, minBet, maxBet, minPlayerGold, 'Snail Racing')) {return}
+	playerLoseGold(amount)
+	let validCommands = ['glooper', 'wormburner', 'adam', 'sloppy', 'scoopy', 'scampy'] //put the list of snail names in the array
+	if (!validCommands.includes(secondCommand)) {
+		console.log(secondCommand)
+		quickMessage(`${secondCommand} is not a snail you can bet on.`)
+		return
+	} else {
+		let line1 = lineFunc()
+		let gameMasterDialogue = ''
+		await dialogueWait(200)
+		blankSpace()
+		customizeEachWord(`Game Master`, 'gameMaster', line1)
+		customizeEachWord(`: ${gameMasterDialogue}`, 'white', line1)
+		if (secondCommand == 'glooper') {
+			customizeEachWord(`"${player.name} bets `, 'white', line1)
+			customizeEachWord(`${amount} `, 'yellow', line1)
+			customizeEachWord(`on Glooper, a tride and true pick! One of the oldest yet slimy with experience snails in the race!"`, 'white', line1)
+		}
+		else if (secondCommand == 'wormburner') {
+			customizeEachWord(`"${player.name} bets `, 'white', line1)
+			customizeEachWord(`${amount} `, 'yellow', line1)
+			customizeEachWord(`on the beast slayer himself, Wormburner!"`, 'white', line1)
+		}
+		else if (secondCommand == 'adam') {
+			customizeEachWord(`"${player.name} bets `, 'white', line1)
+			customizeEachWord(`${amount} `, 'yellow', line1)
+			customizeEachWord(`on Adam! He might just be the most depressed snail we've ever seen, but don't let that fool you! About every 6th race he fights back with a hateful vengence!"`, 'white', line1)
+		}
+		else if (secondCommand == 'sloppy') {
+			customizeEachWord(`"${player.name} bets `, 'white', line1)
+			customizeEachWord(`${amount} `, 'yellow', line1)
+			customizeEachWord(`on Sloppy! Sloppy is one hell of a slopper. He'll slop all the other snails and then slop his way to the finish!"`, 'white', line1)
+		}
+		else if (secondCommand == 'scoopy') {
+			customizeEachWord(`"${player.name} bets `, 'white', line1)
+			customizeEachWord(`${amount} `, 'yellow', line1)
+			customizeEachWord(`on Scoopy! When you need to soop the poop, who better to poop scoop with than Scoopy!"`, 'white', line1)
+		}
+		else if (secondCommand == 'scampy') {
+			customizeEachWord(`"${player.name} bets `, 'white', line1)
+			customizeEachWord(`${amount} `, 'yellow', line1)
+			customizeEachWord(`on Scampy! If you wished you'd scamped instead of scooped, Scampy is your man!"`, 'white', line1)
+		}
+	}
+	blankSpace()
+	initiateSnailRace(amount, secondCommand)
+	return
+}
+
+async function paperRockScissorsHandler(amount, secondCommand) {
+	let minPlayerGold = 1
+	let maxBet = 100
+	let minBet = 1
+	let winAmount = amount * 2
+	let paperRockScissors = ['paper', 'rock', 'scissors']
+	if (!isBetValid(amount, secondCommand, minBet, maxBet, minPlayerGold, 'Roulette')) {return}
+	if (!paperRockScissors.includes(secondCommand)) {
+		quickMessage(`You must say either paper, rock, or scissors.`)
+		return
+	}
+	player.stasis = true
+	let randomNumber = randomNumberRange(0, 2)
+	let gameMastersChoice = paperRockScissors[randomNumber]
+	let playerWinLoseOrPush
+	if (secondCommand == 'paper' && gameMastersChoice == 'rock') {playerWinLoseOrPush = 'win'}
+	if (secondCommand == 'paper' && gameMastersChoice == 'scissors') {playerWinLoseOrPush = 'lose'}
+	if (secondCommand == 'rock' && gameMastersChoice == 'paper') {playerWinLoseOrPush = 'lose'}
+	if (secondCommand == 'rock' && gameMastersChoice == 'scissors') {playerWinLoseOrPush = 'win'}
+	if (secondCommand == 'scissors' && gameMastersChoice == 'rock') {playerWinLoseOrPush = 'lose'}
+	if (secondCommand == 'scissors' && gameMastersChoice == 'paper') {playerWinLoseOrPush = 'win'}
+	if (secondCommand == gameMastersChoice) {playerWinLoseOrPush = 'push'}
+	let line1 = lineFunc()
+	let line2 = lineFunc()
+	let line3 = lineFunc()
+	let line4 = lineFunc()
+	let line5 = lineFunc()
+	let line6 = lineFunc()
+	let line7 = lineFunc()
+	await dialogueWait(200)
+	blankSpace()
+	customizeEachWord(`Game Master`, 'gameMaster', line1)
+	customizeEachWord(`: "You think you can beat me?"`, 'white', line1)
+	blankSpace()
+	await dialogueWait(2000)
+	customizeEachWord(`Game Master`, 'gameMaster', line2)
+	customizeEachWord(`: "Alright, let's go!"`, 'white', line2)
+	blankSpace()
+	await dialogueWait(1000)
+
+	customizeEachWord(`Game Master`, 'gameMaster', line3)
+	customizeEachWord(`: "Paper!"`, 'white', line3)
+	blankSpace()
+	await dialogueWait(1000)
+
+	customizeEachWord(`Game Master`, 'gameMaster', line4)
+	customizeEachWord(`: "Rock!"`, 'white', line4)
+	blankSpace()
+	await dialogueWait(1000)
+
+	customizeEachWord(`Game Master`, 'gameMaster', line5)
+	customizeEachWord(`: "Scissors!"`, 'white', line5)
+	blankSpace()
+	await dialogueWait(1000)
+
+	customizeEachWord(`Game Master `, 'white', line6)
+	customizeEachWord(`shows `, 'white', line6)
+	customizeEachWord(`${gameMastersChoice}.`, 'white', line6)
+
+	customizeEachWord(`You show `, 'white', line7)
+	customizeEachWord(`${secondCommand}.`, 'white', line7)
+	blankSpace()
+	await dialogueWait(2000)
+	if (playerWinLoseOrPush == 'win') {
+		let line1 = lineFunc()
+		customizeEachWord(`You won `, 'white', line1)
+		customizeEachWord(`${winAmount} `, 'yellow', line1)
+		customizeEachWord(`gold!`, 'white', line1)
+		blankSpace()
+		playerGainGold(winAmount)
+	}
+	if (playerWinLoseOrPush == 'lose') {
+		let line1 = lineFunc()
+		customizeEachWord(`You lose...`, 'white', line1)
+		blankSpace()
+		playerLoseGold(amount)
+	}
+	if (playerWinLoseOrPush == 'push') {
+		let line1 = lineFunc()
+		customizeEachWord(`Match ends in a draw!`, 'white', line1)
+		blankSpace()
+	}
+}
+
+async function rouletteHandler(amount, secondCommand) {
+	let minPlayerGold = 1
+	let maxBet = 100
+	let minBet = 1
+	if (!isBetValid(amount, secondCommand, minBet, maxBet, minPlayerGold, 'Roulette')) {return}
+	if ((secondCommand < 1 || secondCommand > 40) && (secondCommand != 'odd' || secondCommand != 'even')) {
+		quickMessage(`You must either pick a number between 1 and 40 or choose to bet on odd or even.`)
+		return
+	}
+	playerLoseGold(amount)
+	player.stasis = true
+	let rouletteNumber = randomNumberRange(1, 40)
+	let isOddOrEven
+	let numberRange
+	let playerBettingRange
+	let doesBettingRangeMatch
+	let doBettingWordsMatch
+	let perfectMatch
+	if (!isNaN(secondCommand)) {
+		rouletteHost.numberOrWord = 'number'
+		rouletteHost.winningAmount = amount * 3
+		numberRange = rouletteNumber <= 10 ? '1 - 10' : rouletteNumber <= 20 ? '11 - 20' : rouletteNumber <= 30 ? '21 - 30' : '31 - 40'
+		playerBettingRange = secondCommand <= 10 ? '1 - 10' : secondCommand <= 20 ? '11 - 20' : secondCommand <= 30 ? '21 - 30' : '31 - 40'
+		doesBettingRangeMatch = numberRange == playerBettingRange ? true : false
+		isOddOrEven = rouletteNumber % 2 == 0 ? 'even' : 'odd'
+		if (rouletteNumber == secondCommand) {
+			perfectMatch = true
+			rouletteHost.winningAmount = amount * 5
+		}
+	} else if (isNaN(secondCommand)) {
+		rouletteHost.numberOrWord = 'word'
+		rouletteHost.winningAmount = amount * 2
+		isOddOrEven = rouletteNumber % 2 == 0 ? 'even' : 'odd'
+		doBettingWordsMatch = isOddOrEven == secondCommand ? true : false
+		numberRange = rouletteNumber <= 10 ? '0 - 9' : rouletteNumber <= 20 ? '10 - 19' : rouletteNumber <= 30 ? '20 - 29' : '30 - 39'
+	}
+	let line1 = lineFunc()
+	let line2 = lineFunc()
+	let line3 = lineFunc()
+	let line4 = lineFunc()
+	let line5 = lineFunc()
+	let line6 = lineFunc()
+	let line7 = lineFunc()
+	let line8 = lineFunc()
+	await dialogueWait(200)
+	blankSpace()
+	customizeEachWord(`Game Master`, 'gameMaster', line1)
+	customizeEachWord(`: "${player.name} bet `, 'white', line1)
+	customizeEachWord(`${amount} `, 'yellow', line1)
+	customizeEachWord(`gold pieces on ${secondCommand}!"`, 'white', line1)
+	blankSpace()
+	await dialogueWait(2000)
+	customizeEachWord(`Game Master`, 'gameMaster', line2)
+	customizeEachWord(`: "Everyone place your bets!"`, 'white', line2)
+	blankSpace()
+	await dialogueWait(2000)
+	customizeEachWord(`Game Master`, 'gameMaster', line3)
+	customizeEachWord(`: "Last chance for bets!"`, 'white', line3)
+	blankSpace()
+	await dialogueWait(2000)
+	customizeEachWord(`The Game Master spins the roulette wheel..`, 'white', line4)
+	blankSpace()
+	await dialogueWait(2000)
+	customizeEachWord(`The roulette wheel slowly spins down..`, 'white', line5)
+	blankSpace()
+	await dialogueWait(5000)
+	customizeEachWord(`The roulette wheel lands on number `, 'white', line6)
+	customizeEachWord(`${rouletteNumber} `, 'green', line6)
+	customizeEachWord(`(${numberRange}) `, 'white', line6)
+	customizeEachWord(`${capitalizeFirstLetter(isOddOrEven)}`, 'yellow', line6)
+	customizeEachWord(`!`, 'white', line6)
+	// blankSpace()
+	// await dialogueWait(200)
+	// customizeEachWord(`The winning number range is ${numberRange}!`, 'white', line7)
+	blankSpace()
+	await dialogueWait(200)
+	if (perfectMatch) {
+		let line1 = lineFunc()
+		customizeEachWord(`You chose the winning number! You won `, 'white', line1)
+		customizeEachWord(`${rouletteHost.winningAmount} `, 'yellow', line1)
+		customizeEachWord(`gold pieces!`, 'white', line1)
+		playerGainGold(rouletteHost.winningAmount)	
+	} else if (doesBettingRangeMatch == true || doBettingWordsMatch == true) {
+		let line1 = lineFunc()
+		customizeEachWord(`You won `, 'white', line1)
+		customizeEachWord(`${rouletteHost.winningAmount} `, 'yellow', line1)
+		customizeEachWord(`gold pieces!`, 'white', line1)
+		playerGainGold(rouletteHost.winningAmount)
+	} else {
+		let line1 = lineFunc()
+		customizeEachWord(`You lost your bet of `, 'white', line1)
+		customizeEachWord(`${amount} `, 'yellow', line1)
+		customizeEachWord(`gold.`, 'white', line1)
+	}
+	blankSpace()
+	player.stasis = false
+}
+
+async function bet(amount, secondCommand) {
+	if (currentArea == amblersTavernGameRoom1) {snailRacingHandler(amount, secondCommand)}
+	else if (currentArea == amblersTavernGameRoom2) {paperRockScissorsHandler(amount, secondCommand)}
+	else if (currentArea == amblersTavernGamblingRoom1) {rouletteHandler(amount, secondCommand)}
+	else if (currentArea == amblersTavern10) {}
+	else if (currentArea == amblersTavern8) {}
+	else if (currentArea == amblersTavern13) {}
+	else if (currentArea == amblersTavern14) {}
+	else if (currentArea == amblersTavern15) {}
+	else {quickMessage(`You must be in a game room in order to place a bet.`)}
+	
+
+}
+
+function isBetValid(playerBetAmount, secondCommand, minBet, maxBet, minPlayerGold, gameName) {
+	if (playerBetAmount > player.gold) {
+		quickMessage(`You don't have enough gold to bet that amount.`)
+		return false
+	}
+	if (isNaN(playerBetAmount)) {
+		quickMessage(`You must specify how much gold you want to bet first.`)
+		return false
+	}
+	if (playerBetAmount <= 0) {
+		quickMessage(`Your bet must be at least 1 gold piece.`)
+		return false
+	}
+	if (!secondCommand) {
+		quickMessage(`You must specify who or what you want to bet on.`)
+		return false
+	}
+	if (playerBetAmount > maxBet) {
+		quickMessage(`You cannot bet more than ${maxBet} gold.`)
+		return false
+	}
+	if (playerBetAmount < minBet) {
+		quickMessage(`You must bet more than ${minBet} gold to play ${gameName}`)
+		return false
+	}
+	if (player.gold < minPlayerGold) {
+		quickMessage(`You must have more than ${minPlayerGold} to play ${gameName}`)
+		return false
+	}
+	return true
+}
+
+function betHandler(betAmount, slugBetOn) {
+	slugHost.playerBet = betAmount
+	slugHost.playerSlug = slugBetOn
+	playerLoseGold(betAmount)
+}
+
+function slugRaceDialogue1() {
+	let line1 = lineFunc()
+	blankSpace()
+	customizeEachWord(`Game Master`, 'gameMaster', line1)
+	customizeEachWord(`: "The race will begin in..."`, 'white', line1)
+	blankSpace()
+}
+function slugRaceDialogue2() {
+	let line1 = lineFunc()
+	blankSpace()
+	customizeEachWord(`Game Master`, 'gameMaster', line1)
+	customizeEachWord(`: "3."`, 'white', line1)
+	blankSpace()
+}
+function slugRaceDialogue3() {
+	let line1 = lineFunc()
+	blankSpace()
+	customizeEachWord(`Game Master`, 'gameMaster', line1)
+	customizeEachWord(`: "2."`, 'white', line1)
+	blankSpace()
+}
+function slugRaceDialogue4() {
+	let line1 = lineFunc()
+	blankSpace()
+	customizeEachWord(`Game Master`, 'gameMaster', line1)
+	customizeEachWord(`: "1."`, 'white', line1)
+	blankSpace()
+}
+function slugRaceDialogue5() {
+	let line1 = lineFunc()
+	blankSpace()
+	customizeEachWord(`Game Master`, 'gameMaster', line1)
+	customizeEachWord(`: "GO!"`, 'white', line1)
+	blankSpace()
+}
+
+async function slugRacingBetHandler() {
+	let main = document.getElementById('masterArea')
+	let snailRacingContainer = document.createElement('section')
+
+	let glooperContainer = document.createElement('section')
+	let glooperName = document.createElement('article')
+	let glooper = document.createElement('article')
+	let glooperFinishText = document.createElement('article')
+	glooperContainer.appendChild(glooperName)
+	glooperContainer.appendChild(glooper)
+	glooperContainer.appendChild(glooperFinishText)
+
+	let wormburnerContainer = document.createElement('section')
+	let wormburnerName = document.createElement('article')
+	let wormburner = document.createElement('article')
+	let wormburnerFinishText = document.createElement('article')
+
+	wormburnerContainer.appendChild(wormburnerName)
+	wormburnerContainer.appendChild(wormburner)
+	wormburnerContainer.appendChild(wormburnerFinishText)
+
+	let adamContainer = document.createElement('section')
+	let adamName = document.createElement('article')
+	let adam = document.createElement('article')
+	let adamFinishText = document.createElement('article')
+
+	adamContainer.appendChild(adamName)
+	adamContainer.appendChild(adam)
+	adamContainer.appendChild(adamFinishText)
+
+
+	let sloppyContainer = document.createElement('section')
+	let sloppyName = document.createElement('article')
+	let sloppy = document.createElement('article')
+	let sloppyFinishText = document.createElement('article')
+
+	sloppyContainer.appendChild(sloppyName)
+	sloppyContainer.appendChild(sloppy)
+	sloppyContainer.appendChild(sloppyFinishText)
+
+
+	let scoopyContainer = document.createElement('section')
+	let scoopyName = document.createElement('article')
+	let scoopy = document.createElement('article')
+	let scoopyFinishText = document.createElement('article')
+
+	scoopyContainer.appendChild(scoopyName)
+	scoopyContainer.appendChild(scoopy)
+	scoopyContainer.appendChild(scoopyFinishText)
+
+
+	let scampyContainer = document.createElement('section')
+	let scampyName = document.createElement('article')
+	let scampy = document.createElement('article')
+	let scampyFinishText = document.createElement('article')
+
+	scampyContainer.appendChild(scampyName)
+	scampyContainer.appendChild(scampy)
+	scampyContainer.appendChild(scampyFinishText)
+
+	snailRacingContainer.appendChild(glooperContainer)
+	snailRacingContainer.appendChild(wormburnerContainer)
+	snailRacingContainer.appendChild(adamContainer)
+	snailRacingContainer.appendChild(sloppyContainer)
+	snailRacingContainer.appendChild(scoopyContainer)
+	snailRacingContainer.appendChild(scampyContainer)
+	// snailRacingContainer.appendChild(firstPlace)
+	// snailRacingContainer.appendChild(secondPlace)
+	// snailRacingContainer.appendChild(thirdPlace)
+	main.appendChild(snailRacingContainer)
+	glooper.setAttribute('class', 'glooper')
+	wormburner.setAttribute('class', 'wormburner')
+	adam.setAttribute('class', 'adam')
+	sloppy.setAttribute('class', 'sloppy')
+	scoopy.setAttribute('class', 'scoopy')
+	scampy.setAttribute('class', 'scampy')
+
+	glooperName.setAttribute('class', 'glooperName')
+	wormburnerName.setAttribute('class', 'wormburnerName')
+	adamName.setAttribute('class', 'adamName')
+	sloppyName.setAttribute('class', 'sloppyName')
+	scoopyName.setAttribute('class', 'scoopyName')
+	scampyName.setAttribute('class', 'scampyName')
+
+	glooperName.textContent = `GLOOPER`
+	wormburnerName.textContent = `WORMBURNER`
+	adamName.textContent = `ADAM`
+	sloppyName.textContent = `SLOPPY`
+	scoopyName.textContent = `SCOOPY`
+	scampyName.textContent = `SCAMPY`
+
+
+	glooperContainer.setAttribute('class', 'glooperContainer')
+	wormburnerContainer.setAttribute('class', 'wormburnerContainer')
+	adamContainer.setAttribute('class', 'adamContainer')
+	sloppyContainer.setAttribute('class', 'sloppyContainer')
+	scoopyContainer.setAttribute('class', 'scoopyContainer')
+	scampyContainer.setAttribute('class', 'scampyContainer')
+
+	snailRacingContainer.setAttribute('class', 'snail-racing-container')
+	updateScroll()
+	let { playerBet } = slugHost
+	let { playerSlug } = slugHost
+	let slugWinningLineup = shuffleArray(slugs)
+	let winnerSlug = slugWinningLineup[0]
+	let secondPlaceSlug = slugWinningLineup[1]
+	let thirdPlaceSlug = slugWinningLineup[2]
+	let fourthPlaceSlug = slugWinningLineup[3]
+	let fifthPlaceSlug = slugWinningLineup[4]
+	let sixthPlaceSlug = slugWinningLineup[5]
+	slugHost[winnerSlug].raceTime = 10000
+	slugHost[winnerSlug].place = 'first'
+	slugHost[secondPlaceSlug].raceTime = 10200
+	slugHost[secondPlaceSlug].place = 'second'
+	slugHost[thirdPlaceSlug].raceTime = 10400
+	slugHost[thirdPlaceSlug].place = 'third'
+	slugHost[fourthPlaceSlug].raceTime = 10600
+	slugHost[fourthPlaceSlug].place = 'fourth'
+	slugHost[fifthPlaceSlug].raceTime = 10800
+	slugHost[fifthPlaceSlug].place = 'fifth'
+	slugHost[sixthPlaceSlug].raceTime = 11000
+	slugHost[sixthPlaceSlug].place = 'sixth'
+
+	convertTimeToRaceHTML('glooper', glooper, glooperFinishText)
+	convertTimeToRaceHTML('wormburner', wormburner, wormburnerFinishText)
+	convertTimeToRaceHTML('adam', adam, adamFinishText)
+	convertTimeToRaceHTML('sloppy', sloppy, sloppyFinishText)
+	convertTimeToRaceHTML('scoopy', scoopy, scoopyFinishText)
+	convertTimeToRaceHTML('scampy', scampy, scampyFinishText)
+
+}
+
+async function convertTimeToRaceHTML(slug, slugHTML, slugFinishText) {
+	let capitalSlug = capitalizeFirstLetter(slug)
+	let fluctuationArray = speedFluctuation(slugHost[slug].raceTime)
+	let shuffledFluctuationArray = shuffleArray(fluctuationArray)
+	slugHTML.innerHTML += `|START| `
+	updateScroll()
+	for (let i = 0; i < 10; i ++) {
+		await waitFunction(shuffledFluctuationArray[i])
+		slugHTML.innerHTML += `__@_/*  `
+	}
+	let firstPlace = document.createElement('article')
+	let secondPlace = document.createElement('article')
+	let thirdPlace = document.createElement('article')
+	let fourthPlace = document.createElement('article')
+	let fifthPlace = document.createElement('article')
+	let sixthPlace = document.createElement('article')
+	firstPlace.setAttribute('class', 'firstPlace')
+	secondPlace.setAttribute('class', 'secondPlace')
+	thirdPlace.setAttribute('class', 'thirdPlace')
+	fourthPlace.setAttribute('class', 'fourthPlace')
+	fifthPlace.setAttribute('class', 'fifthPlace')
+	sixthPlace.setAttribute('class', 'sixthPlace')
+	masterArea.appendChild(firstPlace)
+	masterArea.appendChild(secondPlace)
+	masterArea.appendChild(thirdPlace)
+	masterArea.appendChild(fourthPlace)
+	masterArea.appendChild(fifthPlace)
+	masterArea.appendChild(sixthPlace)
+	let line1 = lineFunc()
+	if (slugHost[slug].place == 'first') {
+		slugFinishText.textContent = `${capitalSlug} is the WINNER!`
+		slugHTML.classList.add('winner')
+		slugFinishText.classList.add('winner')
+	}
+	if (slugHost[slug].place == 'second') {
+		slugFinishText.textContent = `${capitalSlug} gets 2nd place!`
+		slugHTML.classList.add('second')
+		slugFinishText.classList.add('second')
+	}
+	if (slugHost[slug].place == 'third') {
+		slugFinishText.textContent = `${capitalSlug} comes in 3rd!`
+		slugHTML.classList.add('third')
+		slugFinishText.classList.add('third')
+	}
+	if (slugHost[slug].place == 'fourth') {
+		slugFinishText.textContent = `${capitalSlug} trails behind in 4th!`
+	}
+	if (slugHost[slug].place == 'fifth') {
+		slugFinishText.textContent = `${capitalSlug} slops his way to 5th..`
+	}
+	if (slugHost[slug].place == 'sixth') {
+		slugFinishText.textContent = `${capitalSlug} really slugged it up and came in 6th....`
+		findSnailWinner()
+
+		// slugHost = {
+		// 	glooper: {},
+		// 	wormburner: {},
+		// 	adam: {},
+		// 	sloppy: {},
+		// 	scoopy: {},
+		// 	scampy: {},
+		// }
+	}
+	updateScroll()
+}
+
+function speedFluctuation(time) {
+	let totalTime = time //this is like 15000
+	let timeIncrement = time / 10 // this would be 1500 if the above value is 15000
+	let incrementArray = []
+	for (let i = 0; i < 10; i++) {
+		incrementArray.push(timeIncrement)
+	}
+	let counter = 0
+	let sum = 0
+	let incrementChange1 = randomNumberRange(100, 300)
+	let incrementChange2 = randomNumberRange(100, 300)
+	let incrementChange3 = randomNumberRange(100, 300)
+
+
+	incrementArray.forEach((element, index) => {
+	if (counter % 2 == 0) {
+		incrementArray[index] += incrementChange1
+	} else {
+		incrementArray[index] -= incrementChange1
+	}
+		sum += element
+
+	counter++
+	})
+ 	incrementArray.forEach((element, index) => {
+		if (counter % 2 == 0) {
+  	incrementArray[index] += incrementChange2
+	} else {
+  	incrementArray[index] -= incrementChange2
+	}
+	counter++
+  	})
+  	incrementArray.forEach((element, index) => {
+		if (counter % 2 == 0) {
+  	incrementArray[index] += incrementChange3
+	} else {
+  incrementArray[index] -= incrementChange3
+	}
+	counter++
+  	})
+	console.log(sum, "SUM")
+	let shuffledArray = shuffleArray(incrementArray)
+	console.log(incrementArray)
+	return incrementArray
+}
+// betHandler(100, 'scoopy')
+// slugRacingBetHandler()
+
+async function findSnailWinner() {
+	let winnings = slugHost.playerBet
+	let line1 = lineFunc()
+	let line2 = lineFunc()
+    for (const slug in slugHost) {
+        if (slugHost.playerSlug == slug) {
+            if (slugHost[slugHost.playerSlug].place == 'first') {
+				winnings *= 3
+				await dialogueWait(2000)
+				blankSpace()
+				customizeEachWord(`Game Master`, 'gameMaster', line1)
+				customizeEachWord(`: "Congratulations your snail won first place!"`, 'white', line1)
+				blankSpace()
+				await dialogueWait(200)
+				customizeEachWord(`Game Master `, 'gameMaster', line2)
+				customizeEachWord(`hands you your winnings.`, 'white', line2)
+				blankSpace()
+				playerGainGold(winnings)
+				blankSpace()
+			}
+			if (slugHost[slugHost.playerSlug].place == 'second') {
+				winnings *= 2
+				await dialogueWait(2000)
+				blankSpace()
+				customizeEachWord(`Game Master`, 'gameMaster', line1)
+				customizeEachWord(`: "Congratulations your snail came in second place!"`, 'white', line1)
+				blankSpace()
+				await dialogueWait(200)
+				customizeEachWord(`Game Master `, 'gameMaster', line2)
+				customizeEachWord(`hands you the winnings.`, 'white', line2)
+				blankSpace()
+				playerGainGold(winnings)
+				blankSpace()
+			}
+			if (slugHost[slugHost.playerSlug].place == 'third') {
+				await dialogueWait(2000)
+				blankSpace()
+				customizeEachWord(`Game Master`, 'gameMaster', line1)
+				customizeEachWord(`: "Well, at least you didn't lose anything!"`, 'white', line1)
+				blankSpace()
+				await dialogueWait(200)
+				customizeEachWord(`Game Master `, 'gameMaster', line2)
+				customizeEachWord(`gives you your gold back.`, 'white', line2)
+				blankSpace()
+				playerGainGold(winnings)
+				blankSpace()
+			}
+			if (slugHost[slugHost.playerSlug].place == 'fourth') {
+				await dialogueWait(2000)
+				blankSpace()
+				customizeEachWord(`Game Master`, 'gameMaster', line1)
+				customizeEachWord(`: "Better luck next time!"`, 'white', line1)
+				blankSpace()
+				await dialogueWait(200)
+				customizeEachWord(`You lost `, 'white', line2)
+				customizeEachWord(`${winnings} `, 'yellow', line2)
+				customizeEachWord(`gold.`, 'white', line2)
+				blankSpace()
+			}
+			if (slugHost[slugHost.playerSlug].place == 'fifth') {
+				await dialogueWait(2000)
+				blankSpace()
+				customizeEachWord(`Game Master`, 'gameMaster', line1)
+				customizeEachWord(`: "Oh man, not your lucky day.."`, 'white', line1)
+				blankSpace()
+				await dialogueWait(200)
+				customizeEachWord(`You lost `, 'white', line2)
+				customizeEachWord(`${winnings} `, 'yellow', line2)
+				customizeEachWord(`gold.`, 'white', line2)
+				blankSpace()
+			}
+			if (slugHost[slugHost.playerSlug].place == 'sixth') {
+				winnings *= 2
+				await dialogueWait(2000)
+				blankSpace()
+				customizeEachWord(`Game Master`, 'gameMaster', line1)
+				customizeEachWord(`: "Not good, not good at all.. Your snail came in last. You have to pay double."`, 'white', line1)
+				blankSpace()
+				await dialogueWait(200)
+				customizeEachWord(`You lost `, 'white', line2)
+				customizeEachWord(`${winnings} `, 'yellow', line2)
+				customizeEachWord(`gold.`, 'white', line2)
+				blankSpace()
+				playerLoseGold(winnings)
+				blankSpace()
+			}
+        }
+    }
+}
+
+
+
+
+
+
+let gambler = {}
 
 let NPCConversationIntervals = {
 
@@ -384,7 +1141,8 @@ chainLightningPlay3.setAttribute('src', './magic/lightning/chain lightning/chain
 gigavoltPlay1.setAttribute('src', './magic/lightning/gigavolt/gigavolt.mp3')
 gigavoltPlay2.setAttribute('src', './magic/lightning/gigavolt/gigavolt higher.mp3')
 gigavoltPlay3.setAttribute('src', './magic/lightning/gigavolt/gigavolt lower.mp3')
-////////////////////////////////////////////////////////////ABILITIES
+////////////////////////////////////////////////////////////ABILITIES//////////////////////////////////////////////////////
+//////////////BERSERKER
 const ripslashPlay1 = document.createElement('audio')
 const ripslashPlay2 = document.createElement('audio')
 const ripslashPlay3 = document.createElement('audio')
@@ -408,8 +1166,39 @@ const cataclysmAudioArray = [cataclysmPlay1, cataclysmPlay2, cataclysmPlay3]
 cataclysmPlay1.setAttribute('src', './swings/abilities/cataclysm/cataclysm.mp3')
 cataclysmPlay2.setAttribute('src', './swings/abilities/cataclysm/cataclysm higher.mp3')
 cataclysmPlay3.setAttribute('src', './swings/abilities/cataclysm/cataclysm lower.mp3')
+/////////////FIGHTER
+/////////////KNIGHT
+/////////////AMBUSH
+const ambushPlay1 = document.createElement('audio')
+const ambushPlay2 = document.createElement('audio')
+const ambushPlay3 = document.createElement('audio')
+const ambushAudioArray = [ambushPlay1, ambushPlay2, ambushPlay3]
+ambushPlay1.setAttribute('src', './swings/abilities/ambush/ambush.mp3')
+ambushPlay2.setAttribute('src', './swings/abilities/ambush/ambush higher.mp3')
+ambushPlay3.setAttribute('src', './swings/abilities/ambush/ambush lower.mp3')
 
-////////////////////////////////////////////////////////////
+const backstabPlay1 = document.createElement('audio')
+const backstabPlay2 = document.createElement('audio')
+const backstabPlay3 = document.createElement('audio')
+const backstabAudioArray = [backstabPlay1, backstabPlay2, backstabPlay3]
+backstabPlay1.setAttribute('src', './swings/abilities/backstab/backstab.mp3')
+backstabPlay2.setAttribute('src', './swings/abilities/backstab/backstab higher.mp3')
+backstabPlay3.setAttribute('src', './swings/abilities/backstab/backstab lower.mp3')
+
+const guillotinePlay1 = document.createElement('audio')
+const guillotinePlay2 = document.createElement('audio')
+const guillotinePlay3 = document.createElement('audio')
+const guillotineAudioArray = [guillotinePlay1, guillotinePlay2, guillotinePlay3]
+guillotinePlay1.setAttribute('src', './swings/abilities/guillotine/guillotine.mp3')
+guillotinePlay2.setAttribute('src', './swings/abilities/guillotine/guillotine higher.mp3')
+guillotinePlay3.setAttribute('src', './swings/abilities/guillotine/guillotine lower.mp3')
+
+
+
+
+
+
+
 const shortswordHitPlay1 = document.createElement('audio')
 const shortswordHitPlay2 = document.createElement('audio')
 const shortswordHitPlay3 = document.createElement('audio')
@@ -443,11 +1232,11 @@ const longswordHitPlay4 = document.createElement('audio')
 const longswordHitPlay5 = document.createElement('audio')
 const twoHandedHitArray1 = [longswordHitPlay1, longswordHitPlay2, longswordHitPlay3, longswordHitPlay4, longswordHitPlay5]
 
-longswordHitPlay1.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_1.wav')
-longswordHitPlay2.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_2.wav')
-longswordHitPlay3.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_3.wav')
-longswordHitPlay4.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_4.wav')
-longswordHitPlay5.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_5.wav')
+longswordHitPlay1.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_1.mp3')
+longswordHitPlay2.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_2.mp3')
+longswordHitPlay3.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_3.mp3')
+longswordHitPlay4.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_4.mp3')
+longswordHitPlay5.setAttribute('src', './swings/two_handed_swords/longsword/hit/longsword_hit_5.mp3')
 
 const longswordMissPlay1 = document.createElement('audio')
 const longswordMissPlay2 = document.createElement('audio')
@@ -1117,6 +1906,13 @@ function allItemDescription(item) {
 	itemNameDiv.appendChild(itemNameNode)
 	mainDiv.appendChild(itemNameDiv)
 	//slashingarmor
+	if (item.description) {
+		const itemDescriptionDiv = document.createElement('p')
+		const itemDescriptionNode = document.createTextNode(`${item.description}`)
+		itemDescriptionDiv.classList.add('grey', 'italic')
+		itemDescriptionDiv.appendChild(itemDescriptionNode)
+		mainDiv.appendChild(itemDescriptionDiv)
+	}
 	if (item.type?.skillUsed) {
 		const itemTypeDiv = document.createElement('div')
 		const itemTypeNode = document.createTextNode(`Weapon Skill: ${item.type.skillUsed}`)
@@ -1195,6 +1991,116 @@ function allItemDescription(item) {
 			bluntArmorWordDiv.appendChild(closeP)
 		}
 	}
+	if (item.mods?.fireResist) {
+		const fireResistDiv = document.createElement('div')
+		const fireResistWordDiv = createDivElement(`Fire Resist: `, ['row-flex'])
+		const fireResistValueDiv = createDivElement((`${item.mods.fireResist}`), ['light-blue', 'small-left-margin'])
+		fireResistWordDiv.appendChild(fireResistValueDiv)
+		fireResistDiv.appendChild(fireResistWordDiv)
+		mainDiv.appendChild(fireResistDiv)
+		if (item?.leatherworking?.fireResist) {
+			let originalStat = item.mods.fireResist
+			let enhancedStat = item.leatherworking.fireResist
+			let openP = createDivElement(`(`, ['small-left-margin'])
+			let modTotal = createDivElement(`${originalStat - enhancedStat}`, ['light-blue'])
+			let enhancedModConcat = createDivElement(`+ `, ['row-flex', 'small-left-margin'])
+			let enhancedModNumber = createDivElement((`${enhancedStat}`), ['green', 'small-left-margin'])
+			let closeP = createDivElement(`)`)
+			fireResistWordDiv.appendChild(openP)
+			fireResistWordDiv.appendChild(modTotal)
+			fireResistWordDiv.appendChild(enhancedModConcat)
+			fireResistWordDiv.appendChild(enhancedModNumber)
+			fireResistWordDiv.appendChild(closeP)
+		}
+	}
+	if (item.mods?.iceResist) {
+		const div = document.createElement('div')
+		const wordDiv = createDivElement(`Ice Resist: `, ['row-flex'])
+		const valueDiv = createDivElement((`${item.mods.iceResist}`), ['light-blue', 'small-left-margin'])
+		wordDiv.appendChild(valueDiv)
+		div.appendChild(wordDiv)
+		mainDiv.appendChild(div)
+		if (item?.leatherworking?.iceResist) {
+			let originalStat = item.mods.iceResist
+			let enhancedStat = item.leatherworking.iceResist
+			let openP = createDivElement(`(`, ['small-left-margin'])
+			let modTotal = createDivElement(`${originalStat - enhancedStat}`, ['light-blue'])
+			let enhancedModConcat = createDivElement(`+ `, ['row-flex', 'small-left-margin'])
+			let enhancedModNumber = createDivElement((`${enhancedStat}`), ['green', 'small-left-margin'])
+			let closeP = createDivElement(`)`)
+			wordDiv.appendChild(openP)
+			wordDiv.appendChild(modTotal)
+			wordDiv.appendChild(enhancedModConcat)
+			wordDiv.appendChild(enhancedModNumber)
+			wordDiv.appendChild(closeP)
+		}
+	}
+	if (item.mods?.lightningResist) {
+		const div = document.createElement('div')
+		const wordDiv = createDivElement(`Lightning Resist: `, ['row-flex'])
+		const valueDiv = createDivElement((`${item.mods.lightningResist}`), ['light-blue', 'small-left-margin'])
+		wordDiv.appendChild(valueDiv)
+		div.appendChild(wordDiv)
+		mainDiv.appendChild(div)
+		if (item?.leatherworking?.lightningResist) {
+			let originalStat = item.mods.lightningResist
+			let enhancedStat = item.leatherworking.lightningResist
+			let openP = createDivElement(`(`, ['small-left-margin'])
+			let modTotal = createDivElement(`${originalStat - enhancedStat}`, ['light-blue'])
+			let enhancedModConcat = createDivElement(`+ `, ['row-flex', 'small-left-margin'])
+			let enhancedModNumber = createDivElement((`${enhancedStat}`), ['green', 'small-left-margin'])
+			let closeP = createDivElement(`)`)
+			wordDiv.appendChild(openP)
+			wordDiv.appendChild(modTotal)
+			wordDiv.appendChild(enhancedModConcat)
+			wordDiv.appendChild(enhancedModNumber)
+			wordDiv.appendChild(closeP)
+		}
+	}
+	if (item.mods?.waterResist) {
+		const div = document.createElement('div')
+		const wordDiv = createDivElement(`Water Resist: `, ['row-flex'])
+		const valueDiv = createDivElement((`${item.mods.waterResist}`), ['light-blue', 'small-left-margin'])
+		wordDiv.appendChild(valueDiv)
+		div.appendChild(wordDiv)
+		mainDiv.appendChild(div)
+		if (item?.leatherworking?.waterResist) {
+			let originalStat = item.mods.waterResist
+			let enhancedStat = item.leatherworking.waterResist
+			let openP = createDivElement(`(`, ['small-left-margin'])
+			let modTotal = createDivElement(`${originalStat - enhancedStat}`, ['light-blue'])
+			let enhancedModConcat = createDivElement(`+ `, ['row-flex', 'small-left-margin'])
+			let enhancedModNumber = createDivElement((`${enhancedStat}`), ['green', 'small-left-margin'])
+			let closeP = createDivElement(`)`)
+			wordDiv.appendChild(openP)
+			wordDiv.appendChild(modTotal)
+			wordDiv.appendChild(enhancedModConcat)
+			wordDiv.appendChild(enhancedModNumber)
+			wordDiv.appendChild(closeP)
+		}
+	}
+	if (item.mods?.windResist) {
+		const div = document.createElement('div')
+		const wordDiv = createDivElement(`Wind Resist: `, ['row-flex'])
+		const valueDiv = createDivElement((`${item.mods.windResist}`), ['light-blue', 'small-left-margin'])
+		wordDiv.appendChild(valueDiv)
+		div.appendChild(wordDiv)
+		mainDiv.appendChild(div)
+		if (item?.leatherworking?.windResist) {
+			let originalStat = item.mods.windResist
+			let enhancedStat = item.leatherworking.windResist
+			let openP = createDivElement(`(`, ['small-left-margin'])
+			let modTotal = createDivElement(`${originalStat - enhancedStat}`, ['light-blue'])
+			let enhancedModConcat = createDivElement(`+ `, ['row-flex', 'small-left-margin'])
+			let enhancedModNumber = createDivElement((`${enhancedStat}`), ['green', 'small-left-margin'])
+			let closeP = createDivElement(`)`)
+			wordDiv.appendChild(openP)
+			wordDiv.appendChild(modTotal)
+			wordDiv.appendChild(enhancedModConcat)
+			wordDiv.appendChild(enhancedModNumber)
+			wordDiv.appendChild(closeP)
+		}
+	}
 	if (item.type?.damageType) {
 		const damageTypeDiv = document.createElement('div')
 		const damageTypeNode = document.createTextNode(`Damage Type: ${item.type.damageType}`)
@@ -1268,7 +2174,7 @@ function allItemDescription(item) {
 		mainDiv.appendChild(damageWordDiv)
 		mainDiv.appendChild(highWordDiv)
 		mainDiv.appendChild(lowWordDiv)
-		if (item?.blacksmithing) {
+		if (item?.blacksmithing?.topDamage) {
 			let enhancedStat = item.blacksmithing.topDamage
 			highDamageValue = createDivElement(`${item.topDamage - enhancedStat}`, ['light-blue', 'small-left-margin'])
 			let openP = createDivElement(`(`, ['small-left-margin'])
@@ -1282,8 +2188,8 @@ function allItemDescription(item) {
 			highWordDiv.appendChild(enhancedModNumber)
 			highWordDiv.appendChild(closeP)
 		}
-		if (item?.leatherworking) {
-			let enhancedStat = item.leatherworking.botDamage
+		if (item?.blacksmithing?.botDamage) {
+			let enhancedStat = item.blacksmithing.botDamage
 			highDamageValue = createDivElement(`${item.botDamage - enhancedStat}`, ['light-blue', 'small-left-margin'])
 			let openP = createDivElement(`(`, ['small-left-margin'])
 			let originalNumber = createDivElement(`${item.botDamage - enhancedStat}`, ['light-blue'])
@@ -1296,6 +2202,20 @@ function allItemDescription(item) {
 			lowWordDiv.appendChild(enhancedModNumber)
 			lowWordDiv.appendChild(closeP)
 		}
+		// if (item?.leatherworking) {
+		// 	let enhancedStat = item.leatherworking.botDamage
+		// 	highDamageValue = createDivElement(`${item.botDamage - enhancedStat}`, ['light-blue', 'small-left-margin'])
+		// 	let openP = createDivElement(`(`, ['small-left-margin'])
+		// 	let originalNumber = createDivElement(`${item.botDamage - enhancedStat}`, ['light-blue'])
+		// 	let enhancedModConcat = createDivElement(`+`, ['row-flex'])
+		// 	let enhancedModNumber = createDivElement((`${enhancedStat}`), ['green'])
+		// 	let closeP = createDivElement(`)`)
+		// 	lowWordDiv.appendChild(openP)
+		// 	lowWordDiv.appendChild(originalNumber)
+		// 	lowWordDiv.appendChild(enhancedModConcat)
+		// 	lowWordDiv.appendChild(enhancedModNumber)
+		// 	lowWordDiv.appendChild(closeP)
+		// }
 	}
 
 	if (item?.mods) {
@@ -1318,10 +2238,16 @@ function allItemDescription(item) {
 			if (mod == 'slashingArmor') {mod = 'Slashing Armor: '}
 			if (mod == 'piercingArmor') {mod = 'Piercing Armor: '}
 			if (mod == 'bluntArmor') {mod = 'Blunt Armor: '}
+			if (mod == 'fireResist') {mod = 'Fire Resist: '}
+			if (mod == 'iceResist') {mod = 'Ice Resist: '}
+			if (mod == 'lightningResist') {mod = 'Lightning Resist: '}
+			if (mod == 'iceResist') {mod = 'Ice Resist: '}
+			if (mod == 'windResist') {mod = 'Wind Resist: '}
 			if (mod == 'weight') {mod = 'Weight: '}
 			if (item.mods[modAbbreviation] > 0) {
 				if (mod != 'Slashing Armor: ' && mod != 'Piercing Armor: ' && mod != 'Blunt Armor: ' && mod != 'Weight: '
-					&& mod != 'slashingRandom' && mod != 'piercingRandom' && mod != 'bluntRandom'
+					&& mod != 'slashingRandom' && mod != 'piercingRandom' && mod != 'bluntRandom' && mod != 'Fire Resist: '
+					&& mod != 'Ice Resist: ' && mod != 'Lightning Resist: ' && mod != 'Ice Resist: ' && mod != 'Wind Resist: '
 				) {
 					wordsAndColors.push({number: item.mods[modAbbreviation], word: mod, color: 'green'})
 					modHeader.textContent = 'Bonuses'
@@ -1330,7 +2256,7 @@ function allItemDescription(item) {
 				}
 			}
 		}
-//requirements
+		//requirements
 		if (item?.requirements) {
 			if (Object.keys(item.requirements).length != 0) {
 			const modsContainer = createDivElement()
@@ -1371,16 +2297,35 @@ function allItemDescription(item) {
 			})
 		}
 	}
-		wordsAndColors.forEach(item => {
+		wordsAndColors.forEach(numWordColor => {
+			// if (Object.keys(item.magicWeaving))
+
+		
+
+			console.log(numWordColor)
 			let span = document.createElement('span')
 			let numberSpan = document.createElement('span')
 			let mainSpan = document.createElement('span')
 			mainSpan.appendChild(span)
 			mainSpan.appendChild(numberSpan)
-			numberSpan.classList.add(item.color)
-			span.textContent = capitalizeFirstLetter(item.word)
-			numberSpan.textContent = ' ' +  '+' + item.number 
+			numberSpan.classList.add(numWordColor.color)
+			span.textContent = capitalizeFirstLetter(numWordColor.word)
+			numberSpan.textContent = ' ' +  '+' + numWordColor.number
 			
+			let bonusWord = numWordColor.word.toLowerCase()
+			console.log(bonusWord, ' BONUS WORD')
+			let magicWeavingKeys = Object.keys(item.magicWeaving)
+			console.log(magicWeavingKeys)
+			magicWeavingKeys.forEach(key => {
+				if (bonusWord.includes(key)) {
+					let enhancedStat = item.magicWeaving[key]
+					let originalStat = item.mods[key] - enhancedStat
+					let bonusNumbersSpan = document.createElement('span')
+					bonusNumbersSpan.textContent = ` (${originalStat} + ${enhancedStat})`
+					numberSpan.appendChild(bonusNumbersSpan)
+				}
+			})
+
 			modsContainer.appendChild(mainSpan)
 		})
 	}
@@ -1407,13 +2352,13 @@ function allItemDescription(item) {
 		sellNumberDiv.classList.add('yellow')
 		mainDiv.appendChild(sellValueDiv)
 	}
-	if (item.description) {
-		const itemDescriptionDiv = document.createElement('p')
-		const itemDescriptionNode = document.createTextNode(`${item.description}`)
-		itemDescriptionDiv.classList.add('grey', 'italic')
-		itemDescriptionDiv.appendChild(itemDescriptionNode)
-		mainDiv.appendChild(itemDescriptionDiv)
-	}
+	// if (item.description) {
+	// 	const itemDescriptionDiv = document.createElement('p')
+	// 	const itemDescriptionNode = document.createTextNode(`${item.description}`)
+	// 	itemDescriptionDiv.classList.add('grey', 'italic')
+	// 	itemDescriptionDiv.appendChild(itemDescriptionNode)
+	// 	mainDiv.appendChild(itemDescriptionDiv)
+	// }
 	updateScroll()
 }
 
@@ -1883,7 +2828,7 @@ commandLine.addEventListener('keypress', function (event) {
 		event.preventDefault()
 	}
 })
-
+//handleCombatStasisInputs
 function handleInputs(commandLineInput) {
 	const inputsLowerCase = commandLineInput.toLowerCase()
 	const inputsSplitBySpace = inputsLowerCase.split(' ')
@@ -1902,20 +2847,19 @@ function handleInputs(commandLineInput) {
 	if (player.dialogueStasis) {return} 
 	//COMMANDS THAT CAN BE USED IN EVERY STASIS EXCEPT DIALOGUE. THESE COMMANDS ARE FOR UI, INVENTORY,
 	//CHECKING SKILLS, SPELLS, MENU STUFF, ETC.
+
+
+
 	if (command == 'spells') {playerSpellsList()}
-	else if (command == 'fish') {fishFunction()}
+	else if (command == 'bet') {bet(secondCommand, thirdCommand)}
+	else if (command == 'save') {saveGame(secondCommand)}
+	else if (command == 'load') {retrieveSaveFile(secondCommand)}
 	else if (command == 'skills') {playerSkillsList()}
-	else if (command == 'open') {openObject(secondCommand)}
-	else if (command == 'forge') {forge(secondCommand, thirdCommand, fourthCommand)}
-	else if (command == 'tool') {tool(secondCommand, thirdCommand, fourthCommand)}
-	else if (command == 'weave') {weave(secondCommand, thirdCommand, fourthCommand)}
 	else if (command == 'abilities') {playerAbilitiesList()}
 	else if (command == 'stats') {stats()}
 	else if (command == 'experience' || command == 'exp') {exp()}
-	else if (command == 'cook') {cookFunction(secondCommand)}
 	else if (command == 'revive') {revive()}
 	else if (command == 'help') {help(secondCommand)}
-	else if (command == 'increase' || command == 'inc') {increaseStat(secondCommand)}
 	else if (command == 'look' || command == 'l') {look(command, secondCommand, currentArea)}
 	else if (command == 'examine' || command == 'ex') {examine(secondCommand, thirdCommand)}
 	else if (command == 'inspect' || command == 'insp' || command == 'ins' || command == 'in') {inspect(secondCommand, thirdCommand)}
@@ -1927,9 +2871,7 @@ function handleInputs(commandLineInput) {
 	else if (command == 'unpack') {unpack(secondCommand, thirdCommand)}
 	else if (command == 'swap') {swap()}
 	else if (command == 'macro') {setMacro(secondCommand, thirdCommand)}
-	else if (command == 'speak' || command == 'talk') {speak(secondCommand)}
-	else if (command == 'quest') {showQuest(secondCommand)}
-	else if (command == 'offer') {offerQuest(secondCommand)}
+
 	else if (command == 'show') {show(secondCommand, thirdCommand)}
 	else if (command == 'don' || command == 'wear' || command == 'equip') {donWearEquip(secondCommand)}
 	else if (command == 'unequip' || command == 'remove') {unequipRemove(secondCommand)}
@@ -1941,6 +2883,17 @@ function handleInputs(commandLineInput) {
 	else if (command == 'god') {godMode(secondCommand)}
 	else if (command == 'drink') {drinkPotion(secondCommand)}
 	else if (command == 'kl') {displayKillList()}
+	// if (player.stasis) {return}
+	else if (command == 'fish') {fishFunction()}
+	else if (command == 'open') {openObject(secondCommand)}
+	else if (command == 'forge') {forge(secondCommand, thirdCommand, fourthCommand)}
+	else if (command == 'tool') {tool(secondCommand, thirdCommand, fourthCommand)}
+	else if (command == 'weave') {weave(secondCommand, thirdCommand, fourthCommand)}
+	else if (command == 'increase' || command == 'inc') {increaseStat(secondCommand)}
+	else if (command == 'speak' || command == 'talk') {speak(secondCommand)}
+	else if (command == 'quest') {showQuest(secondCommand)}
+	else if (command == 'offer') {offerQuest(secondCommand)}
+	else if (command == 'cook') {cookFunction(secondCommand)}
 	//BELOW ARE COMMANDS THAT CAN ONLY BE USED WHEN ADVANCING, RETREATING, OR ANY STASIS
 
 	else if (advanceAndRetreatCheck()) {return}
@@ -1952,7 +2905,7 @@ function handleInputs(commandLineInput) {
 	else if (command == 'stealth' || command == 'hide') {stealthAbility()}
 	else if (command == 'unhide') {unhide()}
 	else if (command == 'unlock') {unlock(secondCommand)}
-
+	else if (command == 'search') {search(secondCommand)}
 	else if (command == 'pull') {pull(secondCommand)} //pull lever
 
 	else if (command == 'push' || command == 'press') {pull(secondCommand)} //push wall, push tile, push brick
@@ -2497,11 +3450,11 @@ function abvDirectionToFullDirection(command) {
 
 function dialogueWait(milliseconds) {
 	let randomNumber = randomNumberRange(0, 4)
-	let randomDialogueSound = dialogueArray[randomNumber]
+	// let randomDialogueSound = dialogueArray[randomNumber]
     return new Promise(resolve => {
         player.dialogueStasis = true
         setTimeout(() => {
-			randomDialogueSound.play()
+			// randomDialogueSound.play()
             player.dialogueStasis = false
             resolve()
         }, milliseconds)
@@ -2551,12 +3504,12 @@ function actionWait() {
 }
 
 function save(secondCommand, thirdCommand) {
-	localStorage.setItem(secondCommand, JSON.stringify(player))
-	localStorage.setItem('tester', JSON.stringify(attack))
-	localStorage.setItem('vigorDescription', JSON.stringify(player.vigor.description))
-	localStorage.setItem('vigorGoldToUpgrade', JSON.stringify(player.vigor.goldToUpgrade))
-	localStorage.setItem('items', JSON.stringify(pushItem))
-	quickMessage(`Game saved under the name: ${secondCommand}`)
+	// localStorage.setItem(secondCommand, JSON.stringify(player))
+	// localStorage.setItem('tester', JSON.stringify(attack))
+	// localStorage.setItem('vigorDescription', JSON.stringify(player.vigor.description))
+	// localStorage.setItem('vigorGoldToUpgrade', JSON.stringify(player.vigor.goldToUpgrade))
+	// localStorage.setItem('items', JSON.stringify(pushItem))
+	// quickMessage(`Game saved under the name: ${secondCommand}`)
 }
 
 function load(secondCommand) {
@@ -2576,35 +3529,10 @@ function load(secondCommand) {
 }
 
 // Save game function
-function saveGame(secondCommand) {
-	const gameState = {
-	// Serialize player data
-		player: player.serialize(), // Assuming player has a serialize method
-		// Serialize other game state data
-		// ...
-	};
-	localStorage.setItem(secondCommand, JSON.stringify(gameState));
-}
 
-// Load game function
-function loadGame(secondCommand) {
-	const savedGame = localStorage.getItem(secondCommand);
-	if (savedGame) {
-		const gameState = JSON.parse(savedGame);
-		// Deserialize player data
-		player.deserialize(gameState.player); // Assuming player has a deserialize method
-		// Deserialize other game state data
-		// ...
-	} else {
-		quickMessage(`No save file found`)
-	}
-}
 
 
 function godMode(secondCommand) {
-	player.gold = 10000
-	player.skillPoints = 1000
-	player.attributePoints = 1000
 	if (secondCommand == 'health') {
 		player.godMods.con = 100
 		updatePlayerStats()
@@ -2612,6 +3540,22 @@ function godMode(secondCommand) {
 		updatePlayerStats()
 		return
 	}
+	player.gold = 10000
+	player.skillPoints = 1000
+	player.attributePoints = 1000
+	player.godMods.might = 1000
+	player.godMods.adrenaline = 1000
+	player.godMods.focus = 1000
+	player.health = player.maxHealth
+	player.godMods.dodging = 100
+	player.godMods.accuracy = 1000
+	player.godMods.str = 100
+	player.godMods.dex = 100
+	player.godMods.agi = 100
+	player.godMods.charge = 1
+	player.godMods.stealth = 1
+	quickMessage(`God mode activated`)
+
 	if (secondCommand == 'mana') {
 		player.godMods.maxMana = 1000
 		updatePlayerStats()
@@ -2632,12 +3576,12 @@ function godMode(secondCommand) {
 		player.bows.level = 2
 		player.oneHanded.level = 2
 		player.twoHanded.level = 2
-		player.str = player.guild == 'Warrior' ? 2 : 
-		player.dex = player.guild == 'Sinistral' ? 2 : 
-		player.dex = player.guild == 'Monk' ? 2 : 
-		player.agi = player.guild == 'Ranger' ? 2 : 
-		player.int = player.guild == 'Mage' ? 2 : 
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 2 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 2 : 
+		player.godMods.dex = player.guild == 'Monk' ? 2 : 
+		player.godMods.agi = player.guild == 'Ranger' ? 2 : 
+		player.godMods.int = player.guild == 'Mage' ? 2 : 
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
@@ -2649,12 +3593,12 @@ function godMode(secondCommand) {
 		player.bows.level = 3
 		player.oneHanded.level = 3
 		player.twoHanded.level = 3
-		player.str = player.guild == 'Warrior' ? 3 : 
-		player.dex = player.guild == 'Sinistral' ? 3 : 
-		player.dex = player.guild == 'Monk' ? 3 : 
-		player.agi = player.guild == 'Ranger' ? 3 : 
-		player.int = player.guild == 'Mage' ? 3 : 
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 3 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 3 : 
+		player.godMods.dex = player.guild == 'Monk' ? 3 : 
+		player.godMods.agi = player.guild == 'Ranger' ? 3 : 
+		player.godMods.int = player.guild == 'Mage' ? 3 : 
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
@@ -2666,12 +3610,12 @@ function godMode(secondCommand) {
 		player.bows.level = 4
 		player.oneHanded.level = 4
 		player.twoHanded.level = 4
-		player.str = player.guild == 'Warrior' ? 4 : 
-		player.dex = player.guild == 'Sinistral' ? 4 : 
-		player.dex = player.guild == 'Monk' ? 4 : 
-		player.agi = player.guild == 'Ranger' ? 4 : 
-		player.int = player.guild == 'Mage' ? 4 : 
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 4 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 4 : 
+		player.godMods.dex = player.guild == 'Monk' ? 4 : 
+		player.godMods.agi = player.guild == 'Ranger' ? 4 : 
+		player.godMods.int = player.guild == 'Mage' ? 4 : 
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
@@ -2683,12 +3627,12 @@ function godMode(secondCommand) {
 		player.bows.level = 5
 		player.oneHanded.level = 5
 		player.twoHanded.level = 5
-		player.str = player.guild == 'Warrior' ? 5 :
-		player.dex = player.guild == 'Sinistral' ? 5 :
-		player.dex = player.guild == 'Monk' ? 5 :
-		player.agi = player.guild == 'Ranger' ? 5 :
-		player.int = player.guild == 'Mage' ? 5 :
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 5 :
+		player.godMods.dex = player.guild == 'Sinistral' ? 5 :
+		player.godMods.dex = player.guild == 'Monk' ? 5 :
+		player.godMods.agi = player.guild == 'Ranger' ? 5 :
+		player.godMods.int = player.guild == 'Mage' ? 5 :
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 		}
@@ -2700,12 +3644,12 @@ function godMode(secondCommand) {
 		player.bows.level = 6
 		player.oneHanded.level = 6
 		player.twoHanded.level = 6
-		player.str = player.guild == 'Warrior' ? 6 : 
-		player.dex = player.guild == 'Sinistral' ? 6 : 
-		player.dex = player.guild == 'Monk' ? 6 : 
-		player.agi = player.guild == 'Ranger' ? 6 : 
-		player.int = player.guild == 'Mage' ? 6 : 
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 6 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 6 : 
+		player.godMods.dex = player.guild == 'Monk' ? 6 : 
+		player.godMods.agi = player.guild == 'Ranger' ? 6 : 
+		player.godMods.int = player.guild == 'Mage' ? 6 : 
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
@@ -2717,12 +3661,12 @@ function godMode(secondCommand) {
 		player.bows.level = 7
 		player.oneHanded.level = 7
 		player.twoHanded.level = 7
-		player.str = player.guild == 'Warrior' ? 7 : 
-		player.dex = player.guild == 'Sinistral' ? 7 : 
-		player.dex = player.guild == 'Monk' ? 7 : 
-		player.agi = player.guild == 'Ranger' ? 7 : 
-		player.int = player.guild == 'Mage' ? 7 :
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 7 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 7 : 
+		player.godMods.dex = player.guild == 'Monk' ? 7 : 
+		player.godMods.agi = player.guild == 'Ranger' ? 7 : 
+		player.godMods.int = player.guild == 'Mage' ? 7 :
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
@@ -2734,12 +3678,12 @@ function godMode(secondCommand) {
 		player.bows.level = 8
 		player.oneHanded.level = 8
 		player.twoHanded.level = 8
-		player.str = player.guild == 'Warrior' ? 8 : 
-		player.dex = player.guild == 'Sinistral' ? 8 : 
-		player.dex = player.guild == 'Monk' ? 8 :
-		player.agi = player.guild == 'Ranger' ? 8 : 
-		player.int = player.guild == 'Mage' ? 8 : 
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 8 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 8 : 
+		player.godMods.dex = player.guild == 'Monk' ? 8 :
+		player.godMods.agi = player.guild == 'Ranger' ? 8 : 
+		player.godMods.int = player.guild == 'Mage' ? 8 : 
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
@@ -2751,12 +3695,12 @@ function godMode(secondCommand) {
 		player.bows.level = 9
 		player.oneHanded.level = 9
 		player.twoHanded.level = 9
-		player.str = player.guild == 'Warrior' ? 9 : 
-		player.dex = player.guild == 'Sinistral' ? 9 : 
-		player.dex = player.guild == 'Monk' ? 9 : 
-		player.agi = player.guild == 'Ranger' ? 9 : 
-		player.int = player.guild == 'Mage' ? 9 : 
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 9 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 9 : 
+		player.godMods.dex = player.guild == 'Monk' ? 9 : 
+		player.godMods.agi = player.guild == 'Ranger' ? 9 : 
+		player.godMods.int = player.guild == 'Mage' ? 9 : 
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
@@ -2768,69 +3712,56 @@ function godMode(secondCommand) {
 		player.bows.level = 10
 		player.oneHanded.level = 10
 		player.twoHanded.level = 10
-		player.str = player.guild == 'Warrior' ? 10 : 
-		player.dex = player.guild == 'Sinistral' ? 10 : 
-		player.dex = player.guild == 'Monk' ? 10 : 
-		player.agi = player.guild == 'Ranger' ? 10 : 
-		player.int = player.guild == 'Mage' ? 10 :
-		player.con = 1
+		player.godMods.str = player.guild == 'Warrior' ? 10 : 
+		player.godMods.dex = player.guild == 'Sinistral' ? 10 : 
+		player.godMods.dex = player.guild == 'Monk' ? 10 : 
+		player.godMods.agi = player.guild == 'Ranger' ? 10 : 
+		player.godMods.int = player.guild == 'Mage' ? 10 :
+		player.godMods.con = 1
 		updatePlayerStats()
 		return
 	}
 	if (!secondCommand) {
 		player.level = 10
 		player.experience = 1520
-		player.daggers.level = 30
-		player.unarmed.level = 30
-		player.bows.level = 30
-		player.oneHanded.level = 30
-		player.twoHanded.level = 30
-		player.stealth.level = 6
-		player.con = 100
-		player.str = 10
-		player.dex = 10
-		player.agi = 10
-		player.int = 20
+		player.godMods.daggers = 30
+		player.godMods.unarmed = 30
+		player.godMods.bows = 30
+		player.godMods.oneHanded = 30
+		player.godMods.twoHanded = 30
+		player.godMods.stealth = 6
+		player.godMods.con = 100
+		player.godMods.str = 10
+		player.godMods.dex = 10
+		player.godMods.agi = 10
+		player.godMods.int = 20
 		updatePlayerStats()
-		player.health = player.maxHealth
+		player.godMods.health = player.maxHealth
 		updatePlayerStats()
 		return
 	}
-	else {
-	player.godMods.might = 1000
-	player.godMods.adrenaline = 1000
-	player.godMods.focus = 1000
-	player.health = player.maxHealth
-	player.godMods.dodging = 100
-	player.godMods.accuracy = 1000
+
 	updatePlayerStats()
-	quickMessage(`God mode activated`)
-	}
+	
 }
 
 function combatCount(seconds) {
+	// console.log(seconds, ' COMBAT COUNT IN SECONDS')
 	player.stasis = true
 	player.swingTimer = Math.round(seconds * 10) / 10
+	// console.log(player.swingTimer, ' PLAYER SWING TIMER IN SECONDS')
 	player.combatTicker = setInterval(() => {
-		seconds = seconds - 0.1
-		player.swingTimer = Math.round(seconds * 10) / 10
-		seconds = Math.round(seconds * 10) / 10
-		if (seconds <= 0) {
-			player.swingTimer = 0
+		player.swingTimer -= 0.1
+		player.swingTimer = Math.round(player.swingTimer * 10) / 10
+		// seconds = Math.round(seconds * 10) / 10
+		// console.log(player.swingTimer, ' COMBAT COUNT IN SECONDS')
+		if (player.swingTimer <= 0) {
+			// console.log(player.swingTimer, ' SHOULD BE LESS THAN OR = TO 0')
+			player.swingTimer = player.currentWeaponSkill.speed
 			player.stasis = false
 			clearInterval(player.combatTicker)
 		}
 	}, 100)
-	// let combatTicker = setInterval(() => {
-	// 	seconds = seconds - 0.1
-	// 	player.swingTimer = Math.round(seconds * 10) / 10
-	// 	seconds = Math.round(seconds * 10) / 10
-	// 	if (seconds <= 0) {
-	// 		player.swingTimer = 0
-	// 		player.stasis = false
-	// 		clearInterval(combatTicker)
-	// 	}
-	// }, 100)
 }
 
 function abilityCount(seconds) {
@@ -3349,25 +4280,29 @@ function updateNpcPicture() {
 function displayArea(area, addClass) {
 	let areaDescription = area.descriptions.desc
 	let areaActionWord = area.descriptions.actionWord
+	console.log(areaActionWord)
 	// let areaDescriptionSplit = areaDescription.split(/\s|\./)
 	let areaDescriptionSplit = areaDescription.split(' ')
-	console.log(areaDescriptionSplit)
 	let slicedWordIndexArray = []
 	let slicedWords = []
 	changeRoomPicture(area.descriptions.zoneType)
 	updateNpcPicture()
 	// let roomPictureDisplay = document.getElementById('room-picture')
 	// roomPictureDisplay.src = "images/forest.jpg"
-	if (area.descriptions.actionWord) {
-		console.log(1)
-		areaActionWord.forEach(keyword => slicedWordIndexArray.push(areaDescriptionSplit.indexOf(keyword)))
+	if (areaActionWord) {
+			areaActionWord.forEach(keyword => {
+				console.log(areaActionWord)
+				console.log(keyword)
+				slicedWordIndexArray.push(areaDescriptionSplit.indexOf(keyword))
+				console.log(slicedWordIndexArray)
+		})
 		slicedWordIndexArray = slicedWordIndexArray.sort(function (a, b) {
 			return a - b
 		})
 		for (let i = 0; i < slicedWordIndexArray.length; i++) {
 			slicedWords.push(areaDescriptionSplit[slicedWordIndexArray[i]])
-			console.log(slicedWords)
 		}
+		console.log(slicedWords)
 		function compileDescription() {
 			// let splitDirections = currentArea.descriptions.zoneExits.split()
 			const areaMasterDiv = document.createElement('div')
@@ -3384,7 +4319,20 @@ function displayArea(area, addClass) {
 			// const areaDirectionsNode = document.createTextNode(area.descriptions.zoneExits)
 			console.log(slicedWords)
 			areaDescriptionSplit.forEach(word => {
-				if (word != slicedWords[0] && word != slicedWords[1] && word != slicedWords[2] && word != slicedWords[3] && word != slicedWords[4] && word != slicedWords[5]) {
+				if (word != slicedWords[0] && 
+					word != slicedWords[1] && 
+					word != slicedWords[2] && 
+					word != slicedWords[3] && 
+					word != slicedWords[4] && 
+					word != slicedWords[5] &&
+					word != slicedWords[6] &&
+					word != slicedWords[7] &&
+					word != slicedWords[8] &&
+					word != slicedWords[9] &&
+					word != slicedWords[10] &&
+					word != slicedWords[11] &&
+					word != slicedWords[12] &&
+					word != slicedWords[13]) {
 					const areaDescSpan = document.createElement('span')
 					if (addClass) {
 						areaDescSpan.classList.add(addClass)
@@ -3395,12 +4343,17 @@ function displayArea(area, addClass) {
 				}
 				for (let i = 0; i < slicedWords.length; i++) {
 					if (word == slicedWords[i]) {
-						let actionWordColor = area.interactables[slicedWords[i].toLowerCase()].color
-						let areaDescSpan = document.createElement('span')
-						let areaDescNode = document.createTextNode(slicedWords[i] + ' ')
-						areaDescSpan.appendChild(areaDescNode)
-						areaDescSpan.classList.add(actionWordColor())
-						areaDescDiv.appendChild(areaDescSpan)
+						console.log(word)
+						console.log(slicedWords[i])
+						let actionWordColor = area?.interactables?.[slicedWords[i]]?.color
+						if (actionWordColor != undefined) {
+							console.log('	not undefined')
+							let areaDescSpan = document.createElement('span')
+							let areaDescNode = document.createTextNode(slicedWords[i] + ' ')
+							areaDescSpan.appendChild(areaDescNode)
+							areaDescSpan.classList.add(actionWordColor())
+							areaDescDiv.appendChild(areaDescSpan)
+						}
 					}
 				}
 
@@ -3803,8 +4756,9 @@ function read(objectThatIsRead) {
 		img.style.width = '500px'
 		masterArea.appendChild(img)
 	}
-	if (currentArea.descriptions.sign && objectThatIsRead == 'sign') {
-		currentArea.descriptions.sign()
+	if (currentArea.descriptions[objectThatIsRead]) {
+		// currentArea.descriptions.sign()
+		currentArea.descriptions[objectThatIsRead]()
 	} else if (!currentArea.descriptions.sign && objectThatIsRead == 'sign') {
 		quickMessage(`You do not see a ${objectThatIsRead} to read`)
 	} else if (objectThatIsRead == undefined) {
@@ -3827,6 +4781,28 @@ function recall(playerX, playerY, playerZ) {
 	//Add the above conditional to allow the player to recall after completing the tutorial and if under level 10
 	if (playerX == 'square') {
 		currentArea = galvadiaTownSquare
+		player.x = currentArea.x
+		player.y = currentArea.y
+		player.z = currentArea.z
+		quickMessage(`You chant the words of Recall in your head and immediately feel yourself being whisked through space!`)
+		blankSpace()
+		areaCompiler(currentArea)
+		updateScroll()
+		return	
+	} 
+	if (playerX == 'professions') {
+		currentArea = amblersAlley1
+		player.x = currentArea.x
+		player.y = currentArea.y
+		player.z = currentArea.z
+		quickMessage(`You chant the words of Recall in your head and immediately feel yourself being whisked through space!`)
+		blankSpace()
+		areaCompiler(currentArea)
+		updateScroll()
+		return	
+	} 
+	if (playerX == 'warrior') {
+		currentArea = warriorsGuildBerserkersCommonRoom
 		player.x = currentArea.x
 		player.y = currentArea.y
 		player.z = currentArea.z
@@ -3880,7 +4856,19 @@ function recall(playerX, playerY, playerZ) {
 		updateScroll()
 		return
 	} 
-	if (!playerX) {
+	if (playerX == 'fields') {
+		currentArea = fields9
+		player.x = currentArea.x
+		player.y = currentArea.y
+		player.z = currentArea.z
+		quickMessage(`You chant the words of Recall in your head and immediately feel yourself being whisked through space!`)
+		blankSpace()
+		areaCompiler(currentArea)
+		updateScroll()
+		return
+	} 
+	if (!playerX && playerX != 0) {
+		quickMessage(`RECALLED`)
 		currentArea = trainingHallsCommonRoom
 		player.x = currentArea.x
 		player.y = currentArea.y
@@ -3956,6 +4944,7 @@ async function unlock(secondCommand) {
 			currentArea.descriptions.zoneExitsBool[direction()] = true
 			pushItem.splice(playerKeyIndex, 1)
 			await dialogueWait(200)
+			blankSpace()
 			quickMessage(`You have unlocked the way to the ${direction()}.`)
 			blankSpace()
 			await dialogueWait(200)
@@ -5503,7 +6492,7 @@ function calculateCritDamage(rightOrLeftObject) {
 
 
 
-function attack(secondCommand, thirdCommand) {
+function attackGodMode(secondCommand, thirdCommand) {
 	//FAIL CHECKS BELOW
 	let allEnemiesInRoom = getAllEnemiesInRoom()
 	let allEnemiesInCombat = getAllEnemiesInCombat()
@@ -5511,6 +6500,29 @@ function attack(secondCommand, thirdCommand) {
 	let targetEnemy = targetAnyEnemy(secondCommand, thirdCommand)
 	enemiesGettingHit.push(targetEnemy)
 	// if (actionWait()) {return}
+	// if (!doesEnemyExist()) {return} 
+	if (!doesValidTargetExist(targetEnemy)) {return}
+	if (isPlayerConjuring()) {return}
+	let playerWeaponRight = currentRightHandWeapon()
+	let playerWeaponLeft = currentLeftHandWeapon()
+	let weaponsObject = singleOrDualSwing(playerWeaponRight, playerWeaponLeft)
+	let weaponSkillSpeed = player.currentWeaponSkill.speed
+	let cleaveTargets = calculateCleaveTargets(targetEnemy, allEnemiesInCombat)
+	enemiesGettingHit = enemiesGettingHit.concat(cleaveTargets)
+	handleAttack(enemiesGettingHit, weaponsObject)
+	// combatCount(weaponSkillSpeed)
+	updatePlayerStats()
+	updateMonsterBox()
+	updateScroll()
+}
+function attack(secondCommand, thirdCommand) {
+	//FAIL CHECKS BELOW
+	let allEnemiesInRoom = getAllEnemiesInRoom()
+	let allEnemiesInCombat = getAllEnemiesInCombat()
+	let enemiesGettingHit = []
+	let targetEnemy = targetAnyEnemy(secondCommand, thirdCommand)
+	enemiesGettingHit.push(targetEnemy)
+	if (actionWait()) {return}
 	// if (!doesEnemyExist()) {return} 
 	if (!doesValidTargetExist(targetEnemy)) {return}
 	if (isPlayerConjuring()) {return}
@@ -5530,7 +6542,8 @@ function handleAttack(enemy, weaponsObject) {
 	handleRightAttack(enemy, weaponsObject)
 	handleLeftAttack(enemy, weaponsObject)
 }
-function handleRightAttack(enemy, weaponsObject){
+function handleRightAttack(enemy, weaponsObject) {
+	console.log(weaponsObject, ' WEAPONS OBJECT')
 	let rightObject = weaponsObject.right
 	if (rightObject.weapon) {
 		enemy.forEach(enemy => {
@@ -5558,11 +6571,6 @@ function handleRightAttack(enemy, weaponsObject){
 			rightObject.totalDamage = calculateDamageWithBonusesAndAfterEnemyMitigation(enemy, rightObject) //base damage after enemy mitigation
 			// rightObject.blockedDamage = rightObject.baseDamage - rightObject.totalDamage
 			rightObject.blockedDamage = rightObject.damagePreMitigation - rightObject.totalDamage
-			quickMessage(`${rightObject.baseDamage} Base Damage`)
-			quickMessage(`${rightObject.damagePreMitigation} Damage Pre Mitigation`)
-			quickMessage(`${rightObject.critDamage} Crit Damage`)
-			quickMessage(`${rightObject.totalDamage} Total Damage`)
-			quickMessage(`${rightObject.blockedDamage} Blocked Damage`)
 			rightObject.buffDamage = calculateBuffDamage(enemy, rightObject)
 			rightObject.weaponEnchantmentDamage = calculateWeaponEnchantmentDamage(enemy, rightObject)
 			rightObject.weaponEnchantmentHeal = calculateWeaponEnchantmentHeal(rightObject)
@@ -5739,9 +6747,10 @@ function baseAttackDamageRight() {
 	const lowDamage = Math.ceil(attackPower * (botMultiplier * botDamage));
 	const highDamage = Math.ceil(attackPower * (topMultiplier * topDamage));
 	const baseDamage = Math.max(0, randomNumberRange(lowDamage, highDamage))
-	console.log(lowDamage, 'LOW DAMAGE')
-	console.log(highDamage, 'HIGH DAMAGE')
-	console.log(baseDamage, 'CHOSEN DAMAGE')
+	console.log(lowDamage, 'LOW DAMAGE - RIGHT')
+	console.log(highDamage, 'HIGH DAMAGE - RIGHT', highDamage / player.currentWeaponSkill.speed, ' HIGH DPS - RIGHT')
+	console.log(baseDamage, 'CHOSEN DAMAGE - RIGHT')
+	console.log(baseDamage / player.currentWeaponSkill.speed, ' DPS - RIGHT')
 	return baseDamage
 }
 
@@ -5755,9 +6764,10 @@ function baseAttackDamageLeft() {
 	const lowDamage = Math.ceil(attackPower * (botMultiplier * botDamage));
 	const highDamage = Math.ceil(attackPower * (topMultiplier * topDamage));
 	const baseDamage = Math.max(0, randomNumberRange(lowDamage, highDamage))
-	console.log(lowDamage, ' LOW DAMAGE')
-	console.log(highDamage, ' HIGH DAMAGE')
-	console.log(playerWeapon)
+	console.log(lowDamage, ' LOW DAMAGE - LEFT')
+	console.log(highDamage, ' HIGH DAMAGE - LEFT', highDamage / player.currentWeaponSkill.speed, ' HIGH DPS - LEFT')
+	console.log(baseDamage, 'CHOSEN DAMAGE - LEFT')
+	console.log(baseDamage / player.currentWeaponSkill.speed, ' DPS - LEFT')
 	return baseDamage
 }
 
@@ -5984,8 +6994,6 @@ function calculateDamageWithBonusesAndAfterEnemyMitigation(enemy, rightOrLeft) {
 		let enemyArmor = rightOrLeft.penetrationType == 'slashing' ? enemy.slashingArmor : rightOrLeft.penetrationType == 'piercing' ? enemy.piercingArmor : enemy.bluntArmor
 		let armorAfterPen = enemyArmor - player[slashingPiercingOrBlunt] <= 0 ? 0 : enemyArmor - player[slashingPiercingOrBlunt]
 		const damageAfterMitigation = (damageBeforeMitigation - armorAfterPen) * (1000 / (1000 + armorAfterPen)) <= 0 ? 0 : (damageBeforeMitigation - armorAfterPen) * (1000 / (1000 + armorAfterPen))
-		quickMessage(`${damageBeforeMitigation} damage before mitigation`)
-		quickMessage(`${damageAfterMitigation} damage after mitigation`)
 		return Math.floor(damageAfterMitigation)
 	}
 }
@@ -6603,27 +7611,28 @@ function spellUpgradeCost(skillSpellAbility) {
 
 function enemyKillExperience(enemy, baseLevel) {
 	// let enemyLevelMod = enemy.level * enemy.level
-	let enemyLevelMod = (enemy.level - baseLevel) * 0.1
+	// let enemyLevelMod = (enemy.level - baseLevel) * 0.1
 	let baseExperience = enemy.baseExperience
-	let experienceLevelBonus = baseExperience * enemyLevelMod
-	console.log(enemyLevelMod)
-	console.log(baseExperience)
-	console.log(experienceLevelBonus)
-	// if (enemy.level - player.level >= 5) {baseExperience *= 1.25}
-	// if (enemy.level - player.level == 4) {baseExperience *= 1.20}
-	// if (enemy.level - player.level == 3) {baseExperience *= 1.15}
-	// if (enemy.level - player.level == 2) {baseExperience *= 1.1}
-	// if (enemy.level - player.level == 1) {baseExperience *= 1.05}
-	// if (enemy.level - player.level == -1) {baseExperience *= 0.9}
-	// if (enemy.level - player.level == -2) {baseExperience *= 0.8}
-	// if (enemy.level - player.level == -3) {baseExperience *= 0.7}
-	// if (enemy.level - player.level == -4) {baseExperience *= 0.6}
-	// if (enemy.level - player.level == -5) {baseExperience *= 0.5}
-	// if (enemy.level - player.level == -6) {baseExperience *= 0.4}
-	// if (enemy.level - player.level == -7) {baseExperience *= 0.3}
-	// if (enemy.level - player.level == -8) {baseExperience *= 0.2}
-	// if (enemy.level - player.level <= -9) {baseExperience *= 0.1}
-	baseExperience += experienceLevelBonus
+	// let experienceLevelBonus = baseExperience * enemyLevelMod
+	// console.log(enemyLevelMod)
+	// console.log(baseExperience)
+	// console.log(experienceLevelBonus)
+	if (enemy.level - player.level >= 5) {baseExperience *= 1.25}
+	if (enemy.level - player.level == 4) {baseExperience *= 1.20}
+	if (enemy.level - player.level == 3) {baseExperience *= 1.15}
+	if (enemy.level - player.level == 2) {baseExperience *= 1.1}
+	if (enemy.level - player.level == 1) {baseExperience *= 1.05}
+	if (enemy.level - player.level == 0) {baseExperience *= 1.00}
+	if (enemy.level - player.level == -1) {baseExperience *= 0.9}
+	if (enemy.level - player.level == -2) {baseExperience *= 0.8}
+	if (enemy.level - player.level == -3) {baseExperience *= 0.7}
+	if (enemy.level - player.level == -4) {baseExperience *= 0.6}
+	if (enemy.level - player.level == -5) {baseExperience *= 0.5}
+	if (enemy.level - player.level == -6) {baseExperience *= 0.4}
+	if (enemy.level - player.level == -7) {baseExperience *= 0.3}
+	if (enemy.level - player.level == -8) {baseExperience *= 0.2}
+	if (enemy.level - player.level <= -9) {baseExperience *= 0.1}
+	// baseExperience += experienceLevelBonus
 	return Math.floor(baseExperience)
 }
 
@@ -6647,7 +7656,7 @@ function playerLevelFunc() {
 	// 	mageGuild_Room2.npc.push(olivandra)
 	// 	monksGuildRoom1.npc.push(sitoria)
 	// 	rangersGuildRoom1.npc.push(tilwin)
-	// 	sinistralsGuild_Room2.npc.push(zel)
+	// 	sinistralsGuild_Room2.npc.push(zell)
 	// }
 	if (playerCurrentLevel != player.level) {
 	let line1 = document.createElement('div')
@@ -6660,7 +7669,7 @@ function playerLevelFunc() {
 		attributePointsIncrease = 3
 	} else if (player.level <= 15) {
 		attributePointsIncrease = 4
-	} else if (player.level > 16) {
+	} else if (player.level >= 16) {
 		attributePointsIncrease = 5
 	}
 	let skillPointsIncrease = player.level * 4 > 20 ? 20 : player.level * 4
@@ -6688,7 +7697,8 @@ function playerLevelFunc() {
 	}
 }
 function activateLevel10Event() {
-	warriorsGuildOfficeHallVelthash.npc.push(fieldsTrainer)
+	npcAddToRoom(fieldsTrainer, warriorsGuildOfficeHallVelthash)
+	// warriorsGuildOfficeHallVelthash.npc.push(fieldsTrainer)
 }
 
 function abilityLearnedOnLevelUp() {
@@ -6704,6 +7714,7 @@ function abilityLearnedOnLevelUp() {
 		}
 		if (player.level == 4) {
 			player.skillMods.cyclone = 1
+			player.skillMods.bleed = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
 			customizeEachWord(`Cyclone`, player.cyclone.color, line1)
 			customizeEachWord(`!`, 'white', line1)
@@ -6764,6 +7775,7 @@ function abilityLearnedOnLevelUp() {
 		}
 		if (player.level == 4) {
 			player.skillMods.backstab = 1
+			player.skillMods.sinisterMark = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
 			customizeEachWord(`Backstab`, player.backstab.color, line1)
 			customizeEachWord(`!`, 'white', line1)
@@ -6778,6 +7790,7 @@ function abilityLearnedOnLevelUp() {
 	if (player.playerClass.name == 'Thief') {
 		if (player.level == 3) {
 			player.skillMods.venomBlade = 1
+			player.skillMods.poison = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
 			customizeEachWord(`Venom Blade`, player.venomBlade.color, line1)
 			customizeEachWord(`!`, 'white', line1)
@@ -6798,6 +7811,7 @@ function abilityLearnedOnLevelUp() {
 	if (player.playerClass.name == 'Shadowblade') {
 		if (player.level == 3) {
 			player.skillMods.shadowDaggers = 1
+			player.skillMods.shadowMark = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
 			customizeEachWord(`Shadow Daggers`, player.shadowDaggers.color, line1)
 			customizeEachWord(`!`, 'white', line1)
@@ -6810,6 +7824,7 @@ function abilityLearnedOnLevelUp() {
 		}
 		if (player.level == 5) {
 			player.skillMods.shadowVenom = 1
+			player.skillMods.shadowNova = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
 			customizeEachWord(`Shadow Venom`, player.shadowVenom.color, line1)
 			customizeEachWord(`!`, 'white', line1)
@@ -6866,6 +7881,18 @@ function abilityLearnedOnLevelUp() {
 			customizeEachWord(`Earth Seal`, player.earthSeal.color, line1)
 			customizeEachWord(`!`, 'white', line1)
 		}
+		if (player.level == 5) {
+			player.skillMods.mysticFist = 1
+			customizeEachWord(`You have learned the ability `, 'white', line1)
+			customizeEachWord(`Mystic Fist`, player.earthSeal.color, line1)
+			customizeEachWord(`!`, 'white', line1)
+		}
+		if (player.level == 5) {
+			player.skillMods.unleashedPower = 1
+			customizeEachWord(`You have learned the ability `, 'white', line1)
+			customizeEachWord(`Unleashed Power`, player.earthSeal.color, line1)
+			customizeEachWord(`!`, 'white', line1)
+		}
 	}
 	if (player.playerClass.name == 'Elemental Monk') {
 		if (player.level == 3) {
@@ -6882,6 +7909,9 @@ function abilityLearnedOnLevelUp() {
 		}
 		if (player.level == 5) {
 			player.skillMods.quakeFist = 1
+			player.skillMods.lightningFist = 1
+			player.skillMods.elementalTempest = 1
+			player.skillMods.transcendence = 1
 			customizeEachWord(`You have learned the ability `, 'white', line1)
 			customizeEachWord(`Quake Fist`, player.quakeFist.color, line1)
 			customizeEachWord(`!`, 'white', line1)
@@ -6968,39 +7998,154 @@ function abilityLearnedOnLevelUp() {
 		}
 	}
 }
+
+function buffTallyModValue(player, stat) {
+    let total = 0;
+    
+    // Loop through all buffs on the player
+    for (let buff in player.buffs) {
+        if (player.buffs[buff].mods && player.buffs[buff].mods[stat]) {
+            total += player.buffs[buff].mods[stat];
+        }
+    }
+
+    return total;
+}
+
+function buffGetValues() {
+	let playerBuffs = Object.keys(player.buffs)
+	for (const buffName of player.buffs) {
+		if (player.buffs[buffName]?.mods) {
+			quickMessage()
+		}
+	}
+}
+
 function calculateStat(playerObject, stat) {
 		return (playerObject?.skillMods?.[stat] ?? 0) +
 		(playerObject?.baseStats?.[stat] ?? 0) +
 		(playerObject?.equipmentMods?.[stat] ?? 0) +
-		(playerObject?.buffMods?.[stat] ?? 0) +
+		// (playerObject?.buffMods?.[stat] ?? 0) +
+		buffTallyModValue(player, stat) +
 		(playerObject?.debuffMods?.[stat] ?? 0) +
 		(playerObject?.godMods?.[stat] ?? 0);
 }
 function calculateBonusStat(playerObject, stat) {
 		return (playerObject?.skillMods?.[stat] ?? 0) +
 		(playerObject?.equipmentMods?.[stat] ?? 0) +
-		(playerObject?.buffMods?.[stat] ?? 0) +
+		// (playerObject?.buffMods?.[stat] ?? 0) +
+		buffTallyModValue(player, stat) +
 		(playerObject?.debuffMods?.[stat] ?? 0) +
 		(playerObject?.godMods?.[stat] ?? 0);
 }
 
+//!player.questLog.egbert
+//player.questLog.egbert = {}
+//player.questLog.egbert.questStage = stage
+
+function advanceQuestStage(questGiver, stage) {
+	questGiver.questStage = stage
+	// if (!player.questLog[questGiver.refName]) {
+	// 	player.questLog[questGiver.refName] = {}
+	// 	player.questLog[questGiver.refName].stage = stage
+	// } else {
+	// 	player.questLog[questGiver.refName].stage = stage
+	// }
+}
+
+
+// function npcAddLocationToPlayerObject(npc, area) {
+// 	if (!player.npcLocations[npc.refName]) {
+// 		player.npcLocations[npc.refName] = {}
+// 		player.npcLocations[npc.refName] = area
+// 	} else {
+// 		player.npcLocations[npc.refName] = area
+// 	}
+// }
+
+function npcUpdateLocation(npc, area) {
+    // Ensure the tracker has an entry for this NPC
+    if (!player.npcLocationTracker[npc.refName]) {
+        player.npcLocationTracker[npc.refName] = {};
+    }
+
+    // Update the NPC's location and store the NPC object
+    player.npcLocationTracker[npc.refName].location = area.descriptions.areaName
+    player.npcLocationTracker[npc.refName].npcRefName = npc.refName
+	if (npc.questStage) player.npcLocationTracker[npc.refName].questStage = npc.questStage
+}
+function loadNpcsIntoAreas() {
+	npcClearAllBehavior()
+    for (const npcInTracker in player.npcLocationTracker) {
+		console.log(npcInTracker, ' NPC IN TRACKER')
+        const npcData = player.npcLocationTracker[npcInTracker];
+        const areaName = npcData.location;
+		const refName = npcData.npcRefName
+		for (const npcInArray of allNpcsArray) {
+			if (npcInArray.refName == refName) {
+				// clearInterval(npcInArray.behaviorInterval)
+				let areaToPushNpcTo
+				if (npcInArray.areas) {
+					//has area pack -- free roaming npcs
+					let areaToRemoveNpcFrom = npcInArray.areas.find(area => area.npc.find(npc => npc.refName == npcInArray.refName))
+					let npcToRemoveIndex = areaToRemoveNpcFrom.npc.indexOf(npcInArray)
+					areaToRemoveNpcFrom.npc.splice(npcToRemoveIndex, 1)
+				} else {
+					//doesn't have area pack -- static npcs
+					// areaToPushNpcTo = allAreas.find(area => area?.descriptions?.areaName == areaName)
+				}
+				areaToPushNpcTo = allAreas.find(area => area?.descriptions?.areaName == areaName)
+				npcRemoveFromTheirCurrentRoom(npcInArray)
+				npcAddToRoom(areaToPushNpcTo, npcInArray)
+				npcStartSelectNpcBehavior(npcInArray)
+			}
+		}
+    }
+	for (const npcInStorage in player.npcQuestStageStorage) {
+		let foundNpc = allNpcsArray.find(npc => npc.refName == npcInStorage)
+		foundNpc.questStage = player.npcQuestStageStorage[npcInStorage]
+	}
+}
+
+function npcClearAllBehavior() {
+	allNpcsArray.forEach(npc => {
+		clearInterval(npc.behaviorInterval)
+	})
+}
+function npcStartAllBehavior() {
+	//Starts behavior intervals of all npcs. Might not want to use this if
+	//i'm going to have some npcs not have their behavior running until certain events
+	//like npcs in other towns probably shouldn't be moving since the player won't encounter
+	//them for many hours
+	allNpcsArray.forEach(npc => npc.npcBehavior?.())
+}
+function npcStartSelectNpcBehavior(npc) {
+	npc.npcBehavior()
+}
 
 let player = {
-	//stats
+	npcLocationTracker: {},
+	npcQuestStageStorage: {},
 	gameStages: {
 		tutorial: {
 			stage1: true,
-			complete: false,
+			isComplete: false,
 			tutorialEventsRan: false,
+			gameEvent: function() {
+				let npcArray = [till, sylas, gaelwyn, krista, lessa]
+				npcArray.forEach(npc => {
+					console.log(npc)
+					npc.isBehaviorOn = false
+					npcRemoveFromRoomPack(npc, npc.areas)
+					npcAddToRoom(trainingHallsCombatHalls1, npc)
+				})
+			},
 		},
 		gameStart: {
 		},
 	},
-	questStages: {
-		fieldsTrainer: {
-			stage1: false,
-		}
-	},
+	questLog: {},
+	npcLocations: {},
 	isAlive: true,
 	level: 1,
 	id: 'player1',
@@ -7061,7 +8206,7 @@ let player = {
 	z: -2,
 	s: '',
 	special: '',
-	name: 'Zalbane',
+	name: '',
 	mount: false,
 	currentWeaponSkill: [],
 	combat: [],
@@ -7134,6 +8279,10 @@ let player = {
 		},
 		swing: (enemy, weapon) => unarmedSwing1(enemy, weapon),
 		miss: (enemy, weapon) => unarmedSwing1(enemy, weapon),
+		addToPlayer: function() {
+			player[this.refName] = {}
+			copyGettersAndSetters(player[this.refName], this)
+		},
 	},
 	leftFist: {
 		//change object name to leftHand
@@ -7168,6 +8317,10 @@ let player = {
 		},
 		swing: (enemy, weapon) => unarmedSwing1(enemy, weapon),
 		miss: (enemy, weapon) => unarmedSwing1(enemy, weapon),
+		addToPlayer: function() {
+			player[this.refName] = {}
+			copyGettersAndSetters(player[this.refName], this)
+		},
 	},
 	get str() {
 		return calculateStat(this, 'str')
@@ -7214,6 +8367,21 @@ let player = {
 	get bluntArmor() {
 		return calculateStat(this, 'bluntArmor') + player.toughness.rating()
 	},
+	get fireResist() {
+		return calculateStat(this, 'fireResist') // add something like + magic resist skill
+	},
+	get iceResist() {
+		return calculateStat(this, 'iceResist') // add something like + magic resist skill
+	},
+	get lightningResist() {
+		return calculateStat(this, 'lightningResist') // add something like + magic resist skill
+	},
+	get waterResist() {
+		return calculateStat(this, 'waterResist') // add something like + magic resist skill
+	},
+	get windResist() {
+		return calculateStat(this, 'windResist') // add something like + magic resist skill
+	},
 	get burden() {
 		return Math.max(calculateStat(this, 'weight') - (player.str * 5), 0)
 	},
@@ -7242,7 +8410,8 @@ let player = {
 	get maxMana() {
 		let perLevelBonus = player.baseStats.manaPerLevel * player.level
 		let perWISBonus = (player.baseStats.manaPerWIS + player.devotion.level) * player.wis
-		return calculateStat(this, 'maxMana') + perLevelBonus + perWISBonus},
+		return calculateStat(this, 'maxMana') + perLevelBonus + perWISBonus
+	},
 	get sinisterMarksMax() {
 		return calculateStat(this, 'sinisterMarksMax')
 	},
@@ -7329,10 +8498,32 @@ const rest = {
 	manaBonus: 0,
 	maxLevel: 20,
 	healthPerTick: function() {
-		return (this.level * player.con)
+		let baseRecovery = player.con
+		let restSkillLevel = this.level
+		let skillModifier = 1.5
+		if (player.guild == "Warrior") {}
+		if (player.guild == "Sinistral") {}
+		if (player.guild == "Monk") {}
+		if (player.guild == "Ranger") {}
+		if (player.guild == "Mage") {
+			baseRecovery = 1
+			skillModifier = 1
+			restSkillLevel /= 2
+		}
+		let amountRecovered = Math.ceil(baseRecovery + (restSkillLevel * skillModifier) * restSkillLevel)
+		return amountRecovered
 	},
 	manaPerTick: function() {
-		return (this.level * player.wis)
+		let baseRecovery = player.wis
+		let restSkillLevel = this.level
+		let skillModifier = 1.5
+		if (player.guild != "Mage") {
+			baseRecovery = 1
+			skillModifier = 1
+			restSkillLevel /= 2
+		}
+		let amountRecovered = Math.ceil(baseRecovery + (restSkillLevel * skillModifier) * restSkillLevel)
+		return amountRecovered
 	},
 	goldToUpgrade: function () {
 		return goldUpgradeCostLow(player.rest)
@@ -7638,8 +8829,8 @@ const vigor = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`Vigor `, this.color, line1)
-		customizeEachWord(`increases the effectiveness of the Constitution attribute, gaining more hit points per point of Constitution.`, 'white', line1)
+		customizeEachWord(`Vigor`, this.color, line1)
+		customizeEachWord(`: Increases the effectiveness of Constitution by gaining more hit points per point of Constitution. This effect is retroactive and you will gain extra health for the Constitution you currently have.`, 'white', line1)
 		blankSpace()
 	},
 	addToPlayer: function() {
@@ -7648,6 +8839,7 @@ const vigor = {
 	},
 }
 vigor.addToPlayer()
+
 const devotion = {
 		get level() {
 		return calculateStat(player, this.refName)
@@ -7679,8 +8871,8 @@ const devotion = {
 	description: function() {
 		let line1 = lineFunc()
 		blankSpace()
-		customizeEachWord(`Devotion `, this.color, line1)
-		customizeEachWord(`increases the effectiveness of the Wisdom attribute, gaining more mana per point of Wisdom.`, 'white', line1)
+		customizeEachWord(`Devotion`, this.color, line1)
+		customizeEachWord(`: Increases the effectiveness of Wisdom by gaining more mana per point of Wisdom. This effect is retroactive, and you will gain extra mana for the Wisdom you currently have.`, 'white', line1)
 		blankSpace()
 	},
 	addToPlayer: function() {
@@ -7985,12 +9177,12 @@ const stealth = {
 	color: 'sinistral-color',
 	maxLevel: 10,
 	cooldown: function() {
-		if (player.stealth.level == 1) {return 5}
-		if (player.stealth.level == 2) {return 5}
-		if (player.stealth.level == 3) {return 4}
-		if (player.stealth.level == 4) {return 4}
-		if (player.stealth.level == 5) {return 3}
-		if (player.stealth.level == 6) {return 3}
+		if (player.stealth.level <= 1) {return 2}
+		if (player.stealth.level == 2) {return 2}
+		if (player.stealth.level == 3) {return 2}
+		if (player.stealth.level == 4) {return 2}
+		if (player.stealth.level == 5) {return 2}
+		if (player.stealth.level == 6) {return 2}
 		if (player.stealth.level == 7) {return 2}
 		if (player.stealth.level >= 8) {return 2}
 	},
@@ -7999,7 +9191,7 @@ const stealth = {
 		refName: 'stealthBreak',
 		stacks: 1,
 		get dodge() {
-			if (player.stealth.level == 1) { return 10 }
+			if (player.stealth.level <= 1) { return 10 }
 			if (player.stealth.level == 2) { return 15 }
 			if (player.stealth.level == 3) { return 20 }
 			if (player.stealth.level == 4) { return 25 }
@@ -8010,7 +9202,7 @@ const stealth = {
 			if (player.stealth.level >= 9) { return 50 }
 		},
 		get duration() {
-			if (player.stealth.level == 1) { return 11000 }
+			if (player.stealth.level <= 1) { return 11000 }
 			if (player.stealth.level == 2) { return 12000 }
 			if (player.stealth.level == 3) { return 13000 }
 			if (player.stealth.level == 4) { return 14000 }
@@ -8028,7 +9220,7 @@ const stealth = {
 	damageBonus: function() {
 		if (!player.isStealthed) {return 0}
 		let damageBonus = 0
-		if (player.stealth.level == 1) {damageBonus = 0.25} 
+		if (player.stealth.level <= 1) {damageBonus = 0.25} 
 		if (player.stealth.level == 2) {damageBonus = 0.50} 
 		if (player.stealth.level == 3) {damageBonus = 0.75} 
 		if (player.stealth.level == 4) {damageBonus = 1.0} 
@@ -8905,7 +10097,7 @@ const barrier = {
 		let line1 = document.createElement('div')
 		let line2 = document.createElement('div')
 		blankSpace()
-		customizeEachWord(`You hold your hands out in front of you and a light, blue glow surrounds your body.`, 'white', line1)		
+		customizeEachWord(`You hold your hands out in front of you. A light blue glow surrounds your body.`, 'white', line1)		
 		customizeEachWord(`You place a `, 'white', line2)
 		customizeEachWord(`${this.name} `, this.color, line2)
 		customizeEachWord(`on yourself absorbing the next `, 'white', line2)
@@ -9942,6 +11134,7 @@ const fistsOfPrecision = {
 	},
 }
 fistsOfPrecision.addToPlayer()
+
 const wayOfTheFist = {
 		get level() {
 		return calculateStat(player, this.refName)
@@ -10018,6 +11211,7 @@ const bleed = {
 		//change to increment by 10% per stack
 	},
 	bonusModifier: function() {
+		if (this.level == 0) {return 0}
 		if (this.level == 1) {return 0.20}
 		if (this.level == 2) {return 0.25}
 		if (this.level == 3) {return 0.30}
@@ -10239,15 +11433,15 @@ const ripslash = {
 	damage: function (enemy) {
 		let baseDamage = baseAttackDamageRight()
 		let levelModifier = 1
-		if (this.level == 1) { levelModifier = 1.5 }
-		if (this.level == 2) { levelModifier = 1.7 }
-		if (this.level == 3) { levelModifier = 1.9 }
-		if (this.level == 4) { levelModifier = 1.9 }
-		if (this.level == 5) { levelModifier = 2.1 }
-		if (this.level == 6) { levelModifier = 2.1 }
-		if (this.level == 7) { levelModifier = 2.1 }
-		if (this.level == 8) { levelModifier = 2.3 }
-		if (this.level == 9) { levelModifier = 2.3 }
+		if (this.level == 1) { levelModifier = 1.0 }
+		if (this.level == 2) { levelModifier = 1.2 }
+		if (this.level == 3) { levelModifier = 1.4 }
+		if (this.level == 4) { levelModifier = 1.6 }
+		if (this.level == 5) { levelModifier = 1.6 }
+		if (this.level == 6) { levelModifier = 1.8 }
+		if (this.level == 7) { levelModifier = 2.0 }
+		if (this.level == 8) { levelModifier = 2.2 }
+		if (this.level == 9) { levelModifier = 2.5 }
 		if (this.level >= 10) { levelModifier = 2.5 }
 		let baseAndLevelDamage = (baseDamage * levelModifier)
 		let bleedBonusDamage = calculateBleedBonus(enemy, baseAndLevelDamage)
@@ -10320,7 +11514,7 @@ const ripslash = {
 ripslash.addToPlayer()
 
 const cyclone = {
-		get level() {
+	get level() {
 		return calculateStat(player, this.refName)
 	},
 	name: 'Cyclone',
@@ -10625,7 +11819,7 @@ const dualStrike = {
 		attackPower: 0,
 		mods: {
 			attackPower: 2000,
-			weight: 4234
+			weight: 10,
 		},
 		stacks: 1,
 		maxStacks: function() {
@@ -11322,7 +12516,7 @@ const ambush = {
 	cooldown: 5000,
 	cooldownSet: 5000,
 	resourceName: 'adrenaline',
-	resourceCost: 15,
+	resourceCost: 20,
 	weaponTypesUsed: ['daggers'],
 	type: 'ability',
 	color: 'sinistral-color',
@@ -11374,6 +12568,7 @@ const ambush = {
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
+		ambushAudioArray[randomNumberRange(0, 2)].play()
 	},
 	flavorTextSpecial: function() {
 		let line1 = lineFunc()
@@ -11391,6 +12586,7 @@ const ambush = {
 		customizeEachWord(`miss`, 'red', line1)
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
+		daggerMissArray1[randomNumberRange(0, 4)].play()
 	},
 	goldToUpgrade: function () {
 		return abilityGoldUpgradeCost(player.ambush)
@@ -11515,6 +12711,7 @@ const backstab = {
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
+		backstabAudioArray[randomNumberRange(0, 2)].play()
 	},
 	flavorTextMiss: function(enemy, weapon) {
 		let line1 = lineFunc()
@@ -11529,6 +12726,7 @@ const backstab = {
 		customizeEachWord(`miss`, 'red', line1)
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
+		daggerMissArray1[randomNumberRange(0, 4)].play()
 	},
 	goldToUpgrade: function () {
 		return abilityGoldUpgradeCost(player.backstab)
@@ -11612,6 +12810,7 @@ const guillotine = {
 		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
 		customizeEachWord(`)`, 'white', line2)
 		blankSpace()
+		guillotineAudioArray[randomNumberRange(0, 2)].play()
 	},
 	flavorTextAdrenalineGain: function() {
 		let line1 = lineFunc()
@@ -11632,6 +12831,7 @@ const guillotine = {
 		customizeEachWord(`miss`, 'red', line1)
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
+		daggerMissArray1[randomNumberRange(0, 4)].play()
 	},
 	goldToUpgrade: function () {
 		return abilityGoldUpgradeCost(player.guillotine)
@@ -11658,27 +12858,28 @@ const venomBlade = {
 	color: 'sinistral-color',
 	multiplier: 1.5,
 	resourceName: 'adrenaline',
-	resourceCost: 0,
+	resourceCost: 15,
 	weaponTypesUsed: ['daggers', 'oneHanded'],
 	rightWeaponTypes: ['daggers', 'oneHanded'],
 	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
 		//5 and 5 = 10
 		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft())
-		let bonusDamage = enemy.debuffs?.poison ? (enemy.debuffs?.poison.stacks * 0.2) + 1 : 0
-		let baseAndBonusDamage = baseDamage + bonusDamage
+		let bonusModifier = enemy.debuffs?.poison ? (enemy.debuffs?.poison.stacks * 0.1) + 1 : 1
+		console.log(bonusModifier, ' VENOMBLADE BONUS DAMAGE FROM ENEMY POISON STACKS')
+		let bonusDamage = baseDamage * bonusModifier
 		let levelModifier = 1
 		if (this.level == 1) { levelModifier = 1.0}
-		if (this.level == 2) { levelModifier = 1.1}
-		if (this.level == 3) { levelModifier = 1.2}
-		if (this.level == 4) { levelModifier = 1.3}
-		if (this.level == 5) { levelModifier = 1.4}
-		if (this.level == 6) { levelModifier = 1.5}
-		if (this.level == 7) { levelModifier = 1.6}
-		if (this.level == 8) { levelModifier = 1.7}
-		if (this.level == 9) { levelModifier = 1.8}
-		if (this.level >= 10) { levelModifier = 1.9}
-		let totalDamage = baseAndBonusDamage * levelModifier
+		if (this.level == 2) { levelModifier = 1.05}
+		if (this.level == 3) { levelModifier = 1.1}
+		if (this.level == 4) { levelModifier = 1.15}
+		if (this.level == 5) { levelModifier = 1.20}
+		if (this.level == 6) { levelModifier = 1.25}
+		if (this.level == 7) { levelModifier = 1.30}
+		if (this.level == 8) { levelModifier = 1.35}
+		if (this.level == 9) { levelModifier = 1.40}
+		if (this.level >= 10) { levelModifier = 1.45}
+		let totalDamage = (bonusDamage) * levelModifier
 		return Math.ceil(totalDamage)
 	},
 	// debuff: {
@@ -11754,8 +12955,8 @@ const contagion = {
 	},
 	name: 'Contagion',
 	refName: 'contagion',
-	cooldown: 2500,
-	cooldownSet: 2500,
+	cooldown: 2000,
+	cooldownSet: 2000,
 	type: 'ability',
 	color: 'sinistral-color',
 	multiplier: 1.5,
@@ -11765,7 +12966,7 @@ const contagion = {
 	rightWeaponTypes: ['daggers', 'oneHanded'],
 	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
-		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft())
+		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
 		let levelModifier = 1
 		if (this.level == 1) { levelModifier = 1.0}
 		if (this.level == 2) { levelModifier = 1.2}
@@ -11780,47 +12981,6 @@ const contagion = {
 		let totalDamage = baseDamage * levelModifier
 		return Math.ceil(totalDamage)
 	},
-	// debuff: {
-	// 	name: 'Poison',
-	// 	refName: 'poison',
-	// 	resistType: 'poisonResist',
-	// 	penType: 'poisonPen',
-	// 	stacks: 0,
-	// 	get duration() {
-	// 		return Math.trunc(60000 * player.contagion.level)
-	// 	} ,
-	// 	color: 'dark-green',
-	// 	damage: function(swingObject) {
-	// 		let baseDamage = player.currentWeaponSkill.attackPower
-	// 		let bonusDamage = this.stacks * player.contagion.level
-	// 		let totalDamage = baseDamage + bonusDamage + 1000
-	// 		return Math.ceil(totalDamage)
-	// 	},
-	// 	maxStacks: function() {
-	// 		return 10
-	// 	},
-	// 	flavorText: function(enemy, damage, element, damageResisted) {
-	// 		let line1 = lineFunc()
-	// 		customizeEachWord(`You hit for `, 'green', line1)
-	// 		customizeEachWord(`${damage} `, 'light-blue', line1)
-	// 		customizeEachWord(`additional `, 'green', line1)
-	// 		customizeEachWord(`poison `, `dark-green`, line1)
-	// 		customizeEachWord(`damage. `, `green`, line1)
-	// 		customizeEachWord(`(Enemy resists `, `white`, line1)
-	// 		customizeEachWord(`${damageResisted}`, `light-blue`, line1)
-	// 		customizeEachWord(`)`, `white`, line1)
-	// 	},
-	// 	flavorTextWearsOff: function() {
-	// 		let line1 = lineFunc()
-	// 		customizeEachWord(`${this.name} `, 'dark-green', line1)
-	// 		customizeEachWord(`has faded from your weapon`, 'white', line1)
-	// 	},
-	// 	flavorTextApplyBuff: function() {
-	// 		let line1 = lineFunc()
-	// 		customizeEachWord(`Your weapon glows green with `, 'white', line1)
-	// 		customizeEachWord(`${this.name}`, 'dark-green', line1)
-	// 	}
-	// },
 	buff: {
 		name: 'Poison',
 		refName: 'poison',
@@ -11829,7 +12989,8 @@ const contagion = {
 		duration: 30000,
 		stacks: 0,
 		damage: function(enemy) {
-			let totalDamage = baseAttackDamageRight()
+			quickMessage(`Contagion.buff.damage is being triggered`)
+			let totalDamage = baseAttackDamageRight() + 100
 			if (enemy.debuffs) {
 				if (enemy.debuffs.shadowMark) {
 					let stacks = enemy.debuffs.shadowMark.stacks
@@ -11924,7 +13085,7 @@ const bane = {
 	rightWeaponTypes: ['daggers', 'oneHanded'],
 	leftWeaponTypes: ['daggers', 'oneHanded'],
 	damage: function (enemy) {
-		let poisonStacks = enemy.debuffs?.poison?.stacks ? (enemy.debuffs.poison.stacks * 0.2) + 1 : 0
+		let poisonStacks = enemy.debuffs?.poison?.stacks ? (enemy.debuffs.poison.stacks * 0.1) + 1 : 0
 		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft())
 		let baseAndBonusDamage = baseDamage * poisonStacks
 		let levelModifier = 1
@@ -12032,41 +13193,43 @@ const shadowDaggers = {
 		let totalDamage = baseDamage * levelModifier
 		return Math.ceil(totalDamage)	
 	},
-	debuff: [
-		{
-			name: 'Reduced Accuracy',
-			refName: 'reducedAccuracy',
-			modifiedStats: ['accuracy'],
-			accuracy: -7,
-			duration: 20000,
-			stacks: 0,
-			maxStacks: function() {
-				return player.shadowDaggers.level
-			},
-		},
-		{
-			name: 'Reduced Defense',
-			refName: 'reducedDefense',
-			modifiedStats: ['slashingArmor'],
-			slashingArmor: -10,
-			duration: 20000,
-			stacks: 0,
-			maxStacks: function() {
-				return player.shadowDaggers.level
-			},
-		},
-		{
-			name: 'Reduced Dodge',
-			refName: 'reducedDodge',
-			modifiedStats: ['dodge'],
-			dodge: -10,
-			duration: 20000,
-			stacks: 0,
-			maxStacks: function() {
-				return player.shadowDaggers.level
-			},
-		}
-	],
+	debuff: {
+
+	}
+		// {
+		// 	name: 'Reduced Accuracy',
+		// 	refName: 'reducedAccuracy',
+		// 	modifiedStats: ['accuracy'],
+		// 	accuracy: -7,
+		// 	duration: 20000,
+		// 	stacks: 0,
+		// 	maxStacks: function() {
+		// 		return player.shadowDaggers.level
+		// 	},
+		// },
+		// {
+		// 	name: 'Reduced Defense',
+		// 	refName: 'reducedDefense',
+		// 	modifiedStats: ['slashingArmor'],
+		// 	slashingArmor: -10,
+		// 	duration: 20000,
+		// 	stacks: 0,
+		// 	maxStacks: function() {
+		// 		return player.shadowDaggers.level
+		// 	},
+		// },
+		// {
+		// 	name: 'Reduced Dodge',
+		// 	refName: 'reducedDodge',
+		// 	modifiedStats: ['dodge'],
+		// 	dodge: -10,
+		// 	duration: 20000,
+		// 	stacks: 0,
+		// 	maxStacks: function() {
+		// 		return player.shadowDaggers.level
+		// 	},
+		// }
+	,
 	abilityWeaponsCheck: function(weapon1, weapon2) {
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
 		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'unarmed') {return false}
@@ -12120,167 +13283,7 @@ const shadowDaggers = {
 }
 shadowDaggers.addToPlayer()
 
-const shadowsurge = {
-		get level() {
-		return calculateStat(player, this.refName)
-	},
-	name: 'Shadowsurge',
-	refName: 'shadowsurge',
-	cooldown: 1000,
-	cooldownSet: 1000,
-	type: 'ability',
-	element: 'shadow',
-	color: 'sinistral-color',
-	multiplier: 1.5,
-	resourceName: 'adrenaline',
-	resourceCost: 0,
-	weaponTypesUsed: ['daggers', 'oneHanded'],
-	rightWeaponTypes: ['daggers', 'oneHanded'],
-	leftWeaponTypes: ['daggers', 'oneHanded'],
-	damage: function (enemy, doesPlayerShadowStep) {
-		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
-		let totalDamage = 0
-		if (doesPlayerShadowStep) {
-			//Calculate damage for shadowstep
-			let levelMultiplier
-			if (player.shadowsurge.level == 1) { levelMultiplier = 1.25}
-			if (player.shadowsurge.level == 2) { levelMultiplier = 1.35}
-			if (player.shadowsurge.level == 3) { levelMultiplier = 1.45}
-			if (player.shadowsurge.level == 4) { levelMultiplier = 1.55}
-			if (player.shadowsurge.level == 5) { levelMultiplier = 1.65}
-			if (player.shadowsurge.level == 6) { levelMultiplier = 1.75}
-			if (player.shadowsurge.level == 7) { levelMultiplier = 1.85}
-			if (player.shadowsurge.level == 8) { levelMultiplier = 1.95}
-			if (player.shadowsurge.level == 9) { levelMultiplier = 2.05}
-			if (player.shadowsurge.level >= 10) { levelMultiplier = 2.15}
-			totalDamage = baseDamage * levelMultiplier
-		} else {
-			//Calculate damage for shadowsurge
-			let levelMultiplier
-			let shadowMarkMultiplier = enemy.debuffs?.shadowMark?.stacks ? enemy.debuffs.shadowMark.stacks * 0.2 : 0
-			if (player.shadowsurge.level == 1) { levelMultiplier = 1.1 }
-			if (player.shadowsurge.level == 2) { levelMultiplier = 1.2 }
-			if (player.shadowsurge.level == 3) { levelMultiplier = 1.3 }
-			if (player.shadowsurge.level == 4) { levelMultiplier = 1.4 }
-			if (player.shadowsurge.level == 5) { levelMultiplier = 1.5 }
-			if (player.shadowsurge.level == 6) { levelMultiplier = 1.6 }
-			if (player.shadowsurge.level == 7) { levelMultiplier = 1.7 }
-			if (player.shadowsurge.level == 8) { levelMultiplier = 1.8 }
-			if (player.shadowsurge.level == 9) { levelMultiplier = 1.9 }
-			if (player.shadowsurge.level >= 10) { levelMultiplier = 2.0 }
-			totalDamage = (levelMultiplier + shadowMarkMultiplier) * baseDamage
-		}
-		return Math.ceil(totalDamage)
-	},
-	buff: {
-		name: 'Shadowbane',
-		refName: 'shadowbane',
-		duration: 30000,
-		stacks: 1,
-		dodge: 10,
-		maxStacks: function() {
-			return 10
-		},
-	},
-	abilityWeaponsCheck: function(weapon1, weapon2) {
-		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
-		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'unarmed') {return false}
-		if (weapon1.skillUsed == 'unarmed' && weapon2.skillUsed == 'daggers') {return false}
-		else {
-			let line1 = lineFunc()
-			customizeEachWord(`You cannot perform Venom Blade while wielding any weapon other than a dagger`, 'white', line1)
-			return true
-		}
-	},
-	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked, doesPlayerShadowStep) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		if (doesPlayerShadowStep) {
-			blankSpace()
-			customizeEachWord(`You travel through the shadows behind the `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-			customizeEachWord(`sinking your `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
-			customizeEachWord(`into its back!`, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`Shadow Step `, this.color, line2)
-			customizeEachWord(`hits for `, 'green', line2)
-			customizeEachWord(`${damage} `, 'light-blue', line2)
-			customizeEachWord(`${penetrationType} `, penetrationType, line2)
-			customizeEachWord(`damage. `, 'green', line2)
-			customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
-			customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
-			customizeEachWord(`)`, 'white', line2)
-			blankSpace()
-		}
-		if (!doesPlayerShadowStep) {
-			blankSpace()
-			customizeEachWord(`You call upon the Shadows swirling around the `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-			customizeEachWord(`to consume it, draining its lifeforce!`, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`Shadowsurge `, this.color, line2)
-			customizeEachWord(`hits for `, 'green', line2)
-			customizeEachWord(`${damage} `, 'light-blue', line2)
-			customizeEachWord(`shadow `, 'shadow', line2)
-			customizeEachWord(`damage.`, `green`, line2)
-			customizeEachWord(` (Enemy resists `, `white`, line2)
-			customizeEachWord(`${damageBlocked}`, `light-blue`, line2)
-			customizeEachWord(`)`, `white`, line2)
-			blankSpace()
-		}
-	},
-	flavorTextRegularHit: function(enemy, weapon, damage, penetrationType, damageBlocked) {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		blankSpace()
-		customizeEachWord(`You flow through the shadows behind the enemy, and in a cross-slash motion of your daggers you eviscerate the `, `sinistral-ability-text-color`, line1)
-		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
-		customizeEachWord(`!`, `sinistral-ability-text-color`, line1)
-		customizeEachWord(`${this.name} `, this.color, line2)
-		customizeEachWord(`hits for `, 'green', line2)
-		customizeEachWord(`${damage} `, 'light-blue', line2)
-		customizeEachWord(`${penetrationType} `, penetrationType, line2)
-		customizeEachWord(`damage. `, 'green', line2)
-		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
-		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
-		customizeEachWord(`)`, 'white', line2)
-		blankSpace()
-	},
-	flavorTextMiss: function(enemy, weapon, doesPlayerShadowStep) {
-		let line0 = lineFunc()
-		let line1 = lineFunc()
-		if (doesPlayerShadowStep) {
-			blankSpace()
-			customizeEachWord(`You travel through the shadows behind the `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-			customizeEachWord(`attemping to strike it with your `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
-			customizeEachWord(`but `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`miss`, 'red', line1)
-			customizeEachWord(`!`, `sinistral-ability-text-color`, line1)
-			blankSpace()
-		}
-		if (!doesPlayerShadowStep) {
-			blankSpace()
-			customizeEachWord(`You attempt to eviscerate the enemy with `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`${this.name}`, this.color, line1)
-			customizeEachWord(`, but `, `sinistral-ability-text-color`, line1)
-			customizeEachWord(`miss`, `red`, line1)
-			customizeEachWord(`!`, `sinistral-ability-text-color`, line1)
-			blankSpace()
-		}
-	},
-	goldToUpgrade: function () {
-		return abilityGoldUpgradeCost(player.shadowsurge)
-	},
-	pointsToUpgrade: function () {
-		return abilityUpgradeCost(player.shadowsurge)
-	},
-	addToPlayer: function() {
-		player[this.refName] = {}
-		copyGettersAndSetters(player[this.refName], this)
-	},
-}
-shadowsurge.addToPlayer()
+
 const shadowNova = {
 		get level() {
 		return calculateStat(player, this.refName)
@@ -12300,9 +13303,8 @@ const shadowNova = {
 	damage: function () {
 		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
 		let bonusDamageModifier = 1
-		let totalDamage = baseDamage * bonusDamageModifier
 		if (player?.buffs?.shadowbane) {
-			if (player.buffs.shadowbane.stacks == 1) {bonusDamageModifier = 1.0}
+			if (player.buffs.shadowbane.stacks <= 1) {bonusDamageModifier = 1.0}
 			if (player.buffs.shadowbane.stacks == 2) {bonusDamageModifier = 1.1}
 			if (player.buffs.shadowbane.stacks == 3) {bonusDamageModifier = 1.25}
 			if (player.buffs.shadowbane.stacks == 4) {bonusDamageModifier = 1.45}
@@ -12311,8 +13313,10 @@ const shadowNova = {
 			if (player.buffs.shadowbane.stacks == 7) {bonusDamageModifier = 2.35}
 			if (player.buffs.shadowbane.stacks == 8) {bonusDamageModifier = 2.75}
 			if (player.buffs.shadowbane.stacks == 9) {bonusDamageModifier = 3.25}
-			if (player.buffs.shadowbane.stacks == 10) {bonusDamageModifier = 4.0}
+			if (player.buffs.shadowbane.stacks >= 10) {bonusDamageModifier = 4.0}
+			console.log(bonusDamageModifier, ' damage modifier based on stacks')
 		}
+		let totalDamage = baseDamage * bonusDamageModifier
 		return Math.ceil(totalDamage)
 	},
 	regularDamage: function(enemy) {
@@ -12341,7 +13345,7 @@ const shadowNova = {
 		if (weapon1.skillUsed == 'unarmed' && weapon2.skillUsed == 'daggers') {return false}
 		else {
 			let line1 = lineFunc()
-			customizeEachWord(`You cannot perform Venom Blade while wielding any weapon other than a dagger`, 'white', line1)
+			customizeEachWord(`You cannot perform ${this.name} while wielding any weapon other than a dagger`, 'white', line1)
 			return true
 		}
 	},
@@ -12394,13 +13398,13 @@ const catalyst = {
 	},
 	name: 'Catalyst',
 	refName: 'catalyst',
-	cooldown: 4000,
-	cooldownSet: 4000,
+	cooldown: 1000,
+	cooldownSet: 1000,
 	type: 'ability',
 	color: 'monk-color',
 	multiplier: 1.5,
 	resourceName: 'focus',
-	resourceCost: 10,
+	resourceCost: 9,
 	sequence: 0,
 	weaponTypesUsed: ['unarmed'],
 	rightWeaponTypes: ['unarmed'],
@@ -12416,47 +13420,50 @@ const catalyst = {
 		let colossusPunchLevelMultiplier
 		let gigasUppercutLevelMultiplier
 		let atmaShockLevelMultiplier
-		if (player.catalyst.level == 1) {quickJabLevelMultiplier = 1.1 
-										colossusPunchLevelMultiplier = 1.3
-										gigasUppercutLevelMultiplier  = 1.5
-										atmaShockLevelMultiplier = 1.75	}		
-		if (player.catalyst.level == 2) {quickJabLevelMultiplier = 1.2
-										colossusPunchLevelMultiplier = 1.4
-										gigasUppercutLevelMultiplier  = 1.6
-										atmaShockLevelMultiplier = 1.85	}		
-		if (player.catalyst.level == 3) {quickJabLevelMultiplier = 1.3 
-										colossusPunchLevelMultiplier = 1.5
-										gigasUppercutLevelMultiplier  = 1.7
-										atmaShockLevelMultiplier = 1.95	}		
-		if (player.catalyst.level == 4) {quickJabLevelMultiplier = 1.4 
-										colossusPunchLevelMultiplier = 1.6
-										gigasUppercutLevelMultiplier  = 1.8
-										atmaShockLevelMultiplier = 2.05	}		
-		if (player.catalyst.level == 5) {quickJabLevelMultiplier = 1.5 
-										colossusPunchLevelMultiplier = 1.7
-										gigasUppercutLevelMultiplier  = 1.9
-										atmaShockLevelMultiplier = 2.15	}		
-		if (player.catalyst.level == 6) {quickJabLevelMultiplier = 1.6 
-										colossusPunchLevelMultiplier = 1.8
-										gigasUppercutLevelMultiplier  = 2.0
-										atmaShockLevelMultiplier = 2.25	}		
-		if (player.catalyst.level == 7) {quickJabLevelMultiplier = 1.7 
-										colossusPunchLevelMultiplier = 1.9
-										gigasUppercutLevelMultiplier  = 2.1
-										atmaShockLevelMultiplier = 2.35	}		
-		if (player.catalyst.level == 8) {quickJabLevelMultiplier = 1.8 
-										colossusPunchLevelMultiplier = 2.0
-										gigasUppercutLevelMultiplier  = 2.2
-										atmaShockLevelMultiplier = 2.45	}		
-		if (player.catalyst.level == 9) {quickJabLevelMultiplier = 1.9
-										colossusPunchLevelMultiplier = 2.1
-										gigasUppercutLevelMultiplier  = 2.3
-										atmaShockLevelMultiplier = 2.55	}		
-		if (player.catalyst.level >= 10) {quickJabLevelMultiplier = 2.0 
-										colossusPunchLevelMultiplier = 2.2
-										gigasUppercutLevelMultiplier  = 2.4
-										atmaShockLevelMultiplier = 2.1	}		
+		let quickJabDebuff = {
+			name: `Quick Jab's Blind and Hinderance`,
+			refName: 'quickJab',
+			modifiedStats: ['dodge', 'accuracy'],
+			duration: 15000,
+			dodge: -5,
+			accuracy: -5,
+		}
 
+		let colossusPunchDebuff = {
+			name: 'Colossus Punch: Blunt Armor Debuff',
+			refName: 'colossusPunchDebuff',
+			modifiedStats: ['bluntArmor'],
+			duration: 15000,
+			bluntArmor: -5
+		}
+		//////////////////////////////////////////////////////////////////////////
+		const multipliers = [
+			{ quickJab: 1.1, colossusPunch: 1.3, gigasUppercut: 1.5, atmaShock: 1.75, quickJabDodgeDebuff: -5, quickJabAccuracyDebuff: -5, colossusPunchDebuff: -2 },
+			{ quickJab: 1.2, colossusPunch: 1.4, gigasUppercut: 1.6, atmaShock: 1.85, quickJabDodgeDebuff: -8, quickJabAccuracyDebuff: -8, colossusPunchDebuff: -5 },
+			{ quickJab: 1.3, colossusPunch: 1.5, gigasUppercut: 1.7, atmaShock: 1.95, quickJabDodgeDebuff: -12, quickJabAccuracyDebuff: -12, colossusPunchDebuff: -7 },
+			{ quickJab: 1.4, colossusPunch: 1.6, gigasUppercut: 1.8, atmaShock: 2.05, quickJabDodgeDebuff: -16, quickJabAccuracyDebuff: -16, colossusPunchDebuff: -10 },
+			{ quickJab: 1.5, colossusPunch: 1.7, gigasUppercut: 1.9, atmaShock: 2.15, quickJabDodgeDebuff: -20, quickJabAccuracyDebuff: -20, colossusPunchDebuff: -12 },
+			{ quickJab: 1.6, colossusPunch: 1.8, gigasUppercut: 2.0, atmaShock: 2.25, quickJabDodgeDebuff: -25, quickJabAccuracyDebuff: -25, colossusPunchDebuff: -15 },
+			{ quickJab: 1.7, colossusPunch: 1.9, gigasUppercut: 2.1, atmaShock: 2.35, quickJabDodgeDebuff: -30, quickJabAccuracyDebuff: -30, colossusPunchDebuff: -17 },
+			{ quickJab: 1.8, colossusPunch: 2.0, gigasUppercut: 2.2, atmaShock: 2.45, quickJabDodgeDebuff: -35, quickJabAccuracyDebuff: -35, colossusPunchDebuff: -20 },
+			{ quickJab: 1.9, colossusPunch: 2.1, gigasUppercut: 2.3, atmaShock: 2.55, quickJabDodgeDebuff: -40, quickJabAccuracyDebuff: -40, colossusPunchDebuff: -22 },
+			{ quickJab: 2.0, colossusPunch: 2.2, gigasUppercut: 2.4, atmaShock: 2.1, quickJabDodgeDebuff: -50, quickJabAccuracyDebuff: -50, colossusPunchDebuff: -25 }
+		];
+
+		// Determine the player's level (capped at 10)
+		const level = Math.min(player.catalyst.level, 10) - 1;
+		
+		// Set the multipliers from the lookup table
+		quickJabLevelMultiplier = multipliers[level].quickJab;
+		colossusPunchLevelMultiplier = multipliers[level].colossusPunch;
+		gigasUppercutLevelMultiplier = multipliers[level].gigasUppercut;
+		atmaShockLevelMultiplier = multipliers[level].atmaShock;
+		quickJabDebuff.dodge = multipliers[level].quickJabDodgeDebuff
+		quickJabDebuff.accuracy = multipliers[level].quickJabAccuracyDebuff
+		colossusPunchDebuff.bluntArmor = multipliers[level].colossusPunchDebuff
+		console.log(quickJabDebuff)
+		console.log(colossusPunchDebuff)
+/////////////////////////////////////////////////////////////////////////////
 		let quickJabBaseDamage = Math.ceil(baseDamage * quickJabLevelMultiplier)
 		let quickJabDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, quickJabBaseDamage, penetrationType)
 		let quickJabDamageBlocked = quickJabBaseDamage - quickJabDamageAfterMitigation
@@ -12481,9 +13488,15 @@ const catalyst = {
 		let line3 = lineFunc()
 		let line4 = lineFunc()
 		//single -> double strength -> 2 - 3 successive attacks -> Strong AOE
-		switch(this.sequence) {
-			case 0:
-			case 5:
+		let sequence = this.sequence
+		let colossusPunch = player.colossusPunch
+		let hydraStrike = player.hydraStrike
+		let gigasUppercut = player.gigasUppercut
+		let atmaShock = player.atmaShock
+
+
+
+		if (sequence == 0 || sequence == 5) {
 			this.sequence = 1
 			player.sequence = 1
 			blankSpace()
@@ -12501,17 +13514,9 @@ const catalyst = {
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
 			applyDamageToEnemy(enemy, quickJabDamageAfterMitigation)
-			debuff = {
-				name: `Quick Jab's Blind and Hinderance`,
-				refName: 'quickJab',
-				modifiedStats: ['dodge', 'accuracy'],
-				duration: 15000,
-				dodge: -5,
-				accuracy: -5,
-			}
-			applyDebuff(enemy, debuff)
-			break
-			case 1:
+			applyDebuff(enemy, quickJabDebuff)
+		} 
+		else if (sequence == 1 && colossusPunch.level > 0) {
 			this.sequence = 2
 			player.sequence = 2
 			customizeEachWord(`You follow up with a `, `monk-ability-text-color`, line1)
@@ -12529,17 +13534,9 @@ const catalyst = {
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
 			applyDamageToEnemy(enemy, colossusPunchDamageAfterMitigation)
-			debuff = {
-				name: 'Colossus Punch: Blunt Armor Debuff',
-				refName: 'colossusPunchDebuff',
-				modifiedStats: ['bluntArmor'],
-				duration: 15000,
-				bluntArmor: -5
-			}
-			applyDebuff(enemy, debuff)
-			break
-			case 2:
-			//HITS A SINGLE TARGET FOR DOUBLE DAMAGE - SHOULD CHANGE THIS ABILITY DAMAGE OR TWIN FIST STRIKE DAMAGE
+			applyDebuff(enemy, colossusPunchDebuff)
+		}
+		else if (sequence == 2 && hydraStrike.level > 0) {
 			this.sequence = 3
 			player.sequence = 3
 			for (let i = 0; i < 3; i++) {
@@ -12567,11 +13564,10 @@ const catalyst = {
 					applyDamageToEnemy(enemy, hydraStrikeDamageAfterMitigation)
 				}
 			}
-			break;
-			case 3:
-			//HITS A SINGLE TARGET FOR TRIPLE DAMAGE
-			//totaldamage
-			this.sequence = 0
+		}
+		else if (sequence == 3 && gigasUppercut.level > 0) {
+			//this.sequence = 0 stops Atma Shock from happening
+			this.sequence = 4
 			player.sequence = 4
 			customizeEachWord(`You dip down and blink forward with a `, `monk-ability-text-color`, line1)
 			customizeEachWord(`Gigas Uppercut `, `monk-ability-text-color`, line1)
@@ -12588,9 +13584,8 @@ const catalyst = {
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
 			applyDamageToEnemy(enemy, gigasUppercutDamageAfterMitigation)
-			break;
-			case 4:
-			//HITS ALL ENEMIES IN COMBAT FOR DOUBLE DAMAGE
+		}
+		else if (sequence == 4 && atmaShock.level > 0) {
 			let getEnemiesInCombat = getAllEnemiesInCombat()
 			this.sequence = 5
 			player.sequence = 5
@@ -12612,8 +13607,34 @@ const catalyst = {
 				blankSpace()
 				applyDamageToEnemy(enemy, atmaShockDamageAfterMitigation)
 			})
-
-			break;
+		}
+		else {
+			this.sequence = 1
+			player.sequence = 1
+			blankSpace()
+			customizeEachWord(`You land a stiff jab on the `, `monk-ability-text-color`, line1)
+			customizeEachWord(`${enemy.name}`, enemy.color, line1)
+			customizeEachWord(`! `, `monk-ability-text-color`, line1)
+			customizeEachWord(`You knock it off balance lowering its dodge and accuracy!`, `monk-ability-text-color`, line1)
+			customizeEachWord(`Quick Jab `, this.color, line2)
+			customizeEachWord(`hits for `, 'green', line2)
+			customizeEachWord(`${quickJabDamageAfterMitigation} `, 'light-blue', line2)
+			customizeEachWord(`${penetrationFlavorText} `, penetrationFlavorText, line2)
+			customizeEachWord(`damage. `, 'green', line2)
+			customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+			customizeEachWord(`${quickJabDamageBlocked}`, 'light-blue', line2)
+			customizeEachWord(`)`, 'white', line2)
+			blankSpace()
+			applyDamageToEnemy(enemy, quickJabDamageAfterMitigation)
+			debuff = {
+				name: `Quick Jab's Blind and Hinderance`,
+				refName: 'quickJab',
+				modifiedStats: ['dodge', 'accuracy'],
+				duration: 15000,
+				dodge: -5,
+				accuracy: -5,
+			}
+			applyDebuff(enemy, debuff)
 		}
 		clearTimeout(catalystTimeout)
 		catalystTimeout = setTimeout(() => {
@@ -12629,19 +13650,6 @@ const catalyst = {
 			return true
 		}
 	},
-	// flavorText: function(enemy, weapon, damage) {
-	// 	let line1 = lineFunc()
-	// 	let line2 = lineFunc()
-	// 	customizeEachWord(`You slide behind the `, 'gray', line1)
-	// 	customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
-	// 	customizeEachWord(`and sink your `, 'gray', line1)
-	// 	customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
-	// 	customizeEachWord(`into its back!`, 'gray', line1)
-	// 	customizeEachWord(`You hit for `, 'green', line2)
-	// 	customizeEachWord(`${damage} `, 'light-blue', line2)
-	// 	customizeEachWord(`damage.`, 'green', line2)
-	// 	blankSpace()
-	// },
 	flavorTextMiss: function(enemy, weapon, damage) {
 		let line1 = lineFunc()
 		customizeEachWord(`You `, 'light-blue', line1)
@@ -12671,12 +13679,12 @@ const tempest = {
 	name: 'Tempest',
 	refName: 'tempest',
 	color: 'monk-color',
-	cooldown: 4000,
-	cooldownSet: 4000,
+	cooldown: 1000,
+	cooldownSet: 1000,
 	type: 'ability',
 	multiplier: 1.5,
 	resourceName: 'focus',
-	resourceCost: 10,
+	resourceCost: 9,
 	sequence: 0,
 	weaponTypesUsed: ['unarmed'],
 	rightWeaponTypes: ['unarmed'],
@@ -12686,7 +13694,7 @@ const tempest = {
 		name: 'Combo Collector',
 		refName: 'comboCollector',
 		duration: 30000,
-		stacks: 1,
+		stacks: 0,
 		maxStacks: function() {
 			return 5
 		},
@@ -12702,6 +13710,91 @@ const tempest = {
 		let behemothBashLevelMultiplier
 		let flyingKneeLevelMultiplier
 		let hurricaneKickLevelMultiplier
+////////////////////////////////////////////////////////////////////////////////
+		let behemothBlitzBuff = {
+			name: `B.Blitz Buff`,
+			refName: 'behemothBlitzBuff',
+			duration: 3000,
+			mods: {
+				str: 10,
+				dex: 10,
+				agi: 10,
+			},
+			stacks: 1,
+			maxStacks: function() {return 1}
+		}
+
+		let flyingKneeBuff = {
+			name: 'Flying Knee Buff',
+			refName: 'flyingKneeBuff',
+			duration: 15000,
+			mods: {
+				slashingArmor: 0,
+				piercingArmor: 0,
+				bluntArmor: 0,
+			},
+			stacks: 1,
+			maxStacks: function() {return 1}
+		}
+
+		let hurricaneKickBuff = {
+			name: 'H Kick Buff',
+			refName: 'hurricaneKickBuff',
+			duration: 20000,
+			mods: {
+				accuracy: 0,
+			},
+			stacks: 1,
+			maxStacks: function() {return 1}
+		}
+
+		let sommersaultKickBuff = {
+			name: `SS Kick Buff`,
+			refName: 'sommersaultKickBuff',
+			duration: 20000,
+			mods: {
+				dodge: 0,
+			},
+			stacks: 1,
+			maxStacks: function() {return 1}		
+		}
+		const multipliers = [
+			{ meteorKick: 1.1, behemothBash: 1.3, flyingKnee: 1.5, hurricaneKick: 1.75, behemothBlitzBuff: 1, flyingKneeBuff: 2, hurricaneKickBuff: 3, sommersaultKickBuff: 3 },
+			{ meteorKick: 1.2, behemothBash: 1.4, flyingKnee: 1.6, hurricaneKick: 1.85, behemothBlitzBuff: 2, flyingKneeBuff: 4, hurricaneKickBuff: 6, sommersaultKickBuff: 6  },
+			{ meteorKick: 1.3, behemothBash: 1.5, flyingKnee: 1.7, hurricaneKick: 1.95, behemothBlitzBuff: 3, flyingKneeBuff: 6, hurricaneKickBuff: 9, sommersaultKickBuff: 9  },
+			{ meteorKick: 1.4, behemothBash: 1.6, flyingKnee: 1.8, hurricaneKick: 2.05, behemothBlitzBuff: 4, flyingKneeBuff: 8, hurricaneKickBuff: 12, sommersaultKickBuff: 12  },
+			{ meteorKick: 1.5, behemothBash: 1.7, flyingKnee: 1.9, hurricaneKick: 2.15, behemothBlitzBuff: 5, flyingKneeBuff: 10, hurricaneKickBuff: 15, sommersaultKickBuff: 15  },
+			{ meteorKick: 1.6, behemothBash: 1.8, flyingKnee: 2.0, hurricaneKick: 2.25, behemothBlitzBuff: 6, flyingKneeBuff: 13, hurricaneKickBuff: 18, sommersaultKickBuff: 18  },
+			{ meteorKick: 1.7, behemothBash: 1.9, flyingKnee: 2.1, hurricaneKick: 2.35, behemothBlitzBuff: 7, flyingKneeBuff: 16, hurricaneKickBuff: 21, sommersaultKickBuff: 21  },
+			{ meteorKick: 1.8, behemothBash: 2.0, flyingKnee: 2.2, hurricaneKick: 2.45, behemothBlitzBuff: 8, flyingKneeBuff: 20, hurricaneKickBuff: 24, sommersaultKickBuff: 24  },
+			{ meteorKick: 1.9, behemothBash: 2.1, flyingKnee: 2.3, hurricaneKick: 2.55, behemothBlitzBuff: 9, flyingKneeBuff: 24, hurricaneKickBuff: 27, sommersaultKickBuff: 27  },
+			{ meteorKick: 2.0, behemothBash: 2.2, flyingKnee: 2.4, hurricaneKick: 2.1, behemothBlitzBuff: 10, flyingKneeBuff: 28, hurricaneKickBuff: 30, sommersaultKickBuff: 30  }
+		];
+
+		// Determine the player's level (capped at 10)
+		const level = Math.min(player.catalyst.level, 10) - 1;
+		
+		// Set the multipliers from the lookup table
+		meteorKickLevelMultiplier = multipliers[level].meteorKick;
+		behemothBashLevelMultiplier = multipliers[level].behemothBash;
+		flyingKneeLevelMultiplier = multipliers[level].flyingKnee;
+		hurricaneKickLevelMultiplier = multipliers[level].hurricaneKick;
+
+		behemothBlitzBuff.mods.str = multipliers[level].behemothBlitzBuff
+		behemothBlitzBuff.mods.dex = multipliers[level].behemothBlitzBuff
+		behemothBlitzBuff.mods.agi = multipliers[level].behemothBlitzBuff
+
+		flyingKneeBuff.mods.slashingArmor = multipliers[level].flyingKneeBuff
+		flyingKneeBuff.mods.piercingArmor = multipliers[level].flyingKneeBuff
+		flyingKneeBuff.mods.bluntArmor = multipliers[level].flyingKneeBuff
+
+		hurricaneKickBuff.mods.accuracy = multipliers[level].hurricaneKickBuff
+		sommersaultKickBuff.mods.dodge = multipliers[level].sommersaultKickBuff
+		///////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 		if (player.tempest.level == 1) {meteorKickLevelMultiplier = 1.1 
 										behemothBashLevelMultiplier = 1.3
 										flyingKneeLevelMultiplier  = 1.5
@@ -12746,25 +13839,27 @@ const tempest = {
 		let bonusMeteorKickDamage = Math.ceil((((enemy.health / enemy.maxHealth) * -1) + 1).toFixed(2))
 		let meteorKickBaseDamage = Math.ceil((baseDamage * bonusMeteorKickDamage) + baseDamage)
 		let meteorKickDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, meteorKickBaseDamage, penetrationType)
-		let meteorKickDamageBlocked = meteorKickBaseDamage - meteorKickDamageAfterMitigation
+		let meteorKickDamageBlocked = Math.ceil(meteorKickBaseDamage - meteorKickDamageAfterMitigation)
 
-		let behemothBashBaseDamage = baseDamage * behemothBashLevelMultiplier
+		let behemothBashBaseDamage = Math.ceil(baseDamage * behemothBashLevelMultiplier)
 		let behemothBashDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, behemothBashBaseDamage, penetrationType)
-		let behemothBashDamageBlocked = behemothBashBaseDamage - behemothBashDamageAfterMitigation
+		let behemothBashDamageBlocked = Math.ceil(behemothBashBaseDamage - behemothBashDamageAfterMitigation)
+		console.log(behemothBashBaseDamage, ' base damage')
+		console.log(behemothBashDamageAfterMitigation, ' damage after mitigation')
+		console.log(behemothBashDamageBlocked, ' damage blocked')
 
-		let flyingKneeBaseDamage = baseDamage * flyingKneeLevelMultiplier
+		let flyingKneeBaseDamage = Math.ceil(baseDamage * flyingKneeLevelMultiplier)
 		let flyingKneeDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, flyingKneeBaseDamage, penetrationType)
-		let flyingKneeDamageBlocked = flyingKneeBaseDamage - flyingKneeDamageAfterMitigation
+		let flyingKneeDamageBlocked = Math.ceil(flyingKneeBaseDamage - flyingKneeDamageAfterMitigation)
 
-		let hurricaneKickBaseDamage = baseDamage * hurricaneKickLevelMultiplier
+		let hurricaneKickBaseDamage = Math.ceil(baseDamage * hurricaneKickLevelMultiplier)
 		let hurricaneKickDamageAfterMitigation = calculateAbilityDamageAgainstEnemyArmor(enemy, hurricaneKickBaseDamage, penetrationType)
-		let hurricaneKickDamageBlocked = hurricaneKickBaseDamage - hurricaneKickDamageAfterMitigation
+		let hurricaneKickDamageBlocked = Math.ceil(hurricaneKickBaseDamage - hurricaneKickDamageAfterMitigation)
 		
-		let buff = {}
-		let debuff = {}
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		let line3 = lineFunc()
+		let sequence = this.sequence
 		switch(player.catalyst.sequence) {
 			case 0:
 			case 5:
@@ -12782,29 +13877,9 @@ const tempest = {
 			customizeEachWord(`${meteorKickDamageBlocked}`, 'light-blue', line2)
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
-			//MIGHT NOT NEED BUFF HERE ON THIS ABILITY
-			// 	buff = {
-			// 	refName: 'empoweringStrike',
-			// 	duration: 200000,
-			// 	maxStacks: function() {return 1}
-			// 	// agi: 10,
-			// }
-			// applyBuff(buff)
-			// loseResource(this.resourceName, this.resourceCost)
 			applyDamageToEnemy(enemy, meteorKickDamageAfterMitigation)
 			break
 			case 1:
-				buff = {
-					name: 'tempest buff 1',
-					refName: 'behemothBlitzBuff',
-					duration: 15000,
-					str: 1,
-					dex: 1,
-					agi: 1,
-					stacks: 1,
-					maxStacks: function() {return 5}
-				}
-			applyBuff(buff)
 			blankSpace()
 			customizeEachWord(`Focusing your energy to your legs, you deliver a Behemoth Blitz to the `, `monk-ability-text-color`, line1)
 			customizeEachWord(`${enemy.name}`, enemy.color, line1)
@@ -12820,18 +13895,12 @@ const tempest = {
 			customizeEachWord(`)`, 'white', line2)
 			blankSpace()
 			applyDamageToEnemy(enemy, behemothBashDamageAfterMitigation)
+			applyBuff(behemothBlitzBuff)
 			applyBuff(player.tempest.comboCollector)
+
 			break
 			case 2: //strength buff
-			buff = {
-				name: 'tempest buff 2',
-				refName: 'flyingKneeBuff',
-				duration: 15000,
-				armor: 5,
-				stacks: 1,
-				maxStacks: function() {return 2}
-			}
-			applyBuff(buff)
+			applyBuff(flyingKneeBuff)
 			blankSpace()
 			customizeEachWord(`You lunge forward with a Flying Knee smashing into the `, `monk-ability-text-color`, line1)
 			customizeEachWord(`${enemy.name}`, enemy.color, line1)
@@ -12850,16 +13919,7 @@ const tempest = {
 			break
 			case 3: //agility buff
 				totalDamage = Math.ceil(baseDamage)
-				buff = {
-				name: 'tempest buff 3',
-				refName: 'agility-buff',
-				duration: 20000,
-				mys: 5,
-				stacks: 1,
-				maxStacks: function() {return 1}
-
-			}
-			applyBuff(buff)
+			applyBuff(hurricaneKickBuff)
 			blankSpace()
 			customizeEachWord(`You spin in a blurring whirl deliving a Hurricane Kick to the `, `monk-ability-text-color`, line1)
 			customizeEachWord(`${enemy.name}`, enemy.color, line1)
@@ -12878,16 +13938,7 @@ const tempest = {
 			break
 			case 4: //Armor Reduction on enemies
 				totalDamage = Math.ceil(baseDamage)
-				debuff = {
-				name: 'tempest debuff 1',
-				refName: 'sommerSaultKick',
-				modifiedStats: ['slashingArmor', 'piercingArmor', 'bluntArmor'],
-				slashingArmor: -5,
-				piercingArmor: -5,
-				bluntArmor: -5,
-				duration: 20000,
-				}
-				quickMessage(`Apply armor reduction to enemies`)
+				quickMessage(`Apply armor reduction to enemies applied`)
 				let getEnemiesInCombat = getAllEnemiesInCombat()
 				customizeEachWord(``, 'monk-color', line1)
 				blankSpace()
@@ -12896,8 +13947,7 @@ const tempest = {
 					let line1 = lineFunc()
 					let line2 = lineFunc()
 					let line3 = lineFunc()
-					applyDebuff(enemy, debuff)
-					totalDamage = randomNumberRange(lowDamage, highDamage)
+					totalDamage = randomNumberRange(500, 750)
 					customizeEachWord(`**`, 'white', line0)
 					customizeEachWord(`SHOCKWAVE`, 'activate-skill', line0)
 					customizeEachWord(`**`, 'white', line0)
@@ -12911,6 +13961,7 @@ const tempest = {
 					blankSpace()
 					applyDamageToEnemy(enemy, totalDamage)
 					applyBuff(player.tempest.comboCollector)
+					applyBuff(sommersaultKickBuff)
 				})
 				break
 		}
@@ -12961,6 +14012,84 @@ const tempest = {
 	},
 }
 tempest.addToPlayer()
+
+const colossusPunch = {
+	get level() {
+		return calculateStat(player, this.refName)
+	},
+	name: 'Colossus Punch',
+	refName: 'colossusPunch',
+	color: 'monk-color',
+	goldToUpgrade: function () {
+		return abilityGoldUpgradeCost(player.colossusPunch)
+	},
+	pointsToUpgrade: function () {
+		return abilityUpgradeCost(player.colossusPunch)
+	},
+	addToPlayer: function() {
+		player[this.refName] = {}
+		copyGettersAndSetters(player[this.refName], this)
+	},
+}
+colossusPunch.addToPlayer()
+const hydraStrike = {
+	get level() {
+		return calculateStat(player, this.refName)
+	},
+	name: 'Hydra Strike',
+	refName: 'hydraStrike',
+	color: 'monk-color',
+	goldToUpgrade: function () {
+		return abilityGoldUpgradeCost(player.hydraStrike)
+	},
+	pointsToUpgrade: function () {
+		return abilityUpgradeCost(player.hydraStrike)
+	},
+	addToPlayer: function() {
+		player[this.refName] = {}
+		copyGettersAndSetters(player[this.refName], this)
+	},
+}
+hydraStrike.addToPlayer()
+const gigasUppercut = {
+	get level() {
+		return calculateStat(player, this.refName)
+	},
+	name: 'Gigas Uppercut',
+	refName: 'gigasUppercut',
+	color: 'monk-color',
+	goldToUpgrade: function () {
+		return abilityGoldUpgradeCost(player.gigasUppercut)
+	},
+	pointsToUpgrade: function () {
+		return abilityUpgradeCost(player.gigasUppercut)
+	},
+	addToPlayer: function() {
+		player[this.refName] = {}
+		copyGettersAndSetters(player[this.refName], this)
+	},
+}
+gigasUppercut.addToPlayer()
+const atmaShock = {
+	get level() {
+		return calculateStat(player, this.refName)
+	},
+	name: 'Atma Shock',
+	refName: 'atmaShock',
+	color: 'monk-color',
+	goldToUpgrade: function () {
+		return abilityGoldUpgradeCost(player.atmaShock)
+	},
+	pointsToUpgrade: function () {
+		return abilityUpgradeCost(player.atmaShock)
+	},
+	addToPlayer: function() {
+		player[this.refName] = {}
+		copyGettersAndSetters(player[this.refName], this)
+	},
+}
+atmaShock.addToPlayer()
+
 
 
 
@@ -13917,7 +15046,17 @@ const callOfWind = {
 	weaponTypesUsed: ['unarmed'],
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
-	damageRanged: function (enemy) {
+	resourceBonus: function() {
+		if (this.level <= 1) {return 15}
+		if (this.level == 2) {return 20}
+		if (this.level == 3) {return 25}
+		if (this.level == 4) {return 30}
+		if (this.level == 5) {return 35}
+		if (this.level == 6) {return 40}
+		if (this.level == 7) {return 45}
+		if (this.level >= 8) {return 50}
+	},
+	damageRanged: function(enemy) {
 		let mysticPowerBot = player.mysticPower * player.transcendence.botMultiplier
 		let mysticPowerTop = player.mysticPower * player.transcendence.topMultiplier
 		let totalDamage = randomNumberRange(mysticPowerBot, mysticPowerTop)
@@ -14035,12 +15174,12 @@ const knuckleBlitz = {
 	color: 'monk-color',
 	multiplier: 1.5,
 	resourceName: 'focus',
-	resourceCost: 5,
+	resourceCost: 15,
 	weaponTypesUsed: ['unarmed'],
 	rightWeaponTypes: ['unarmed'],
 	leftWeaponTypes: ['unarmed'],
 	damage: function (enemy) {
-		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.5
+		let baseDamage = (baseAttackDamageRight() + baseAttackDamageLeft()) * 0.75
 		let levelMultiplier
 		if (player.knuckleBlitz.level == 1) { levelMultiplier = 1.1}
 		if (player.knuckleBlitz.level == 2) { levelMultiplier = 1.2}
@@ -14514,7 +15653,8 @@ const waterSeal = {
 		flavorText: function(enemy, heal) {
 			let line1 = lineFunc()
 			customizeEachWord(`You heal yourself for `, 'green', line1)
-			customizeEachWord(`${heal} `, 'light-blue', line1)
+			customizeEachWord(`${heal}`, 'light-blue', line1)
+			customizeEachWord(`health.`, 'green', line1)
 		}
 	},
 	damage: function () {
@@ -15020,7 +16160,7 @@ const waveFist = {
 		customizeEachWord(`You consume the power of your Water Seal, healing yourself!`, 'water', line1)
 		customizeEachWord(`You heal yourself for `, 'green', line2)
 		customizeEachWord(`${heal} `, `fire`, line2)
-		customizeEachWord(`!`, 'green', line2)
+		customizeEachWord(`health.`, 'green', line2)
 		blankSpace()
 	},
 	flavorTextMiss: function(enemy, weapon, damage) {
@@ -15281,6 +16421,168 @@ const sinisterMark = {
 }
 sinisterMark.addToPlayer()
 
+const shadowsurge = {
+	get level() {
+	return calculateStat(player, this.refName)
+	},
+	name: 'Shadowsurge',
+	refName: 'shadowsurge',
+	cooldown: 1000,
+	cooldownSet: 1000,
+	type: 'ability',
+	element: 'shadow',
+	color: 'sinistral-color',
+	multiplier: 1.5,
+	resourceName: 'adrenaline',
+	resourceCost: 0,
+	weaponTypesUsed: ['daggers', 'oneHanded'],
+	rightWeaponTypes: ['daggers', 'oneHanded'],
+	leftWeaponTypes: ['daggers', 'oneHanded'],
+	damage: function (enemy, doesPlayerShadowStep) {
+		let baseDamage = baseAttackDamageRight() + baseAttackDamageLeft()
+		let totalDamage = 0
+		if (doesPlayerShadowStep) {
+			//Calculate damage for shadowstep
+			let levelMultiplier
+			if (player.shadowsurge.level == 1) { levelMultiplier = 1.25}
+			if (player.shadowsurge.level == 2) { levelMultiplier = 1.35}
+			if (player.shadowsurge.level == 3) { levelMultiplier = 1.45}
+			if (player.shadowsurge.level == 4) { levelMultiplier = 1.55}
+			if (player.shadowsurge.level == 5) { levelMultiplier = 1.65}
+			if (player.shadowsurge.level == 6) { levelMultiplier = 1.75}
+			if (player.shadowsurge.level == 7) { levelMultiplier = 1.85}
+			if (player.shadowsurge.level == 8) { levelMultiplier = 1.95}
+			if (player.shadowsurge.level == 9) { levelMultiplier = 2.05}
+			if (player.shadowsurge.level >= 10) { levelMultiplier = 2.15}
+			totalDamage = baseDamage * levelMultiplier
+		} else {
+			//Calculate damage for shadowsurge
+			let levelMultiplier
+			let shadowMarkMultiplier = enemy.debuffs?.shadowMark?.stacks ? enemy.debuffs.shadowMark.stacks * 0.2 : 0
+			if (player.shadowsurge.level == 1) { levelMultiplier = 1.1 }
+			if (player.shadowsurge.level == 2) { levelMultiplier = 1.2 }
+			if (player.shadowsurge.level == 3) { levelMultiplier = 1.3 }
+			if (player.shadowsurge.level == 4) { levelMultiplier = 1.4 }
+			if (player.shadowsurge.level == 5) { levelMultiplier = 1.5 }
+			if (player.shadowsurge.level == 6) { levelMultiplier = 1.6 }
+			if (player.shadowsurge.level == 7) { levelMultiplier = 1.7 }
+			if (player.shadowsurge.level == 8) { levelMultiplier = 1.8 }
+			if (player.shadowsurge.level == 9) { levelMultiplier = 1.9 }
+			if (player.shadowsurge.level >= 10) { levelMultiplier = 2.0 }
+			totalDamage = (levelMultiplier + shadowMarkMultiplier) * baseDamage
+		}
+		return Math.ceil(totalDamage)
+	},
+	buff: {
+		name: 'Shadowbane',
+		refName: 'shadowbane',
+		duration: 30000,
+		stacks: 0,
+		dodge: 10,
+		maxStacks: function() {
+			return 10
+		},
+	},
+	abilityWeaponsCheck: function(weapon1, weapon2) {
+		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'daggers') {return false}
+		if (weapon1.skillUsed == 'daggers' && weapon2.skillUsed == 'unarmed') {return false}
+		if (weapon1.skillUsed == 'unarmed' && weapon2.skillUsed == 'daggers') {return false}
+		else {
+			let line1 = lineFunc()
+			customizeEachWord(`You cannot perform Venom Blade while wielding any weapon other than a dagger`, 'white', line1)
+			return true
+		}
+	},
+	flavorText: function(enemy, weapon, damage, penetrationType, damageBlocked, doesPlayerShadowStep) {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		if (doesPlayerShadowStep) {
+			blankSpace()
+			customizeEachWord(`You travel through the shadows behind the `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
+			customizeEachWord(`sinking your `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
+			customizeEachWord(`into its back!`, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`Shadow Step `, this.color, line2)
+			customizeEachWord(`hits for `, 'green', line2)
+			customizeEachWord(`${damage} `, 'light-blue', line2)
+			customizeEachWord(`${penetrationType} `, penetrationType, line2)
+			customizeEachWord(`damage. `, 'green', line2)
+			customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+			customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+			customizeEachWord(`)`, 'white', line2)
+			blankSpace()
+		}
+		if (!doesPlayerShadowStep) {
+			blankSpace()
+			customizeEachWord(`You call upon the Shadows swirling around the `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
+			customizeEachWord(`to consume it, draining its lifeforce!`, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`Shadowsurge `, this.color, line2)
+			customizeEachWord(`hits for `, 'green', line2)
+			customizeEachWord(`${damage} `, 'light-blue', line2)
+			customizeEachWord(`shadow `, 'shadow', line2)
+			customizeEachWord(`damage.`, `green`, line2)
+			customizeEachWord(` (Enemy resists `, `white`, line2)
+			customizeEachWord(`${damageBlocked}`, `light-blue`, line2)
+			customizeEachWord(`)`, `white`, line2)
+			blankSpace()
+		}
+	},
+	flavorTextRegularHit: function(enemy, weapon, damage, penetrationType, damageBlocked) {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		blankSpace()
+		customizeEachWord(`You flow through the shadows behind the enemy, and in a cross-slash motion of your daggers you eviscerate the `, `sinistral-ability-text-color`, line1)
+		customizeEachWord(`${enemy.name}`, `${enemy.color}`, line1)
+		customizeEachWord(`!`, `sinistral-ability-text-color`, line1)
+		customizeEachWord(`${this.name} `, this.color, line2)
+		customizeEachWord(`hits for `, 'green', line2)
+		customizeEachWord(`${damage} `, 'light-blue', line2)
+		customizeEachWord(`${penetrationType} `, penetrationType, line2)
+		customizeEachWord(`damage. `, 'green', line2)
+		customizeEachWord(`(Enemy's armor blocks `, 'white', line2)
+		customizeEachWord(`${damageBlocked}`, 'light-blue', line2)
+		customizeEachWord(`)`, 'white', line2)
+		blankSpace()
+	},
+	flavorTextMiss: function(enemy, weapon, doesPlayerShadowStep) {
+		let line0 = lineFunc()
+		let line1 = lineFunc()
+		if (doesPlayerShadowStep) {
+			blankSpace()
+			customizeEachWord(`You travel through the shadows behind the `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${enemy.name} `, `${enemy.color}`, line1)
+			customizeEachWord(`attemping to strike it with your `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${weapon.name} `, `${weapon.color}`, line1)
+			customizeEachWord(`but `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`miss`, 'red', line1)
+			customizeEachWord(`!`, `sinistral-ability-text-color`, line1)
+			blankSpace()
+		}
+		if (!doesPlayerShadowStep) {
+			blankSpace()
+			customizeEachWord(`You attempt to eviscerate the enemy with `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`${this.name}`, this.color, line1)
+			customizeEachWord(`, but `, `sinistral-ability-text-color`, line1)
+			customizeEachWord(`miss`, `red`, line1)
+			customizeEachWord(`!`, `sinistral-ability-text-color`, line1)
+			blankSpace()
+		}
+	},
+	goldToUpgrade: function () {
+		return abilityGoldUpgradeCost(player.shadowsurge)
+	},
+	pointsToUpgrade: function () {
+		return abilityUpgradeCost(player.shadowsurge)
+	},
+	addToPlayer: function() {
+		player[this.refName] = {}
+		copyGettersAndSetters(player[this.refName], this)
+	},
+}
+shadowsurge.addToPlayer()
+
 const shadowVenom = {
 		get level() {
 		return calculateStat(player, this.refName)
@@ -15395,7 +16697,7 @@ const shadowVenom = {
 		refName: 'shadowMark',
 		resistType: 'shadowResist',
 		penType: 'shadowPen',
-		stacks: 0,
+		stacks: 1,
 		maxStacks: function() {
 			return 5
 		},
@@ -15423,24 +16725,85 @@ const poison = {
 	penType: 'poisonPen',
 	stacks: 0,
 	duration: function() {
-		if (player.contagion.level == 1) {return 20000}
-		if (player.contagion.level == 2) {return 30000}
-		if (player.contagion.level == 3) {return 40000}
-		if (player.contagion.level == 4) {return 50000}
-		if (player.contagion.level >= 5) {return 60000}
-		
+		if (player.contagion.level == 1) {return 30000}
+		if (player.contagion.level == 2) {return 60000}
+		if (player.contagion.level == 3) {return 90000}
+		if (player.contagion.level == 4) {return 150000}
+		if (player.contagion.level == 5) {return 240000}
+		if (player.contagion.level == 6) {return 360000}
+		if (player.contagion.level == 7) {return 480000}
+		if (player.contagion.level == 8) {return 600000}
+		if (player.contagion.level == 9) {return 900000}
+		if (player.contagion.level >= 10) {return 1200000}
 		else {return 0}
-
 	},
 	color: 'dark-green',
 	damage: function(swingObject) {
-		let baseDamage = player.currentWeaponSkill.attackPower
-		let bonusDamage = this.stacks * player.contagion.level
+		let botModifier = 0
+		let topModifier = 0
+		if (this.level == 1) {
+			botModifier = 0.5
+			topModifier = 1.0
+		}
+		if (this.level == 2) {
+			botModifier = 0.55
+			topModifier = 1.05
+		}
+		if (this.level == 3) {
+			botModifier = 0.6
+			topModifier = 1.1
+		}
+		if (this.level == 4) {
+			botModifier = 0.65
+			topModifier = 1.15
+		}
+		if (this.level == 5) {
+			botModifier = 0.70
+			topModifier = 1.20
+		}
+		if (this.level == 6) {
+			botModifier = 0.75
+			topModifier = 1.25
+		}
+		if (this.level == 7) {
+			botModifier = 0.80
+			topModifier = 1.30
+		}
+		if (this.level == 8) {
+			botModifier = 0.85
+			topModifier = 1.35
+		}
+		if (this.level == 9) {
+			botModifier = 0.90
+			topModifier = 1.40
+		}
+		if (this.level == 10) {
+			botModifier = 1.0
+			topModifier = 1.5
+		}
+		else {
+			botModifier = 0.5
+			topModifier = 1.0
+		}
+		let botDamage = player.currentWeaponSkill.attackPower * botModifier
+		let topDamage = player.currentWeaponSkill.attackPower * topModifier
+		let baseDamage = randomNumberRange(botDamage, topDamage)
+		let bonusDamage = this.stacks
 		let totalDamage = baseDamage + bonusDamage
 		return Math.ceil(totalDamage)
 	},
 	maxStacks: function() {
-		return 10
+		if (player.contagion.level == 1) {return 2}
+		if (player.contagion.level == 2) {return 3}
+		if (player.contagion.level == 3) {return 4}
+		if (player.contagion.level == 4) {return 5}
+		if (player.contagion.level == 5) {return 6}
+		if (player.contagion.level == 6) {return 7}
+		if (player.contagion.level == 7) {return 8}
+		if (player.contagion.level == 8) {return 9}
+		if (player.contagion.level == 9) {return 10}
+		if (player.contagion.level >= 10) {return 12}
+		else {return 0}	
 	},
 	flavorText: function(enemy, damage, element, damageResisted) {
 		let line1 = lineFunc()
@@ -15994,13 +17357,13 @@ const unarmed = {
 		return Math.ceil((twoHandedAttributes + attackPowerMods) * 0.5)
 	},
 	get level() {
-		return player.skillMods[this.refName] ?? 0
+		return calculateStat(player, this.refName)
 	},
 	get topMultiplier() {
-		return parseFloat((0.05 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get botMultiplier() {
-		return parseFloat((0.05 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get speed() {
 		let main = Math.max(2, parseFloat(4.1 - Math.floor((player.unarmed.level / 10) * 100) / 100).toFixed(1))
@@ -16031,21 +17394,21 @@ const daggers = {
 	refName: 'daggers',
 	type: 'skill',
 	get attackPower() {
-		let twoHandedAttributes = player.dex + player.agi + (player.str * 0.5)
+		let daggers = player.dex + player.agi + (player.str * 0.5)
 		let attackPowerMods = calculateStat(player, 'attackPower')
-		return Math.ceil((twoHandedAttributes + attackPowerMods) * 0.5)
+		return Math.ceil((daggers + attackPowerMods) * 0.5)
 	},
 	get level() {
-		return player.skillMods[this.refName] ?? 0
+		return calculateStat(player, this.refName)
 	},
 	get topMultiplier() {
-		return parseFloat((0.05 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get botMultiplier() {
-		return parseFloat((0.05 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get speed() {
-		let main = Math.max(2, parseFloat((5.1 - Math.floor((this.level / 5) * 100) / 100).toFixed(1)))
+		let main = Math.max(2, parseFloat((5.2 - Math.floor((this.level / 5) * 100) / 100).toFixed(1)))
 		let bonus = Math.floor(player.burden * 0.1)
 		return main + bonus
 	},
@@ -16072,21 +17435,21 @@ const oneHanded = {
 	refName: 'oneHanded',
 	type: 'skill',
 	get attackPower() {
-		let twoHandedAttributes = player.str + player.dex + (player.agi * 0.5)
+		let oneHandedAttributes = player.str + player.dex + (player.agi * 0.5)
 		let attackPowerMods = calculateStat(player, 'attackPower')
-		return Math.ceil((twoHandedAttributes + attackPowerMods) * 0.5)
+		return Math.ceil((oneHandedAttributes + attackPowerMods) * 0.5)
 	},
 	get level() {
 		return calculateStat(player, this.refName)
 	},
 	get topMultiplier() {
-		return parseFloat((0.45 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get botMultiplier() {
-		return parseFloat((0.45 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get speed() {
-		let main = Math.max(2, parseFloat((5.1 - Math.floor((this.level / 5) * 100) / 100).toFixed(1)))
+		let main = Math.max(2, parseFloat((5.2 - Math.floor((this.level / 5) * 100) / 100).toFixed(1)))
 		let bonus = Math.floor(player.burden * 0.1)
 		return main + bonus
 	},
@@ -16132,10 +17495,10 @@ const twoHanded = {
 		return calculateStat(player, this.refName)
 	},
 	get topMultiplier() {
-		return parseFloat((0.45 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get botMultiplier() {
-		return parseFloat((0.45 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get speed() {
 		let main = Math.max(2, parseFloat((6.2 - Math.floor((this.level / 5) * 100) / 100).toFixed(1)))
@@ -16174,18 +17537,18 @@ const bows = {
 	refName: 'bows',
 	type: 'skill',
 	get attackPower() {
-		let twoHandedAttributes = (player.agi * 2) + ((player.str + player.dex) * 0.5)
+		let twoHandedAttributes = (player.agi + player.dex) + (player.str * 0.5)
 		let attackPowerMods = calculateStat(player, 'attackPower')
 		return Math.ceil((twoHandedAttributes + attackPowerMods) * 0.5)
 	},
 	get level() {
-		return player.skillMods[this.refName] ?? 0
+		return calculateStat(player, this.refName)
 	},
 	get topMultiplier() {
-		return parseFloat((0.05 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get botMultiplier() {
-		return parseFloat((0.05 + this.level / 10).toFixed(2))
+		return parseFloat((allWeaponSkillMultipliers + this.level / allWeaponSkillIncrements).toFixed(2))
 	},
 	get speed() {
 		let main = Math.max(2, parseFloat((5.1 - Math.floor((this.level / 5) * 100) / 100).toFixed(1)))
@@ -16419,7 +17782,7 @@ const inferno = {
 	element: 'fire',
 	resourceName: 'mana', 
 	resourceCost: function() {
-		if (player.inferno.level == 1) {return 15 * player.sorceryMastery.reduction()}
+		if (player.inferno.level <= 1) {return 15 * player.sorceryMastery.reduction()}
 		if (player.inferno.level == 2) {return 30 * player.sorceryMastery.reduction()}
 		if (player.inferno.level == 3) {return 45 * player.sorceryMastery.reduction()}
 		if (player.inferno.level == 4) {return 60 * player.sorceryMastery.reduction()}
@@ -16474,6 +17837,7 @@ const inferno = {
 		let burnBonusDamage = ((burnStacks * player.burn.bonusModifier()) + 1)
 		let damageWithBurn = damageBeforeBonus * burnBonusDamage
 		let levelMultiplier
+		if (player.inferno.level == 0) { levelMultiplier = 1 }
 		if (player.inferno.level == 1) { levelMultiplier = 1.5 }
 		if (player.inferno.level == 2) { levelMultiplier = 1.7 }
 		if (player.inferno.level == 3) { levelMultiplier = 1.9 }
@@ -16590,7 +17954,7 @@ const meteor = {
 	numberOfTargets: 'all',
 	resourceName: 'mana', 
 	resourceCost: function() {
-		if (player.meteor.level == 1) {return 25 * player.sorceryMastery.reduction()}
+		if (player.meteor.level <= 1) {return 25 * player.sorceryMastery.reduction()}
 		if (player.meteor.level == 2) {return 50 * player.sorceryMastery.reduction()}
 		if (player.meteor.level == 3) {return 75 * player.sorceryMastery.reduction()}
 		if (player.meteor.level == 4) {return 100 * player.sorceryMastery.reduction()}
@@ -16650,7 +18014,7 @@ const meteor = {
 		let burnBonusDamage = ((burnStacks * player.burn.bonusModifier()) + 1)
 		let damageWithBurn = damageBeforeBonus * burnBonusDamage
 		let levelMultiplier
-		if (player.meteor.level == 1) { levelMultiplier = 1.0 }
+		if (player.meteor.level <= 1) { levelMultiplier = 1.0 }
 		if (player.meteor.level == 2) { levelMultiplier = 1.2 }
 		if (player.meteor.level == 3) { levelMultiplier = 1.4 }
 		if (player.meteor.level == 4) { levelMultiplier = 1.6 }
@@ -18023,7 +19387,7 @@ heal.addToPlayer()
 // player.firefist = {...firefist}
 const lightningFistEnchant = {
 	name: 'Lightning Fist',
-	refName: 'lightningFist',
+	refName: 'lightningFistEnchant',
 	color: 'lightning-fist-color',
 	type: 'enchantment',
 	enchantWeaponOrArmor: 'weapon',
@@ -18244,7 +19608,7 @@ const currentAttributes = document.querySelectorAll('.attribute')
 const currentWeaponSkillRightDisplay = document.querySelector('.current-weapon-skill-right')
 const currentWeaponSkillLeftDisplay = document.querySelector('.current-weapon-skill-left')
 const expBar = document.querySelector('.exp-bar')
-expBar.textContent = ''
+expBar.textContent
 
 
 function updateResource() {
@@ -18575,6 +19939,7 @@ function updateMysticPower() {
 // }
 
 function updatePlayerStats() {
+	updateBuffMods()
 	updateWeaponIcons()
 	updateInventory()
 	updateEquipmentMods()
@@ -18939,21 +20304,22 @@ let egbert = {
 	},
 	questItem: 'pair of glasses',
 	questSequence: {
-		// first: false,
-		// second: false,
-		// third: false,
-		// fourth: false,
-		// fifth: false,
-		// sixth: false,
-		// seventh: false,
-		// eighth: false,
-		// ninth: false,
-		// tenth: false,
-		// eleventh: false,
-		// twelth: false,
-		// thirteenth: false,
-		// fourteenth: false,
-		// fifteenth: false,
+		preFirst: false,
+		first: false,
+		second: false,
+		third: false,
+		fourth: false,
+		fifth: false,
+		sixth: false,
+		seventh: false,
+		eighth: false,
+		ninth: false,
+		tenth: false,
+		eleventh: false,
+		twelth: false,
+		thirteenth: false,
+		fourteenth: false,
+		fifteenth: false,
 	},
 	train: function (secondCommand) {
 		trainInteraction(secondCommand, this)
@@ -18979,99 +20345,153 @@ let egbert = {
 		npcDescription(this)
 		blankSpace()
 	},
+	questStage: 0,
 	speak: async function () {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		let line3 = lineFunc()
 		let line4 = lineFunc()
 		let line5 = lineFunc()
-		if (this.questSequence.first == false) {
+		// let stage = player.questLog?.egbert?.stage
+		let stage = this.questStage
+		if (stage == 0) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line1)
-			customizeEachWord(`"Greetings, ${player.name}! I am Egbert, tutor for beginners. I will walk you through the rest of your beginner training. You might have noticed the (Q) beside my name. This indicates that I have a quest available. To see what the quest entails, use the SHOW QUEST command. When you've completed the quest, return to me and use the OFFER command."`, `white`, line1)
+			customizeEachWord(`"Ahh there you are! I was wondering where you'd run off to. The rest of the class is already outside fighting in the Training Fields. Let's get you caught up on the basics, then we'll meet up with the others outside."`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`Egbert: `, this.nameColor, line2)
+			customizeEachWord(`"First, we'll start with the basics. If you look at the room description above, you can see the room you're in, a description of the room, room exits, and other people who might be in the room with you. If you use the LOOK or L command, you can refresh your view of the room. This is useful if you can no longer see the room description or exits."`, 'white', line2)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`Egbert: `, this.nameColor, line3)
+			customizeEachWord(`"As you can see, the only exit out of this room is to the north. To move, simply type the direction you want to go. You can shorthand any direction as well as most commands. Try typing NORTH or N to move to the next room."`, 'white', line3)
+			customizeEachWord(`NOTE: You can also use the NumPad to move. Each number, except 5, corresponds to cardinal and intermediate directions. To move UP, use the . key. To move DOWN, use the 0 key.`, 'white', line4)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`Egbert: `, this.nameColor, line5)
+			customizeEachWord(`Follow me to the north when you're ready.`, 'white', line5)
+			blankSpace()
+			await dialogueWait(200)
+			npcMovesAndChangesRoom(this, galvadiaWelcomeArea2, 'north')
+			advanceQuestStage(this, 1)
+			return
+		}
+		else if (stage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Directions marked in yellow means that you cannot pass in that direction, but there is something you can do to open the way. Trying to move in a direction that is yellow will usually hint at why it is blocked and might also provide a hint as how to open the way."`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`Egbert: `, this.nameColor, line2)
+			customizeEachWord(`"Areas will sometimes have keywords highlighted in them which indicates that there is something of interest to investigate. By using the EXAMINE or EX command, you can find out more information about it. Investigating keywords can be useful as they may lead to something important like a hidden room, an item, or finding a way through a locked or blocked room. Go ahead and try "examine wall" or "ex wall"."`, 'white', line2)
 			blankSpace()
 			return
 		}
-		if (this.questSequence.second == false) {
+		else if (stage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Excellent! Let us continue."`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			npcMovesAndChangesRoom(this, galvadiaWelcomeArea3, 'north')
+			advanceQuestStage(this, 3)
+			return
+		}
+		else if (stage == 3) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Some rooms will appear to have no obvious exits other than the way you came in. Here, you see that there is a lever on the wall. Use what you just learned to see if you can find a way forward."`, 'white', line1)
+			blankSpace()
+			return
+		}
+		else if (stage == 4) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Looks like you're already familiar with how to get around!"`, 'white', line1)
+			blankSpace()
+			npcMovesAndChangesRoom(this, galvadiaWelcomeArea3, 'north')
+			advanceQuestStage(this, 6)
+			return
+		}
+		else if (stage == 5) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Great! Moving on."`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			npcMovesAndChangesRoom(this, galvadiaWelcomeArea5, 'north')
+			advanceQuestStage(this, 6)
+			return
+		}
+		else if (stage == 6) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Hmmm... I must've dropped that key when I went looking for you. Go ahead and pick it up, we'll need it in the next room. To pick up an item on the ground, use the GET or G command followed by any word in the item's name. To pick up the key, try "g simple" or "g key" -- whichever you prefer."`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`Egbert: `, this.nameColor, line2)
+			customizeEachWord(`"Once you've picked up or received an item, you can see it in your inventory by using the INVENTORY or I command. This will show you everything you have in your backpack, your equipped weapons and armor, and your gold."`, 'white', line2)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`NOTE: You can use the GET command followed by ALL to pick up everything on the ground including gold.`, 'white', line3)
+			blankSpace()
+			await dialogueWait(200)
+			npcMovesAndChangesRoom(this, galvadiaWelcomeArea4, 'north')
+			advanceQuestStage(this, 7)
+			return
+		}
+		else if (stage == 7 && currentArea.descriptions.zoneExitsBool.north == 'locked') {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Locked doors will appear yellow. Simple locks can be unlocked by using a simple key, picking the lock -- if you have the skill, or using an unlock spell -- if you have the spell. Some locks require a specific key open in which case a simple key, lockpicking skill or spell, will not work. A simple key only has a single use before it disappears, but once a door is unlocked, it will remain open."`, 'white', line1)
+			blankSpace()
+			return
+		}
+		else if (stage == 7 && currentArea.descriptions.zoneExitsBool.north == true) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"Alrighty, on to the next!"`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			npcMovesAndChangesRoom(this, galvadiaWelcomeArea6, 'north')
+			advanceQuestStage(this, 8)
+			return
+		}
+		else if (stage == 8) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line1)
+			customizeEachWord(`"You might've noticed the (Q) beside my name. This indicates that I have a quest to offer. Completing a quest can offer a range of rewards from any combination of experience points, skill points, attribute points, gold, and sometimes an item. To see what a quest entails, use the SHOW QUEST command. If there's only one person in the room offering quests, that command alone will work. If there are multiple people in the same room offering quests, you will need to specify SHOW QUEST followed by the name of the person."`, `white`, line1)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`Egbert: `, this.nameColor, line2)
+			customizeEachWord(`"You also might've noticed that the direction to the east is red. This means that there is a hard requirement that must be fulfilled before you can go there. A few examples include needing to be a certain level to pass, completing a specific quest, being at a certain point in the story progression, etc. In this case, you need to complete my quest first before you can move in that direction."`, `white`, line2)
+			blankSpace()
+			return
+		}
+		else if (stage == 9) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line1)
 			customizeEachWord(`"Alright, let's get you combat ready. The rooms to the south and east will each have a weapon and piece of armor for you. Once you have them both equipped, meet me in the room to the north where you'll get to practice fighting!"`, `white`, line1)
 			await dialogueWait(200)
 			blankSpace()
-			customizeEachWord(`Egbert `, this.nameColor, line2)
-			customizeEachWord(`strides to the north`, 'white', line2)
-			blankSpace()
-			if (player.playerClass.name == 'Berserker') {
-				weaponGen(trainingTwoHandedSword())
-				armorGen(trainingMailChestpiece())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-				pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
-
-			}
-			if (player.playerClass.name == 'Fighter') {
-				weaponGen(trainingShortsword())
-				weaponGen(trainingShortsword())
-				armorGen(trainingMailChestpiece())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-				pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
-				pushItem[pushItem.length - 3].roomId = galvadiaWelcomeArea9.id
-
-
-			}
-			if (player.playerClass.name == 'Knight') {
-				weaponGen(trainingShortsword())
-				weaponGen(trainingShield())
-				armorGen(trainingMailChestpiece())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-				pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
-				pushItem[pushItem.length - 3].roomId = galvadiaWelcomeArea9.id
-
-
-			}
-			if (player.guild == 'Sinistral') {
-				weaponGen(trainingDagger())
-				weaponGen(trainingDagger())
-				armorGen(trainingLeatherTunic())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-				pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
-				pushItem[pushItem.length - 3].roomId = galvadiaWelcomeArea9.id
-
-			}
-			if (player.playerClass.name == 'Martial Monk' || player.playerClass.name == 'Mystic Monk') {
-				armorGen(trainingLeatherTunic())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-			}
-			if (player.playerClass.name == 'Elemental Monk') {
-				armorGen(trainingClothChestpiece())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-			}
-			if (player.guild == 'Ranger') {
-				weaponGen(trainingBow())
-				armorGen(trainingLeatherTunic())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-				pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
-
-			}
-			if (player.guild == 'Mage') {
-				weaponGen(trainingStaff())
-				armorGen(trainingClothChestpiece())
-				pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
-				pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
-
-			}
-
-			this.questSequence.second = true
-			currentArea.npc.splice(0, 1)
-			egbert.y++
-			galvadiaWelcomeArea14.npc.push(egbert)
+			npcMovesAndChangesRoom(this, galvadiaWelcomeArea14, 'north')
 			galvadiaWelcomeArea8.descriptions.zoneExitsBool.north = true
+			advanceQuestStage(this, 10)
 			return 
 		} 
-		if (this.questSequence.fourth == false) {
-			let mageDialogue
-			let nonMageDialogue
+		else if (stage == 10) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line2)
@@ -19092,79 +20512,60 @@ let egbert = {
 			blankSpace()
 			await dialogueWait(200)
 			blankSpace()
-			customizeEachWord(`"Egbert moves to the north"`, `white`, line4)
-			blankSpace()
-			this.questSequence.fourth = true
-			egbert.y+= 2
-			th_b_center_1.npc.push(egbert)
-			currentArea.npc.pop()
-			currentArea.descriptions.zoneExitsBool.north = true
+			npcMovesAndChangesRoom(this, th_b_center_1, 'north')
+			galvadiaWelcomeArea8.descriptions.zoneExitsBool.north = true
+			advanceQuestStage(this, 11)
 			return 
 		}
-		if (this.questSequence.ninth == false) {
+		else if (stage == 11) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line2)
 			customizeEachWord(`"There's a mechanism in the rooms to the east and west that will open this door. Go and see if you can figure out how to open it."`, `white`, line2)
 			blankSpace()
-			this.questSequence.ninth = true
 			return
 		}
-		if (this.questSequence.tenth == false) {
-			await dialogueWait(200)
-			blankSpace()
-			customizeEachWord(`Egbert `, this.nameColor, line1)
-			customizeEachWord(`looks at the door`, `white`, line1)
-			blankSpace()
+		else if (stage == 12) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line2)
-			customizeEachWord(`"It looks like there's still something you need to do to open the door."`, `white`, line2)
-			blankSpace()
-			return
-		}
-		if (this.questSequence.eleventh == false) {
-			await dialogueWait(200)
-			blankSpace()
-			customizeEachWord(`Egbert: `, this.nameColor, line2)
-			customizeEachWord(`"Excellent! Follow me up the stairs to the main Training Hall."`, white, line2)
+			customizeEachWord(`"Excellent! Follow me up the stairs to the Training Halls Common Room."`, white, line2)
 			blankSpace()
 			await dialogueWait(200)
 			blankSpace()
-			customizeEachWord(`Egbert `, this.nameColor, line3)
-			customizeEachWord(`strides to the north`, 'white', line3)
-			blankSpace()
-			egbert.x = -7
-			egbert.y = 4
-			egbert.z = 0
-			currentArea.npc.splice(0, 1)
-			trainingHallsCommonRoom.npc.push(egbert)
-			this.questSequence.eleventh = true
+			npcMovesAndChangesRoom(this, trainingHallsCommonRoom, 'north')
+			galvadiaWelcomeArea8.descriptions.zoneExitsBool.north = true
+			advanceQuestStage(this, 13)
 			updateNpcPicture()
 			return
 		}
-		if (this.questSequence.twelth == false) {
+		else if (stage == 13) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line1)
-			customizeEachWord(`"Now it's time to try out what you've learned in the field. And by that, I mean the Training Fields just outside the gates. You will meet with your class trainer who will guide you through the rest of your training. From here, go all the way east where they will be waiting for you."`, white, line1)
+			customizeEachWord(`"Now it's time to put some of that combat training to the test! You will meet with your class trainer who will guide you through the rest of your training. From here, go all the way east where they will be waiting for you."`, white, line1)
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line2)
-			customizeEachWord(`"A useful command for when you're out there training and you forget something is the HELP command. Using the HELP command will give you a list of topics that you can search to bring up information about the topic."`, white, line2)
+			customizeEachWord(`"But before you go, I want to teach you about the HELP command. I expect you don't remember everything we went over in our training, so you can use this command to get a list of topics to see detailed information about. For example, typing 'help basics' will bring up a list of every subject and command that we went over."`, white, line2)
 			blankSpace()
-			this.questSequence.twelth = true
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`Egbert: `, this.nameColor, line3)
+			customizeEachWord(`"Alright, goodluck out there ${player.name}!"`, white, line3)
+			blankSpace()
+			advanceQuestStage(this, 14)
 			return
 		}
-		if (!this.questSequence.fourteenth) {
+		else if (stage == 14) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line1)
-			customizeEachWord(`"For the last part of your training, you'll need to go to the Training Fields to the east. ${fieldsTrainer.name} will be there waiting for you where they will instruct you further."`, white, line1)
+			customizeEachWord(`"Go to the Training Fields to the east to meet with your class trainer."`, white, line1)
 			blankSpace()
 			return
 		}
-		if (!this.questSequence.fifteenth) {
+		else if (stage == 15) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line1)
@@ -19185,13 +20586,10 @@ let egbert = {
 			customizeEachWord(`Egbert: `, this.nameColor, line4)
 			customizeEachWord(`"Alright, I'll let you on your way."`, 'white', line4)
 			blankSpace()
-			customizeEachWord(`Egbert `, this.nameColor, line5)
-			customizeEachWord(`strides to the south`, 'white', line5)
-			currentArea.npc.pop()
-			this.questSequence.fifteenth = true
-			player.questStages.fieldsTrainer.stage15 = true
-			player.gameStages.gameStart.stage1 = true
-			gameStageEvents()
+			await dialogueWait(200)
+			blankSpace()
+			advanceQuestStage(this, 16)
+			npcMovesAndChangesRoom(this, trainingHallsCommonRoom, 'north')
 			updateNpcPicture()
 			return
 		}
@@ -19202,7 +20600,7 @@ let egbert = {
 		await dialogueWait(200)
 		blankSpace()
 		customizeEachWord(`${this.name}: `, this.nameColor, line1)
-		customizeEachWord(`"I seem to have missplaced my glasses. I need them to be able to show you around. I think I left them somewhere in my office to the west."`, `white`, line1)
+		customizeEachWord(`"I've barely been able to see going through these halls. It's a wonder I found you! Go and retrieve my glasses for me. I believe I left them somewhere in my office to the west."`, `white`, line1)
 		blankSpace()
 	},
 	isQuestAvailable: true,
@@ -19235,24 +20633,25 @@ let egbert = {
 			customizeEachWord(`"I'll be in the room to the east when you are ready for your next lesson."`, 'white', line3)
 			blankSpace()
 			await dialogueWait(200)
-			blankSpace()
-			customizeEachWord(`${this.name} `, this.nameColor, line4)
-			customizeEachWord(`strides to the east`, 'white', line4)
-			blankSpace()
-			egbert.x++
 			currentArea.descriptions.zoneExitsBool.east = true
-			currentArea.npc.splice(0, 1)
-			galvadiaWelcomeArea8.npc.push(egbert)
-			this.questSequence.first = true
+			spawnTutorialWeapons()
+			npcMovesInADirection('east', this)
+			npcRemoveFromTheirCurrentRoom(this)
+			npcAddToRoom(galvadiaWelcomeArea8, this)			
 			this.isQuestAvailable = false
+			advanceQuestStage(this, 9)
 			updateNpcPicture()
 		} else if (this.questSequence.first == false) {
 			let line1 = lineFunc()
+			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`Egbert: `, this.nameColor, line1)
 			customizeEachWord(`"If you can find my glasses, I'll be able to show you around. They should be somewhere in my office, in the room to the west."`, 'white', line1)
 			blankSpace()
-		} else {return}
+		} else {
+			npcNoQuestAvailable(this)
+			return
+		}
 	},
 	displayShop: async function (ssiq) {
 		this.questSequence.thirteenth = true
@@ -19266,6 +20665,7 @@ let egbert = {
 		// }
 	},
 }
+allNpcsArray.push(egbert)
 
 
 function npcMovesEastToWest(chosenNpc) {
@@ -19311,7 +20711,7 @@ function npcMovesEastToWest(chosenNpc) {
 			let line1 = document.createElement('div')
 			customizeEachWord(`${chosenNpc.name} `, `${chosenNpc.nameColor}`, line1)
 			customizeEachWord(`moves to the ${direction}`, 'white', line1)
-			removeNpcFromRoom(npcArea, thisIndexToRemove)
+			npcRemoveFromRoom(npcArea, thisIndexToRemove)
 			newNpcArea = allAreas.find(area => area.x == chosenNpc.x && area.y == chosenNpc.y && area.z == chosenNpc.z)
 			newNpcArea.npc.push(chosenNpc)
 		} else if (coordinatesMatch(chosenNpc, player) == false) {
@@ -19335,7 +20735,7 @@ function npcMovesEastToWest(chosenNpc) {
 				customizeEachWord(`${chosenNpc.name} `, `${chosenNpc.nameColor}`, line1)
 				customizeEachWord(`enters from the ${entersFromDirection}`, 'white', line1)
 			}
-			removeNpcFromRoom(npcArea, thisIndexToRemove)
+			npcRemoveFromRoom(npcArea, thisIndexToRemove)
 			newNpcArea = allAreas.find(area => area.x == chosenNpc.x && area.y == chosenNpc.y && area.z == chosenNpc.z)
 			console.log(newNpcArea, ' NEW NPC AREA')
 			newNpcArea.npc.push(chosenNpc)
@@ -19386,7 +20786,7 @@ function npcMovesNorthToSouth(chosenNpc) {
 			let line1 = document.createElement('div')
 			customizeEachWord(`${chosenNpc.name} `, `${chosenNpc.nameColor}`, line1)
 			customizeEachWord(`moves to the ${direction}`, 'white', line1)
-			removeNpcFromRoom(npcArea, thisIndexToRemove)
+			npcRemoveFromRoom(npcArea, thisIndexToRemove)
 			newNpcArea = allAreas.find(area => area.x == chosenNpc.x && area.y == chosenNpc.y && area.z == chosenNpc.z)
 			newNpcArea.npc.push(chosenNpc)
 		} else if (coordinatesMatch(chosenNpc, player) == false) {
@@ -19410,7 +20810,7 @@ function npcMovesNorthToSouth(chosenNpc) {
 				customizeEachWord(`${chosenNpc.name} `, `${chosenNpc.nameColor}`, line1)
 				customizeEachWord(`enters from the ${entersFromDirection}`, 'white', line1)
 			}
-			removeNpcFromRoom(npcArea, thisIndexToRemove)
+			npcRemoveFromRoom(npcArea, thisIndexToRemove)
 			newNpcArea = allAreas.find(area => area.x == chosenNpc.x && area.y == chosenNpc.y && area.z == chosenNpc.z)
 			console.log(newNpcArea, ' NEW NPC AREA')
 			newNpcArea.npc.push(chosenNpc)
@@ -19534,16 +20934,148 @@ function applySkillBuff(buff) {
 	}, buff.duration)
 }
 
-function removeNpcFromRoom(area, selectNpc) {
+function npcRemoveFromRoom(area, selectNpc) {
 	let allNpcsInRoom = area.npc
 	let npcIndex = allNpcsInRoom.indexOf(selectNpc)
 	area.npc.splice(npcIndex, 1)
 }
-function addNpcToRoom(npc) {
-	let roomToAddNpc = allAreas.find(area => area.x == npc.x && area.y == npc.y && area.z == npc.z)
-	roomToAddNpc.npc.push(npc)
+function npcRemoveFromTheirCurrentRoom(selectNpc) {
+	console.log(selectNpc.refName, ' NPC TO BE REMOVED ON LOAD')
+	let npcCurrentRoom = allAreas.find(area => area?.npc?.[0]?.refName == selectNpc.refName)
+	if (!npcCurrentRoom) {
+		console.log('no npc current room')
+		return
+	}
+	let allNpcsInRoom = npcCurrentRoom.npc
+	let npcIndex = allNpcsInRoom.indexOf(selectNpc)
+	npcCurrentRoom.npc.splice(npcIndex, 1)
+}
+function npcRemoveFromRoomPack(selectNpc, npcRoomPack) {
+	let npcCurrentRoom = npcRoomPack.find(area => area.npc.find(npc => npc.refName == selectNpc.refName))
+	let allNpcsInRoom = npcCurrentRoom.npc
+	let npcIndex = allNpcsInRoom.indexOf(selectNpc)
+	npcCurrentRoom.npc.splice(npcIndex, 1)
+}
+function npcMovesAndChangesRoom(npc, area, direction, movesTo = true) {
+	npcRemoveFromTheirCurrentRoom(npc)
+	npcAddToRoom(area, npc)
+	// npcAddLocationToPlayerObject(npc, area)
+	// npcUpdateLocation(npc, area)
+	if (!direction) return
+
+	if (direction) {
+		if (movesTo) {npcMovesInADirection(direction, npc)}
+		else {npcEntersFromADirection(direction, npc)}
+	}
+}
+// let npcCurrentRoom = npcRoomPack.find(area => 
+// 	area.npc.find(npc => npc.refName === selectNpc.refName)
+//   );
+// function npcAddToLocationTracker(npc, area) {
+// 	npcLocationTracker[npc.refName] = area
+// }
+function npcAddToRoom(area, npc) {
+	// let roomToAddNpc = allAreas.find(area => area.x == npc.x && area.y == npc.y && area.z == npc.z)
+	area.npc.push(npc)
+	// npc.currentArea = area
+	npcUpdateLocation(npc, area)
+	// npcAddToLocationTracker(npc, area)
+}
+function npcMovesInADirection(direction, npc) {
+	let line1 = lineFunc()
+	customizeEachWord(`${npc.name} `, npc.nameColor, line1)
+	customizeEachWord(`moves to the ${direction}`, 'white', line1)
+	blankSpace()
+}
+function npcEntersFromADirection(direction, npc) {
+	let line1 = lineFunc()
+	let entersFromDirection = ``
+	if (direction == 'northwest') {entersFromDirection = 'southeast'}
+	if (direction == 'north') {entersFromDirection = 'south'}
+	if (direction == 'northeast') {entersFromDirection = 'southwest'}
+	if (direction == 'east') {entersFromDirection = 'west'}
+	if (direction == 'southeast') {entersFromDirection = 'northwest'}
+	if (direction == 'south') {entersFromDirection = 'north'}
+	if (direction == 'southwest') {entersFromDirection = 'northeast'}
+	if (direction == 'west') {entersFromDirection = 'east'}
+	if (direction == 'up') {entersFromDirection = 'below'}
+	if (direction == 'down') {entersFromDirection = 'above'}
+	customizeEachWord(`${npc.name} `, npc.nameColor, line1)
+	customizeEachWord(`enters from the ${entersFromDirection}`, 'white', line1)
+	blankSpace()
 }
 
+async function npcNoQuestAvailable(npc) {
+	let line1 = lineFunc()
+	await dialogueWait(200)
+	blankSpace()
+	customizeEachWord(`${npc.name} `, npc.nameColor, line1)
+	customizeEachWord(`is not currently offering any quests.`, 'white', line1)
+	blankSpace()
+}
+
+
+
+function spawnTutorialWeapons() {
+	if (player.playerClass.name == 'Berserker') {
+		weaponGen(trainingTwoHandedSword())
+		armorGen(trainingMailChestpiece())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+		pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
+
+	}
+	if (player.playerClass.name == 'Fighter') {
+		weaponGen(trainingShortsword())
+		weaponGen(trainingShortsword())
+		armorGen(trainingMailChestpiece())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+		pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
+		pushItem[pushItem.length - 3].roomId = galvadiaWelcomeArea9.id
+
+
+	}
+	if (player.playerClass.name == 'Knight') {
+		weaponGen(trainingShortsword())
+		weaponGen(trainingShield())
+		armorGen(trainingMailChestpiece())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+		pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
+		pushItem[pushItem.length - 3].roomId = galvadiaWelcomeArea9.id
+
+
+	}
+	if (player.guild == 'Sinistral') {
+		weaponGen(trainingDagger())
+		weaponGen(trainingDagger())
+		armorGen(trainingLeatherTunic())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+		pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
+		pushItem[pushItem.length - 3].roomId = galvadiaWelcomeArea9.id
+
+	}
+	if (player.playerClass.name == 'Martial Monk' || player.playerClass.name == 'Mystic Monk') {
+		armorGen(trainingLeatherTunic())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+	}
+	if (player.playerClass.name == 'Elemental Monk') {
+		armorGen(trainingClothChestpiece())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+	}
+	if (player.guild == 'Ranger') {
+		weaponGen(trainingBow())
+		armorGen(trainingLeatherTunic())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+		pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
+
+	}
+	if (player.guild == 'Mage') {
+		weaponGen(trainingStaff())
+		armorGen(trainingClothChestpiece())
+		pushItem[pushItem.length - 1].roomId = galvadiaWelcomeArea11.id
+		pushItem[pushItem.length - 2].roomId = galvadiaWelcomeArea9.id
+
+	}
+}
 
 
 function compareCoordinates(comparedObject) {
@@ -19560,6 +21092,66 @@ function compareCoordinates(comparedObject) {
 			return false
 		}
 	}
+}
+
+//x = 1, y = 1
+//x = 2, y = 2
+
+function npcMovesRandomlyNew(npc) {
+	//currentArea
+	let npcAreas = npc.areas
+	let npcCurrentArea = npcAreas.find(area => area?.npc?.some(person => person.refName == npc.refName))
+	let possibleDirectionsArray = Object.keys(npcCurrentArea.descriptions.zoneExitsBool)
+	let selectedDirection = possibleDirectionsArray[randomNumberRange(0, possibleDirectionsArray.length - 1)]
+	let x = 0
+	let y = 0
+	let z = 0
+	if (selectedDirection == 'east') {x = 1}
+	if (selectedDirection == 'west') {x = -1}
+	if (selectedDirection == 'north') {y = 1}
+	if (selectedDirection == 'south') {y = -1}
+	if (selectedDirection == 'up') {z = 1}
+	if (selectedDirection == 'down') {z = -1}
+	if (selectedDirection == 'northeast') {
+		x = 1
+		y = 1
+	}
+	if (selectedDirection == 'southwest') {
+		x = -1
+		y = -1
+	}
+	if (selectedDirection == 'northwest') {
+		x = -1
+		y = 1
+	}
+	if (selectedDirection == 'southeast') {
+		x = 1
+		y = -1
+	}
+	let newArea = npcAreas.find(area => npcCurrentArea.x + x == area.x && npcCurrentArea.y + y == area.y && npcCurrentArea.z + z == area.z)
+	if (newArea == undefined) {
+		for (let i = 0; i < 10; i++) {
+			newArea = npcAreas.find(area => npcCurrentArea.x + x == area.x && npcCurrentArea.y + y == area.y && npcCurrentArea.z + z == area.z)
+			if (newArea != undefined) {
+				break
+			}
+		}
+		if (newArea == undefined) {return}
+	}
+	console.log(selectedDirection, ' SELECTED DIRECTION')
+	if (npcCurrentArea == currentArea) {
+		if (npc.getAwayAttempts < 5) {
+			npc.getAwayAttempts++
+			return
+		} else {
+			npcMovesInADirection(selectedDirection, npc)
+		}
+	} else if (newArea == currentArea) {
+		npcEntersFromADirection(selectedDirection, npc)
+	}
+	npcRemoveFromRoom(npcCurrentArea, npc)
+	npcAddToRoom(newArea, npc)
+	console.log(npc.name, ' moves')
 }
 
 function npcMovesRandomly(npc) {
@@ -19630,7 +21222,7 @@ function npcMovesRandomly(npc) {
 			default:
 				quickMessage(`This is the default. Figure out what went wrong. This should probably never run`)
 		}
-		removeNpcFromRoom(npcArea, thisIndexToRemove)
+		npcRemoveFromRoom(npcArea, thisIndexToRemove)
 		newNpcArea = allAreas.find(area => area.x == npc.x && area.y == npc.y && area.z == npc.z)
 		newNpcArea.npc.push(npc)
 	} else if (coordinatesMatch(npc, player) == false) {
@@ -19698,7 +21290,7 @@ function npcMovesRandomly(npc) {
 				customizeEachWord(`enters from above`, 'white', line1)
 			}
 		}
-		removeNpcFromRoom(npcArea, thisIndexToRemove)
+		npcRemoveFromRoom(npcArea, thisIndexToRemove)
 		newNpcArea = allAreas.find(area => area.x == npc.x && area.y == npc.y && area.z == npc.z)
 		newNpcArea.npc.push(npc)
 	}
@@ -20014,8 +21606,8 @@ let threxOfferDialogue = {
 			threx.z = -2
 			galvadiaWarriorsGuildEntrance.descriptions.zoneExitsBool.south = true
 			removeItemFromPerson(questItem)
-			removeNpcFromRoom(galvadiaWarriorsGuildEntrance, threx)
-			addNpcToRoom(threx)
+			npcRemoveFromRoom(galvadiaWarriorsGuildEntrance, threx)
+			npcAddToRoom(threx)
 			return
 		} else {
 			let line1 = lineFunc()
@@ -20318,20 +21910,14 @@ const magvello = {
 		}
 	},
 	get skillsOffered() {
-		if (player.level < 10) {
-			return [ripslash, charge, twoHanded, initiation, tactics, vigor]
-		} else if (player.level < 20) {
-			return [ripslash, cyclone, cataclysm, charge, twoHanded, initiation, tactics, vigor, warcraft, precision, cleave, 
-				slashingExpertise, piercingExpertise, bluntExpertise, bleed]
-		} else if (player.level < 30) {
-			return [ripslash, cyclone, cataclysm, charge, twoHanded, thrillOfTheKill, battleRage, counterAttack, brutalBlows, 
-				multipleStrikes, stunningBlows, resilience, initiation, tactics, vigor, warcraft, precision, cleave, slashingExpertise, 
-				piercingExpertise, bluntExpertise, bleed]
-		} else {
-			return 	[ripslash, cyclone, cataclysm, charge, twoHanded, thrillOfTheKill, cleave, slashingExpertise, piercingExpertise, 
-				bluntExpertise, battleRage, blacksmithing, counterAttack, tactics, initiation, brutalBlows, 
-				multipleStrikes, stunningBlows, vigor, warcraft, resilience, bleed]
-		}
+		let level5Skills = [twoHanded, initiation, tactics, vigor, rest]
+		let level10Skills = [ripslash, cyclone, cataclysm, charge, bleed, twoHanded, initiation, tactics, vigor, warcraft, precision, cleave, rest]
+		let level15Skills = [ripslash, cyclone, cataclysm, charge, bleed, twoHanded, initiation, tactics, vigor, warcraft, precision, cleave, rest]
+		let level20Skills = [ripslash, cyclone, cataclysm, charge, bleed, twoHanded, initiation, tactics, vigor, warcraft, precision, cleave, counterAttack, stunningBlows, multipleStrikes, brutalBlows, thrillOfTheKill, battleRage, slashingExpertise, piercingExpertise, bluntExpertise, rest]
+		if (player.level <= 5) {return level5Skills} 
+		if (player.level <= 10) {return level10Skills} 
+		if (player.level <= 15) {return level15Skills}
+		if (player.level < 20) {return level20Skills}
 	},
 	skillsMaxLevel: {
 		get ripslash() {return skillMaxLevel2(player.ripslash)},
@@ -20527,16 +22113,12 @@ const allAbilitiesMan = {
 		displayNPCName(peopleDiv, this)
 	},
 	train: function (secondCommand) {
-		if (player.playerClass.name == 'Berserker') {
 			trainInteraction(secondCommand, this)
-		} else {
-			quickMessage(`You must be a Berserker in order to train with Magvello`)
-		}
 	},
 	skillsOffered: [ripslash, cyclone, cataclysm, dualStrike, shred, bladeBlitz, valorStrike, shieldSlam, boomingMight, 
 	ambush, backstab, guillotine, venomBlade, contagion, bane, shadowDaggers, shadowsurge, shadowNova, catalyst, tempest, 
 	callOfWind, knuckleBlitz, fireSeal, waterSeal, earthSeal, mysticFist, unleashedPower, blazingFist, tidalFist, 
-	lightningFist, elementalTempest, transcendence, piercingArrow, rapidFireShot, hydraArrow],
+	lightningFist, elementalTempest, transcendence, piercingArrow, rapidFireShot, hydraArrow, colossusPunch, hydraStrike, gigasUppercut, atmaShock],
 	skillsMaxLevel: {
 		ripslash: 10,
 		cyclone: 10,
@@ -20573,6 +22155,10 @@ const allAbilitiesMan = {
 		piercingArrow: 10,
 		rapidFireShot: 10,
 		hydraArrow: 10,
+		colossusPunch: 1,
+		hydraStrike: 1,
+		gigasUppercut: 1,
+		atmaShock: 1,
 	},
 	questSequence: {
 		first: false,
@@ -20594,6 +22180,379 @@ const allAbilitiesMan = {
 			this.questSequence.first = true
 			this.speak()
 		}
+	},
+}
+const noviceBerserkerTrainer = {
+	x: -6,
+	y: 5,
+	z: 0,
+	name: 'Novice Berserker Trainer',
+	refName: 'noviceBerserkerTrainer',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	nameColor: 'dark-red',
+	// prefix: 'Howling Blade, ',
+	// prefixColor: 'warrior-color-dark',
+	keywords: ['berserker', 'novice', 'trainer'],
+	occupation: `Novice Berserker Class Trainer`,
+	race: `Half-Minotaur`,
+	description: `A novice teacher`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	train: function (secondCommand) {
+		if (player.playerClass.name == 'Berserker') {
+			trainInteraction(secondCommand, this)
+		} else {
+			quickMessage(`You must be a Berserker in order to train with this guy`)
+		}
+	},
+	get skillsOffered() {
+		let level5Skills = [twoHanded, initiation, tactics, vigor, rest]
+		return level5Skills
+	},
+	skillsMaxLevel: {
+		twoHanded: 5,
+		initiation: 5,
+		tactics: 5,
+		vigor: 5,
+		rest: 5
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		customizeEachWord(`Hello, I am the Novice Trainer. I can teach you some basic skills.`, 'white', line1)
+	},
+	displayShop: async function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
+	},
+}
+const apprenticeBerserkerTrainer = {
+	x: -6,
+	y: 5,
+	z: 0,
+	name: 'Apprenctice Berserker Trainer',
+	refName: 'apprenticeBerserkerTrainer',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	nameColor: 'dark-red',
+	// prefix: 'Howling Blade, ',
+	// prefixColor: 'warrior-color-dark',
+	keywords: ['berserker', 'apprentice', 'trainer'],
+	occupation: `Apprentice Berserker Class Trainer`,
+	race: `Half-Minotaur`,
+	description: `A apprentice teacher`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	train: function (secondCommand) {
+		if (player.playerClass.name == 'Berserker') {
+			trainInteraction(secondCommand, this)
+		} else {
+			quickMessage(`You must be a Berserker in order to train with this guy`)
+		}
+	},
+	get skillsOffered() {
+		let level10Skills = [ripslash, cyclone, cataclysm, charge, bleed, twoHanded, initiation, tactics, vigor, warcraft, precision, cleave, rest]
+		return level10Skills
+	},
+	skillsMaxLevel: {
+		ripslash: 2,
+		cyclone: 2,
+		cataclysm: 2,
+		charge: 1,
+		bleed: 2,
+		twoHanded: 7,
+		initiation: 7,
+		tactics: 7,
+		vigor: 5,
+		warcraft: 3,
+		precision: 3,
+		cleave: 3,
+		rest: 5
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		customizeEachWord(`Hello, I am the Apprentice Trainer. I can teach you some basic skills.`, 'white', line1)
+	},
+	displayShop: async function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
+	},
+}
+
+const adeptBerserkerTrainer = {
+	x: -6,
+	y: 5,
+	z: 0,
+	name: 'Adept Berserker Trainer',
+	refName: 'adeptBerserkerTrainer',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	nameColor: 'dark-red',
+	// prefix: 'Howling Blade, ',
+	// prefixColor: 'warrior-color-dark',
+	keywords: ['berserker', 'adept', 'trainer'],
+	occupation: `Adept Berserker Class Trainer`,
+	race: `Half-Minotaur`,
+	description: `An adept teacher`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	train: function (secondCommand) {
+		if (player.playerClass.name == 'Berserker') {
+			trainInteraction(secondCommand, this)
+		} else {
+			quickMessage(`You must be a Berserker in order to train with this guy`)
+		}
+	},
+	get skillsOffered() {
+		let level15Skills = [ripslash, cyclone, cataclysm, bleed, twoHanded, initiation, tactics, vigor, warcraft, precision, cleave, rest]
+		return level15Skills
+	},
+	skillsMaxLevel: {
+		ripslash: 5,
+		cyclone: 5,
+		cataclysm: 5,
+		bleed: 6,
+		twoHanded: 15,
+		initiation: 10,
+		tactics: 10,
+		vigor: 10,
+		warcraft: 6,
+		precision: 6,
+		cleave: 5,
+		rest: 10
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		customizeEachWord(`Hello, I am the Adept Trainer. I can teach you some basic skills.`, 'white', line1)
+	},
+	displayShop: async function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
+	},
+}
+const skilledBerserkerTrainer = {
+	x: -6,
+	y: 5,
+	z: 0,
+	name: 'Skilled Berserker Trainer',
+	refName: 'skilledBerserkerTrainer',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	nameColor: 'dark-red',
+	// prefix: 'Howling Blade, ',
+	// prefixColor: 'warrior-color-dark',
+	keywords: ['berserker', 'skilled', 'trainer'],
+	occupation: `Skilled Berserker Class Trainer`,
+	race: `Half-Minotaur`,
+	description: `A skilled teacher`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	train: function (secondCommand) {
+		if (player.playerClass.name == 'Berserker') {
+			trainInteraction(secondCommand, this)
+		} else {
+			quickMessage(`You must be a Berserker in order to train with this guy`)
+		}
+	},
+	get skillsOffered() {
+		let level20Skills = [ripslash, cyclone, cataclysm, charge, bleed, twoHanded, initiation, tactics, vigor, warcraft, precision, cleave, counterAttack, stunningBlows, multipleStrikes, brutalBlows, thrillOfTheKill, battleRage, slashingExpertise, piercingExpertise, bluntExpertise, rest]
+		return level20Skills
+	},
+	skillsMaxLevel: {
+		ripslash: 5,
+		cyclone: 5,
+		cataclysm: 5,
+		bleed: 6,
+		twoHanded: 15,
+		initiation: 10,
+		tactics: 10,
+		vigor: 10,
+		warcraft: 6,
+		precision: 6,
+		cleave: 5,
+		counterAttack: 3,
+		stunningBlows: 3,
+		multipleStrikes: 3,
+		brutalBlows: 3,
+		thrillOfTheKill: 3,
+		battleRage: 3,
+		slashingExpertise: 10,
+		piercingExpertise: 10,
+		bluntExpertise: 10,
+		rest: 10
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		customizeEachWord(`Hello, I am the Skilled Trainer. I can teach you some basic skills.`, 'white', line1)
+	},
+	displayShop: async function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
+	},
+}
+const blacksmithingProfessionTrainer = {
+	x: -3,
+	y: 5,
+	z: 0,
+	name: 'Blacksmithing Profession Trainer',
+	refName: 'blacksmithingProfessionTrainer',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	nameColor: 'blacksmithingProfessionTrainer',
+	// prefix: 'Howling Blade, ',
+	// prefixColor: 'warrior-color-dark',
+	keywords: ['blacksmithing', 'profession', 'trainer'],
+	occupation: `Blacksmithing Profession Trainer`,
+	race: `Dwarf`,
+	description: `A blacksmith who teaches Blacksmithing.`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	train: function (secondCommand) {
+		trainInteraction(secondCommand, this)
+	},
+	get skillsOffered() {
+		let blacksmithingSkills = [blacksmithing]
+		return blacksmithingSkills
+	},
+	skillsMaxLevel: {
+		get blacksmithing() {
+			if (player.level <= 10) {return 2}
+			if (player.level <= 15) {return 3}
+			if (player.level <= 20) {return 4}
+			if (player.level >= 21) {return 5}
+		}
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		blankSpace()
+		await dialogueWait(200)
+		customizeEachWord(`Blacksmithing Trainer: `, 'blacksmithingProfessionTrainer', line1)
+		customizeEachWord(`"Welcome to the Blacksmithing Training House! Blacksmithing is a powerful skill that you can use to enhance your weapons and armor."`, 'white', line1)
+		blankSpace()
+		await dialogueWait(200)
+		customizeEachWord(`Blacksmithing Trainer: `, 'blacksmithingProfessionTrainer', line2)
+		customizeEachWord(`"If you've learned as much as I can teach you, you can check back every 5 levels. I will only be able to teach you Blacksmithing so high depending on your level."`, 'white', line2)
+		blankSpace()
+	},
+	displayShop: async function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
+	},
+}
+const leatherworkingProfessionTrainer = {
+	x: -3,
+	y: 5,
+	z: 0,
+	name: 'Leatherworking Profession Trainer',
+	refName: 'leatherworkingProfessionTrainer',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	nameColor: 'leatherworkingProfessionTrainer',
+	// prefix: 'Howling Blade, ',
+	// prefixColor: 'warrior-color-dark',
+	keywords: ['leatherworking', 'profession', 'trainer'],
+	occupation: `Leatherworking Profession Trainer`,
+	race: `Dwarf`,
+	description: `A Leatherworker who teaches Leatherworking.`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	train: function (secondCommand) {
+		trainInteraction(secondCommand, this)
+	},
+	get skillsOffered() {
+		let leatherworkingSkills = [leatherworking]
+		return leatherworkingSkills
+	},
+	skillsMaxLevel: {
+		get leatherworking() {
+			if (player.level <= 10) {return 2}
+			if (player.level <= 15) {return 3}
+			if (player.level <= 20) {return 4}
+			if (player.level >= 21) {return 5}
+		}
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		blankSpace()
+		await dialogueWait(200)
+		customizeEachWord(`Leatherworking Trainer: `, 'leatherworkingProfessionTrainer', line1)
+		customizeEachWord(`"Welcome to the Leatherworking Training House! Leatherworking is a powerful skill that you can use to enhance your weapons and armor."`, 'white', line1)
+		blankSpace()
+		await dialogueWait(200)
+		customizeEachWord(`Leatherworking Trainer: `, 'leatherworkingProfessionTrainer', line2)
+		customizeEachWord(`"If you've learned as much as I can teach you, you can check back every 5 levels. I will only be able to teach you Leatherworking so high depending on your level."`, 'white', line2)
+		blankSpace()
+	},
+	displayShop: async function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
+	},
+}
+const magicWeavingProfessionTrainer = {
+	x: -3,
+	y: 5,
+	z: 0,
+	name: 'Magic Weaving Profession Trainer',
+	refName: 'magicWeavingProfessionTrainer',
+	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	nameColor: 'magicWeavingProfessionTrainer',
+	// prefix: 'Howling Blade, ',
+	// prefixColor: 'warrior-color-dark',
+	keywords: ['magic', 'weaving', 'profession', 'trainer'],
+	occupation: `Magic Weaving Profession Trainer`,
+	race: `Half-Elf`,
+	description: `A Magic Weaver who teaches Magic Weaving.`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	train: function (secondCommand) {
+		trainInteraction(secondCommand, this)
+	},
+	get skillsOffered() {
+		let magicWeavingSkills = [magicWeaving]
+		return magicWeavingSkills
+	},
+	skillsMaxLevel: {
+		get magicWeaving() {
+			if (player.level <= 10) {return 2}
+			if (player.level <= 15) {return 3}
+			if (player.level <= 20) {return 4}
+			if (player.level >= 21) {return 5}
+		}
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		await dialogueWait(200)
+		blankSpace()
+		customizeEachWord(`Magic Weaving Trainer: `, 'magicWeavingProfessionTrainer', line1)
+		customizeEachWord(`"Welcome to the Magic Weaving Training House! Magic Weaving is a powerful skill that you can use to enhance your weapons and armor."`, 'white', line1)
+		blankSpace()
+		await dialogueWait(200)
+		customizeEachWord(`Magic Weaving Trainer: `, 'magicWeavingProfessionTrainer', line2)
+		customizeEachWord(`"If you've learned as much as I can teach you, you can check back every 5 levels. I will only be able to teach you Magic Weaving so high depending on your level."`, 'white', line2)
+		blankSpace()
+
+	},
+	displayShop: async function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
 	},
 }
 
@@ -20633,9 +22592,17 @@ let fieldsTrainerOffer = {
 		customizeEachWord(`${this.name} `, this.nameColor, line4)
 		customizeEachWord(`swiftly rushes off`, 'white', line4)
 		blankSpace()
-		currentArea.npc.pop()
+		let guildOffice
+		if (player.guild == 'Warrior') {guildOffice = warriorsGuildOfficeHallVelthash}
+		else if (player.guild == 'Sinistral') {guildOffice = sinistralsGuildZellOffice}
+		else if (player.guild == 'Monk') {guildOffice = monksGuildSitoriaOffice}
+		else if (player.guild == 'Ranger') {guildOffice = rangersGuildTilwinOffice}
+		else if (player.guild == 'Mage') {guildOffice = mageGuildOlivandraOffice}
+		npcRemoveFromTheirCurrentRoom(fieldsTrainer)
+		npcAddToRoom(guildOffice, fieldsTrainer)
 		pushItem.splice(qItemIndex, 1)
-		this.questSequence.ninth = true
+		fieldsTrainer.questSequence.ninth = true
+		this.questStage = 10
 		this.isQuestAvailable = false
 	},
 }
@@ -20649,6 +22616,7 @@ let fieldsTrainerQuest = {
 		blankSpace()
 		customizeEachWord(`${this.name}: `, this.nameColor, line1)
 		customizeEachWord(`"We've received information that there have been Cultists gathering in the Graveyard. What they might be doing, we don't know, but we want to find out any details."`, 'white', line1)
+		blankSpace()
 		await dialogueWait(200)
 		blankSpace()
 		customizeEachWord(`${this.name}: `, this.nameColor, line2)
@@ -20700,6 +22668,10 @@ let fieldsTrainerDialogue = {
 			await dialogueWait(200)
 			customizeEachWord(`${this.name}: `, this.nameColor, line3)
 			customizeEachWord(`"The Training Fields have slightly more difficult enemies toward the back, so if you're new to combat, I would suggest not going in too deep until you gain a level or two. The area will also be a slightly different color, so you will know if you've gone too far."`, 'white', line3)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`${this.name}: `, this.nameColor, line5)
+			customizeEachWord(`"Be sure to pick up any items from the ground you want to keep. Enemies will pick up leftover items if you're not in the same room, though, if you kill them they will drop everything they picked up."`, 'white', line5)
 			blankSpace()
 			await dialogueWait(200)
 			customizeEachWord(`You can now move to the `, 'white', line4)
@@ -20905,8 +22877,7 @@ let fieldsTrainerDialogue = {
 				default:
 				quickMessage(`none of these`)
 			}
-			egbert.questSequence.fourteenth = true
-			player.questStages.fieldsTrainer.stage14 = true
+			advanceQuestStage(egbert, 15)
 			return
 		} else if (!this.questSequence.sixth && !player.killList.littleMudElemental && !player.killList.littleGrassElemental && !player.killList.littleWaterElemental) {
 			await dialogueWait(200)
@@ -20976,8 +22947,8 @@ let fieldsTrainerDialogue = {
 			blankSpace()
 			customizeEachWord(`${this.name}: `, this.nameColor, line1)
 			customizeEachWord(`"We've received information that there have been Cultists gathering in the Graveyard. What they might be doing, we don't know, but we want to find out any details."`, 'white', line1)
-			await dialogueWait(200)
 			blankSpace()
+			await dialogueWait(200)
 			customizeEachWord(`${this.name}: `, this.nameColor, line2)
 			customizeEachWord(`"There was a group many years ago that studied the least understood aspects of magic. Their knowledge was kept secret in the libraries of the cathedral. Some people wanted this knowledge out in the open, but the Monks and Priests wanted to completely understand the magic before allowing the public to study it. (continue)"`, 'white', line2)
 			await dialogueWait(200)
@@ -21000,7 +22971,7 @@ let fieldsTrainerDialogue = {
 			blankSpace()
 			return
 		}
-		if (!this.questSequence.tenth) {
+		if (!this.questSequence.tenth && player.level >= 10) {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`${this.name}: `, this.nameColor, line1)
@@ -21014,6 +22985,30 @@ let fieldsTrainerDialogue = {
 			blankSpace()
 			customizeEachWord(`${this.name}: `, this.nameColor, line3)
 			customizeEachWord(`"You'll need to reach at least level 20 before heading to the North Garrison. The Kobold Caves should be a good place for you to fight right now. Once you can handle the Kobolds easily, you can explore the Gnoll plains north of the Kobold Caves."`, 'white', line3)
+			blankSpace()
+			this.questSequence.tenth = true
+			return
+		} else if (player.level < 10) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"You should explore east and west of the Castle Crossroads. To the east is the Glade of Galvadia. It's where a lot of the townspeople spend their time, but there's an area called The Shallows in the northeast corner that has some enemies suitable for your level. To the west of the Castle Crossroads is the Kobold Caves. You'll have to trek the path a ways to get there. It's a little more dangerous than The Shallows, so make sure you're well equipped. Those Kobolds can be nasty little buggers."`, 'white', line1)
+			blankSpace()
+			return
+		}
+		if (!this.questSequence.eleventh && player.level >= 20) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"You've done it! You're Ready to fight GOBLINS!!"`, 'white', line1)
+			blankSpace()
+			this.questSequence.eleventh = true
+			return
+		} else if (player.level < 20) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"Keep training. We need to make sure you're strong enough to take on Goblins. They're nasty creatures. I suggest fighting Kobolds until you're strong enough for the Gnolls in the Gnoll Plains."`, 'white', line1)
 			blankSpace()
 			return
 		}
@@ -21355,16 +23350,16 @@ const daggslain = {
 		}
 	},
 }
-const zel = {
+const zell = {
 	x: 0,
 	y: 0,
 	z: 0,
-	name: 'Zel',
-	refName: 'zel',
+	name: 'Zell',
+	refName: 'zell',
 	nameColor: 'yellow',
 	prefix: 'Silent Carnage, ',
 	prefixColor: 'sinistral-color',
-	keywords: ['zel'],
+	keywords: ['zell'],
 	occupation: `trainer`,
 	race: `Human`,
 	description: `Assassin's Guild Master`,
@@ -21394,6 +23389,7 @@ const zel = {
 		first: false,
 		second: false,
 	},
+	questItem: [cultTexts],
 	itemsOffered: [],
 	buy: function (secondCommand) {
 		buyInteraction(secondCommand, this)
@@ -21408,8 +23404,8 @@ const zel = {
 		blankSpace()
 		customizeEachWord(`${this.name}: `, this.nameColor, line1)
 		customizeEachWord(`"We've received information that there have been Cultists gathering in the Graveyard. What they might be doing, we don't know, but we want to find out any details."`, 'white', line1)
-		await dialogueWait(200)
 		blankSpace()
+		await dialogueWait(200)
 		customizeEachWord(`${this.name}: `, this.nameColor, line2)
 		customizeEachWord(`"There was a group many years ago that studied the least understood aspects of magic. Their knowledge was kept secret in the libraries of the cathedral. Some people wanted this knowledge out in the open, but the Monks and Priests wanted to completely understand the magic before allowing the public to study it. (continue)"`, 'white', line2)
 		await dialogueWait(200)
@@ -21955,6 +23951,7 @@ const fearecia = {
 	},
 }
 const sitoria = {
+	aaa: 'this is Sitoria and not fields trainer',
 	x: 0,
 	y: 0,
 	z: 0,
@@ -21991,6 +23988,7 @@ const sitoria = {
 	buy: function (secondCommand) {
 		buyInteraction(secondCommand, this)
 	},
+	questItem: [cultTexts],
 	isQuestAvailable: false,
 	quest: async function() {
 		let line1 = lineFunc()
@@ -22001,12 +23999,12 @@ const sitoria = {
 		blankSpace()
 		customizeEachWord(`${this.name}: `, this.nameColor, line1)
 		customizeEachWord(`"We've received information that there have been Cultists gathering in the Graveyard. What they might be doing, we don't know, but we want to find out any details."`, 'white', line1)
-		await dialogueWait(200)
 		blankSpace()
+		await dialogueWait(200)
 		customizeEachWord(`${this.name}: `, this.nameColor, line2)
 		customizeEachWord(`"There was a group many years ago that studied the least understood aspects of magic. Their knowledge was kept secret in the libraries of the cathedral. Some people wanted this knowledge out in the open, but the Monks and Priests wanted to completely understand the magic before allowing the public to study it. (continue)"`, 'white', line2)
-		await dialogueWait(200)
 		blankSpace()
+		await dialogueWait(200)
 		customizeEachWord(`${this.name}: `, this.nameColor, line3)
 		customizeEachWord(`"The Graveyard is on the otherside of the wall behind the Guild Plaza to the south, so you'll have to take the road east of the Galvadian Plaza. If you get lost, just read any signs you come across, and they'll point you in the right direction."`, 'white', line3)
 		blankSpace()
@@ -22223,6 +24221,8 @@ const tilwin = {
 		second: false,
 	},
 	itemsOffered: [shortbow, leatherTunic, leatherGloves, leatherBoots],
+	questItem: [cultTexts],
+
 	buy: function (secondCommand) {
 		buyInteraction(secondCommand, this)
 	},
@@ -22919,19 +24919,18 @@ let deylani = {
 			return
 		}
 	},
-	movesWhenPlayerIsHere: true,
-	isInConversation: false,
-	xa: [0, 0, 0, 1, 1, 1, 1],
-	ya: [1, 1, 1, 0, 0, 0, 0],
-	xb: [-1, -1, -1, -1, 0, 0, 0],
-	yb: [0, 0, 0, 0, -1, -1, -1],
-	originalWaitInterval: 500000,
-	conversationInterval: 500000,
-	waitInterval: 500000,
+	get areas(){
+		return galvadiaSquareRoomPack
+	},
 	npcBehavior: function () {
-		specificNpcMovement(this)
+		let movementSpeed = randomNumberRange(2000, 2000)
+		this.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, movementSpeed) 
 	},
 }
+allNpcsArray.push(deylani)
+
 let arnoldo = {
 	npc: true,
 	id: 0,
@@ -23077,6 +25076,7 @@ let timtim = {
 	questSequence: {
 	},
 	questItem: [wormGuts],
+	isQuestAvailable: true,
 	quest: async function() {
 		let line1 = lineFunc()
 		await dialogueWait(200)
@@ -23099,25 +25099,25 @@ let timtim = {
 		customizeEachWord(`"Oooooooo I'm gonna really get her with this! Thanks mister!"`, 'white', line1)
 		blankSpace()
 		sally.conversationNumber = 3
+		sally.isQuestAvailable = true
 		pushItem.splice(qItemIndex, 1)
 		this.questSequence.first = true
+		this.isQuestAvailable = false
 		await dialogueWait(200)
 		playerGainQuestExperience(100)
 
 	},
-	movesWhenPlayerIsHere: true,
-	isInConversation: false,
-	// xa: [0, 0, 0, 1, 1, 1, 1],
-	// ya: [1, 1, 1, 0, 0, 0, 0],
-	// xb: [-1, -1, -1, -1, 0, 0, 0],
-	// yb: [0, 0, 0, 0, -1, -1, -1],
-	originalWaitInterval: 500000,
-	conversationInterval: 500000,
-	waitInterval: 500000,
+	get areas(){
+		return galvadiaSquareRoomPack
+	},
 	npcBehavior: function () {
-		specificNpcMovement(this)
+		let movementSpeed = randomNumberRange(20000, 60000)
+		this.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, movementSpeed) 
 	},
 }
+allNpcsArray.push(timtim)
 
 let sally = {
 	npc: true,
@@ -23215,22 +25215,23 @@ let sally = {
 		blankSpace()
 		pushItem.splice(qItemIndex, 1)
 		this.questSequence.first = true
+		this.isQuestAvailable = false
 		await dialogueWait(200)
 		playerGainQuestExperience(200)
 	},
-	movesWhenPlayerIsHere: true,
-	isInConversation: false,
-	// xa: [0, 0, 0, 1, 1, 1, 1],
-	// ya: [1, 1, 1, 0, 0, 0, 0],
-	// xb: [-1, -1, -1, -1, 0, 0, 0],
-	// yb: [0, 0, 0, 0, -1, -1, -1],
-	originalWaitInterval: 500000,
-	conversationInterval: 500000,
-	waitInterval: 500000,
+	get areas(){
+		return galvadiaSquareRoomPack
+	},
 	npcBehavior: function () {
-		specificNpcMovement(this)
+		let movementSpeed = 2000
+		this.behaviorInterval = setInterval(() => {
+			console.log(movementSpeed)
+			npcMovesRandomlyNew(this)
+		}, movementSpeed) 
 	},
 }
+allNpcsArray.push(sally)
+
 let travellingWagon = {
 	npc: true,
 	id: 0,
@@ -23273,6 +25274,7 @@ let travellingWagon = {
 	questSequence: {
 	},
 	questItem: [sackOfGrain],
+	isQuestAvailable: true,
 	quest: async function() {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
@@ -23360,6 +25362,7 @@ const strayKitty = {
 	questSequence: {
 	},
 	questItem: [halfEatenFish],
+	isQuestAvailable: true,
 	quest: function() {
 		let line1 = lineFunc()
 		blankSpace()
@@ -23517,6 +25520,365 @@ let frederickGregory = {
 	},
 }
 
+const shadowyDealer = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Shadowy Dealer',
+	refName: 'shadowyDealer',
+	picture: "",
+	nameColor: 'shadowyDealer-name',
+	keywords: ['shadowy', 'dealer', 'shadowy dealer'],
+	occupation: `Shopkeeper`,
+	race: `Human`,
+	description: `A strange, shadowy figure`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	itemsOffered: [shabbyCloak, shoddyCloak, shreddedCloak, shiftyCloak, shelledCloak],
+	isQuestAvailable: false,
+	buy: function (secondCommand) {
+		buyInteraction(secondCommand, this)
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		await dialogueWait(200)
+		blankSpace()
+		customizeEachWord(`${this.name}`, this.nameColor, line1)
+		customizeEachWord(`: "Don't ask me why I'm here... Or where I got these cloaks..."`, 'white', line1)
+		blankSpace()
+	},
+	displayShop: function (ssiq) {
+		displayShopSkillsOrSpells(this, ssiq)
+	},
+}
+const bromwelBoulderbash = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Bromwel Boulderbash',
+	prefix: 'Tavern Keeper, ',
+	refName: 'bromwelBoulderbash',
+	picture: "",
+	nameColor: 'bromwelBoulderbash-name',
+	prefixColor: 'tavern-keeper',
+	keywords: ['bromwel', 'boulderbash', 'bromwel boulderbash'],
+	occupation: `Tavern Keeper`,
+	race: `Human`,
+	description: `A Dwarf`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	// itemsOffered: [shabbyCloak, shoddyCloak, shreddedCloak, shiftyCloak, shelledCloak],
+	isQuestAvailable: false,
+	// buy: function (secondCommand) {
+	// 	buyInteraction(secondCommand, this)
+	// },
+	speak: async function () {
+		let line1 = lineFunc()
+		if (!this.dialogueStage) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "Ah, well if it isn't a new face wanderin' into me tavern! Welcome, ${player.guild}! The name's Bromwel Boulderbash, master of this tavern. If ye need a pint o' me finest ale to wash the road dust from yer throat, you've come to the right place!"`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+		if (this.dialogueStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "Check out me store if ye want somethin' te drink! I got a lil somethin' fer everyone!"`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 2
+			return
+		}
+		if (this.dialogueStage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "I bet I got somethin that would quinch the thirst of a Jagged Gilled Mud Belly!"`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+	},
+	// displayShop: function (ssiq) {
+	// 	displayShopSkillsOrSpells(this, ssiq)
+	// },
+}
+const telgremGreyhorn = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Telgrem Greyhorn',
+	refName: 'telgremGreyhorn',
+	picture: "",
+	nameColor: 'telgremGreyhorn-name',
+	keywords: ['telgrem', 'greyhorn', 'telgrem greyhorn'],
+	occupation: `Adventurer`,
+	race: `Dwarf`,
+	description: `A rugged looking dwarf`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	isQuestAvailable: false,
+	speak: async function () {
+		let line1 = lineFunc()
+		if (!this.dialogueStage || this.dialogueStage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "The Boulderbashes have been runnin' this tavern since before the Civil War. That must'a been over two hundred years ago! Time really flies once ye get to be over one hundred. That an' drinkin every night!" **hiccups**`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+		if (this.dialogueStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "People travel all 'round the continent to visit the Boulderbash Tavern. It's known even beyond the great seas!"`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 2
+			return
+		}
+	},
+	// displayShop: function (ssiq) {
+	// 	displayShopSkillsOrSpells(this, ssiq)
+	// },
+}
+const ulfregSnagdril = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Ulfreg Snagdril',
+	refName: 'ulfregSnagdril',
+	picture: "",
+	nameColor: 'ulfregSnagdril-name',
+	keywords: ['ulfreg', 'snagdril', 'ulfreg snagdril'],
+	occupation: `Adventurer`,
+	race: `Dwarf`,
+	description: `A rugged looking dwarf`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	isQuestAvailable: false,
+	speak: async function () {
+		let line1 = lineFunc()
+		if (!this.dialogueStage || this.dialogueStage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "You been upstairs yet? They got gamblin' and games up there! I can't get enough of Snail Racin'!"`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+		if (this.dialogueStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 2
+			return
+		}
+	},
+	// displayShop: function (ssiq) {
+	// 	displayShopSkillsOrSpells(this, ssiq)
+	// },
+}
+const gulthradGreenbeard = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Gulthrad Greenbeard',
+	refName: 'gulthradGreenbeard',
+	picture: "",
+	nameColor: 'gulthradGreenbeard-name',
+	keywords: ['gulthrad', 'greenbeard', 'gulthrad greenbeard'],
+	occupation: `Adventurer`,
+	race: `Dwarf`,
+	description: `A rugged looking dwarf`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	isQuestAvailable: false,
+	speak: async function () {
+		let line1 = lineFunc()
+		if (!this.dialogueStage || this.dialogueStage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "I hail from the Dwarven city of Boomhorn, far to the north. The trees are a nice change of scenery down here, but I do miss the hills and mountains of home."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+		if (this.dialogueStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "I'm not used to seein' so many different races runnin' around. Back where I'm from, it's mostly just us Dwarves and Minotaurs. Not many others enjoy the extreme hot an' cold of the mountains."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 2
+			return
+		}
+	},
+	// displayShop: function (ssiq) {
+	// 	displayShopSkillsOrSpells(this, ssiq)
+	// },
+}
+const seltathSilverwood = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Seltath Silverwood',
+	refName: 'seltathSilverwood',
+	picture: "",
+	nameColor: 'seltathSilverwood-name',
+	keywords: ['seltath', 'silverwood', 'seltath silverwood'],
+	occupation: `Adventurer`,
+	race: `Elf`,
+	description: `Elf Ranger`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	isQuestAvailable: false,
+	speak: async function () {
+		let line1 = lineFunc()
+		if (!this.dialogueStage || this.dialogueStage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "Most of my family moved here from Aleurn a long time ago. When the guilds were established after the war, a lot of them came here to study magic."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+		if (this.dialogueStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "When I was young, I thought magic was only used to cast spells. After I came here to study, I learned that magic is used in nearly everything. As a Ranger, I can manipulate magic in the form of Focus to use powerful abilities."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 2
+			return
+		}
+	},
+	// displayShop: function (ssiq) {
+	// 	displayShopSkillsOrSpells(this, ssiq)
+	// },
+}
+const arlasSilverwood = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Arlas Silverwood',
+	refName: 'arlasSilverwood',
+	picture: "",
+	nameColor: 'arlasSilverwood-name',
+	keywords: ['arlas', 'silverwood', 'arlas silverwood'],
+	occupation: `Ranger`,
+	race: `Elf`,
+	description: `Elf Ranger`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	isQuestAvailable: false,
+	speak: async function () {
+		let line1 = lineFunc()
+		if (!this.dialogueStage || this.dialogueStage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "Me and my brother come here when we're not watching over the forest. Our duties as Sentinels are second nature to us. As kids, we practically lived in the trees."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+		if (this.dialogueStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "We can see some interesting things up in the tree tops. As you get closer to the Mana Tree, the creatures get bigger and bigger. I've heard some strange noises from deep within the forest a few times -- what I believe to be Mana Beasts. We can't go beyond the Forest Deep, so I haven't been able to see for myself."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 2
+			return
+		}
+	},
+	// displayShop: function (ssiq) {
+	// 	displayShopSkillsOrSpells(this, ssiq)
+	// },
+}
+const vyrlanWyrmspire = {
+	x: -1,
+	y: 2,
+	z: 0,
+	name: 'Vyrlan Wyrmspire',
+	refName: 'vyrlanWyrmspire',
+	picture: "",
+	nameColor: 'vyrlanWyrmspire-name',
+	keywords: ['vyrlan', 'wyrmspire', 'vyrlan wyrmspire'],
+	occupation: `Ranger`,
+	race: `Elf`,
+	description: `Elf Ranger`,
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	isQuestAvailable: false,
+	speak: async function () {
+		let line1 = lineFunc()
+		if (!this.dialogueStage || this.dialogueStage == 2) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 1
+			return
+		}
+		if (this.dialogueStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}`, this.nameColor, line1)
+			customizeEachWord(`: "."`, 'white', line1)
+			blankSpace()
+			this.dialogueStage = 2
+			return
+		}
+	},
+	// displayShop: function (ssiq) {
+	// 	displayShopSkillsOrSpells(this, ssiq)
+	// },
+}
+
 async function questDeny() {
 	let line1 = lineFunc()
 	await dialogueWait(200)
@@ -23617,74 +25979,99 @@ async function questReward({gold = 0, exp = 0, item = null, sp = 0, ap = 0}) {
 	blankSpace()
 }
 
-//forge sword copper 
-async function forge(ore, armorType) {
+function forgeFailMessages(selectedItem, doesPlayerHaveMaterial, selectedOre, material, armorType, enhanceType) {
 	let line1 = lineFunc()
-	let selectedOre
-	let selectedArmorType
-	let doesPlayerHaveAnyOre = getAllItemsOnPerson().find(({ keywords }) => keywords.some(keyword => keyword == 'ore'))
-	let selectedItem = getAllItemsOnPerson().find(forgeTarget => forgeTarget.roomId == 'right hand')
-	if (ore == 'copper') {selectedOre = getAllItemsOnPerson().find(forgeOre => forgeOre.refName == 'copperOre')}
-	if (ore == 'iron') {selectedOre = getAllItemsOnPerson().find(forgeOre => forgeOre.refName == 'ironOre')}
-	if (ore == 'silver') {selectedOre = getAllItemsOnPerson().find(forgeOre => forgeOre.refName == 'silverOre')}
-	if (ore == 'gold') {selectedOre = getAllItemsOnPerson().find(forgeOre => forgeOre.refName == 'goldOre')}
-	if (armorType == 'slashing') {selectedArmorType = 'slashingArmor'}
-	if (armorType == 'piercing') {selectedArmorType = 'piercingArmor'}
-	if (armorType == 'blunt') {selectedArmorType = 'bluntArmor'}
-	await dialogueWait(200)
-	if (currentArea != galvadiaForge) {
+	if (enhanceType == 'ore' && currentArea != galvadiaForge) {
 		blankSpace()
 		customizeEachWord(`You need to be at a forge in order to do this.`, 'white', line1)
 		blankSpace()
-		return
+		return true
+	}
+	if (enhanceType == 'hide' && currentArea != galvadiaTanner) {
+		blankSpace()
+		customizeEachWord(`You need to be at a tanner in order to do this.`, 'white', line1)
+		blankSpace()
+		return true
+	}
+	if (enhanceType == 'magic fiber' && currentArea != galvadiaForge) {
+		blankSpace()
+		customizeEachWord(`You need to be at a forge in order to do this.`, 'white', line1)
+		blankSpace()
+		return true
 	}
 	if (!selectedItem || (!selectedItem.type.weapon && !selectedItem.type.armor)) {
 		blankSpace()
 		customizeEachWord(`You need to have the item you want to enhance in your right hand.`, 'white', line1)
 		blankSpace()
-		return
+		return true
 	}
-	if (!doesPlayerHaveAnyOre) {
+	if (!doesPlayerHaveMaterial) {
 		blankSpace()
-		customizeEachWord(`You need to have ore in order to enhance this item.`, 'white', line1)
+		customizeEachWord(`You need to have ${enhanceType} in order to enhance this item.`, 'white', line1)
 		blankSpace()
-		return
+		return true
 	}
 	if (!selectedOre) {
 		blankSpace()
-		customizeEachWord(`You need to specify the type of ore you want to use.`, 'white', line1)
+		customizeEachWord(`You need to specify the type of ${enhanceType} you want to use.`, 'white', line1)
 		blankSpace()
-		return
+		return true
 	}
-	if (ore == undefined) {
+	if (material == undefined) {
 		blankSpace()
-		customizeEachWord(`You need to specify the ore you want to use.`, 'white', line1)
+		customizeEachWord(`You need to specify the material you want to use.`, 'white', line1)
 		blankSpace()
-		return
+		return true
 	}
-	if (selectedItem.type.armor && (armorType != 'slashing' && armorType != 'piercing' && armorType != 'blunt')) {
+	if (selectedItem.type.armor && (armorType != 'slashing' && armorType != 'piercing' && armorType != 'blunt' &&
+		armorType != 'fire' && armorType != 'ice' && armorType != 'lightning' && armorType != 'water' && armorType != 'wind'
+	)) {
 		blankSpace()
 		customizeEachWord(`You need to specify the armor type you want to enhance.`, 'white', line1)
 		blankSpace()
-		return
+		return true
 	}
 	if (selectedItem.type.tier > selectedOre.tier) {
 		blankSpace()
 		customizeEachWord(`You need an ore with stronger magical properties to enhance this item.`, 'white', line1)
 		blankSpace()
-		return
+		return true
 	}
+	return false
+}
+//forge sword copper 
+async function forge(ore, armorType) {
+	let line1 = lineFunc()
+	let selectedOre = getAllItemsOnPerson().find(item => item.type[ore])
+	let selectedArmorType
+	let doesPlayerHaveAnyOre = getAllItemsOnPerson().find(({ keywords }) => keywords.some(keyword => keyword == 'ore'))
+	let selectedItem = getAllItemsOnPerson().find(forgeTarget => forgeTarget.roomId == 'right hand')
+
+	if (armorType == 'slashing') {selectedArmorType = 'slashingArmor'}
+	if (armorType == 'piercing') {selectedArmorType = 'piercingArmor'}
+	if (armorType == 'blunt') {selectedArmorType = 'bluntArmor'}
+	if (forgeFailMessages(selectedItem, doesPlayerHaveAnyOre, selectedOre, ore, armorType, 'ore')) {return}
+	await dialogueWait(200)
 	if (selectedItem.type.weapon) {
-		if (selectedItem.blacksmithing) {
+		console.log('first conditional')
+		if (!selectedItem.blacksmithing) {
+			selectedItem.blacksmithing = {}
+			// selectedItem.blacksmithing.topDamage = selectedOre.increase
+			// selectedItem.blacksmithing.enhanced = true
+		}
+		if (!selectedItem.blacksmithing.topDamage) {
+			selectedItem.blacksmithing.topDamage = selectedOre.increase
+			selectedItem.topDamage += selectedOre.increase
+			// selectedItem.blacksmithing.enhanced = true
+		} else if (!selectedItem.blacksmithing.botDamage) {
+			selectedItem.blacksmithing.botDamage = selectedOre.increase
+			selectedItem.botDamage += selectedOre.increase
+			// selectedItem.blacksmithing.enhanced = true
+		} else {
 			blankSpace()
 			customizeEachWord(`You cannot enhance this property any further.`, 'white', line1)
 			blankSpace()			
 			return
-		}
-		if (!selectedItem.blacksmithing) {
-			selectedItem.blacksmithing = {}
-			selectedItem.blacksmithing.topDamage = selectedOre.increase
-			selectedItem.blacksmithing.enhanced = true
 		}
 		// if (!selectedItem.modCount) {
 		// 	selectedItem.modCount = {}
@@ -23699,7 +26086,6 @@ async function forge(ore, armorType) {
 		customizeEachWord(`${selectedOre.increase}`, 'green', line1)
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
-		selectedItem.topDamage += selectedOre.increase
 		selectedItem.mods.weight += selectedOre.increase
 		removeItemFromPerson(selectedOre)
 	}
@@ -23730,115 +26116,134 @@ async function forge(ore, armorType) {
 		customizeEachWord(`${selectedOre.increase}`, 'green', line1)
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
-		!selectedItem.mods[selectedArmorType] ? selectedItem.mods[selectedArmorType] = selectedOre.increase: selectedItem.mods[selectedArmorType] += selectedOre.increase
+		!selectedItem.mods[selectedArmorType] ? selectedItem.mods[selectedArmorType] = selectedOre.increase : selectedItem.mods[selectedArmorType] += selectedOre.increase
 		selectedItem.mods.weight += selectedOre.increase
 		removeItemFromPerson(selectedOre)
 	}
 }
-async function tool(leather, armorType) {
-	let line1 = lineFunc()
-	let selectedLeather
-	let selectedArmorType
-	let doesPlayerHaveAnyLeather = getAllItemsOnPerson().find(({ keywords }) => keywords.some(keyword => keyword == 'hide'))
-	let selectedItem = getAllItemsOnPerson().find(toolTarget => toolTarget.roomId == 'right hand')
-	if (leather == 'light') {selectedLeather = getAllItemsOnPerson().find(toolTarget => toolTarget.refName == 'lightHide')}
-	if (leather == 'thick') {selectedLeather = getAllItemsOnPerson().find(toolTarget => toolTarget.refName == 'thickHide')}
-	if (leather == 'wooly') {selectedLeather = getAllItemsOnPerson().find(toolTarget => toolTarget.refName == 'woolyHide')}
-	if (leather == 'gnoll') {selectedLeather = getAllItemsOnPerson().find(toolTarget => toolTarget.refName == 'gnollHide')}
-	if (armorType == 'slashing') {selectedArmorType = 'slashingArmor'}
-	if (armorType == 'piercing') {selectedArmorType = 'piercingArmor'}
-	if (armorType == 'blunt') {selectedArmorType = 'bluntArmor'}
-	await dialogueWait(200)
-	if (currentArea != galvadiaTanner) {
-		blankSpace()
-		customizeEachWord(`You need to be at a tanner in order to do this.`, 'white', line1)
-		blankSpace()
-		return
-	}
-	if (!selectedItem || (!selectedItem.type.weapon && !selectedItem.type.armor)) {
-		blankSpace()
-		customizeEachWord(`You need to have the item you want to enhance in your right hand.`, 'white', line1)
-		blankSpace()
-		return
-	}
-	if (!doesPlayerHaveAnyLeather) {
-		blankSpace()
-		customizeEachWord(`You need to have a hide in order to enhance this item.`, 'white', line1)
-		blankSpace()
-		return
-	}
-	if (!selectedLeather) {
-		blankSpace()
-		customizeEachWord(`You need to specify the type of hide you want to use.`, 'white', line1)
-		blankSpace()
-		return
-	}
-	if (leather == undefined) {
-		blankSpace()
-		customizeEachWord(`You need to specify the hide you want to use.`, 'white', line1)
-		blankSpace()
-		return
-	}
-	if (selectedItem.type.armor && (armorType != 'slashing' && armorType != 'piercing' && armorType != 'blunt')) {
-		blankSpace()
-		customizeEachWord(`You need to specify the armor type you want to enhance.`, 'white', line1)
-		blankSpace()
-		return
-	}
-	if (selectedItem.type.tier > selectedLeather.tier) {
-		blankSpace()
-		customizeEachWord(`You need a hide with stronger magical properties to enhance this item.`, 'white', line1)
-		blankSpace()
-		return
-	}
-	if (selectedItem.type.weapon) {
-		if (selectedItem.leatherworking) {
-			blankSpace()
-			customizeEachWord(`You cannot enhance this property any further.`, 'white', line1)
-			blankSpace()			
-			return
+//tool light slashing - weapon
+//tool light fire - armor
+async function tool(leather, armorPenOrMagicRes) {
+    const selectedItem = getAllItemsOnPerson().find(item => item.roomId === 'right hand');
+	let doesPlayerHaveAnyHide = getAllItemsOnPerson().find(({ keywords }) => keywords.some(keyword => keyword == 'hide'))
+
+    const leatherTypes = {
+        light: 'lightHide',
+        thick: 'thickHide',
+        wooly: 'woolyHide',
+        gnoll: 'gnollHide'
+    };
+    const armorPenTypes = {
+        slashing: 'slashingPen',
+        piercing: 'piercingPen',
+        blunt: 'bluntPen'
+    };
+    const magicResTypes = {
+        fire: 'fireResist',
+        ice: 'iceResist',
+        lightning: 'lightningResist',
+		water: 'waterResist',
+		wind: 'windResist',
+    };
+	const armorPen = armorPenTypes[armorPenOrMagicRes]; //armorPenOrMagicRes needs to be slashing, piercing, or blunt
+    const magicRes = magicResTypes[armorPenOrMagicRes]; //armorPenOrMagicRes needs to be fire, ice, lightning, etc
+	const selectedLeather = getAllItemsOnPerson().find(item => item.refName === leatherTypes[leather]);
+	if (forgeFailMessages(selectedItem, doesPlayerHaveAnyHide, selectedLeather, leather, armorPenOrMagicRes, 'leather')) {return}
+	console.log(armorPen)
+	console.log(magicRes)
+	if (armorPen) {
+		if (selectedItem.type.weapon) {
+			if (selectedItem.mods[armorPen] == undefined) {
+				console.log(selectedItem)
+				console.log(selectedItem.mods)
+				console.log(selectedItem.mods[armorPen])
+				console.log(armorPen, ' ARMOR PEN')
+				quickMessage(`You can only enhance a penetration type inherently on the weapon`)
+				return
+			}
+			if (selectedItem.leatherworking?.[armorPen]) {
+				quickMessage('You cannot enhance this property any further.')
+				return
+			}
+			quickMessage('enhance weapon with leather')
+			enhanceItemLeather(selectedItem, selectedLeather, armorPen);
 		}
-		if (!selectedItem.leatherworking) {
-			selectedItem.leatherworking = {}
-			selectedItem.leatherworking.botDamage = selectedLeather.increase
-			selectedItem.leatherworking.enhanced = true
-		}
-		blankSpace()
-		customizeEachWord(`You have increased the damage of your `, 'white', line1)
-		customizeEachWord(`${selectedItem.name} `, selectedItem.color, line1)
-		customizeEachWord(`by `, 'white', line1)
-		customizeEachWord(`${selectedLeather.increase}`, 'green', line1)
-		customizeEachWord(`!`, 'white', line1)
-		blankSpace()
-		selectedItem.botDamage += selectedLeather.increase
-		selectedItem.mods.weight - selectedLeather.increase < 0 ? 0 : selectedItem.mods.weight - selectedLeather.increase
-		removeItemFromPerson(selectedLeather)
 	}
-	if (selectedItem.type.armor) {
-		if (selectedItem?.leatherworking?.[selectedArmorType]) {
-			blankSpace()
-			customizeEachWord(`You cannot enhance this property any further.`, 'white', line1)
-			blankSpace()			
-			return
+	else if (magicRes) {
+		if (selectedItem.type.armor) {
+			if (selectedItem.leatherworking?.[magicRes]) {
+				quickMessage('You cannot enhance this property any further.');
+				return;
+			}
+			enhanceItemLeather(selectedItem, selectedLeather, magicRes);
 		}
-		if (!selectedItem.leatherworking) {
-			selectedItem.leatherworking = {}
-			selectedItem.leatherworking[selectedArmorType] = selectedLeather.increase
-		} else {
-			selectedItem.leatherworking[selectedArmorType] = selectedLeather.increase
-		}
-		blankSpace()
-		customizeEachWord(`You have increased the effectiveness of your `, 'white', line1)
-		customizeEachWord(`${selectedItem.name}'s `, selectedItem.color, line1)
-		customizeEachWord(`${armorType} `, armorType, line1)
-		customizeEachWord(`armor by `, 'white', line1)
-		customizeEachWord(`${selectedLeather.increase}`, 'green', line1)
-		customizeEachWord(`!`, 'white', line1)
-		blankSpace()
-		!selectedItem.mods[selectedArmorType] ? selectedItem.mods[selectedArmorType] = selectedLeather.increase: selectedItem.mods[selectedArmorType] += selectedLeather.increase
-		selectedItem.mods.weight - selectedLeather.increase < 0 ? 0 : selectedItem.mods.weight - selectedLeather.increase
-		removeItemFromPerson(selectedLeather)
 	}
+
+
+
+
+
+
+
+	// if (selectedItem.type.weapon) {
+	// 	if (selectedItem.leatherworking.slashingPen) {
+	// 		blankSpace()
+	// 		customizeEachWord(`You cannot enhance this property any further.`, 'white', line1)
+	// 		blankSpace()			
+	// 		return
+	// 	}
+	// 	if (!selectedItem.leatherworking) {
+	// 		selectedItem.leatherworking = {}
+	// 		selectedItem.leatherworking.botDamage = selectedLeather.increase
+	// 		selectedItem.leatherworking.enhanced = true
+	// 	}
+	// 	blankSpace()
+	// 	customizeEachWord(`You have increased the damage of your `, 'white', line1)
+	// 	customizeEachWord(`${selectedItem.name} `, selectedItem.color, line1)
+	// 	customizeEachWord(`by `, 'white', line1)
+	// 	customizeEachWord(`${selectedLeather.increase}`, 'green', line1)
+	// 	customizeEachWord(`!`, 'white', line1)
+	// 	blankSpace()
+	// 	selectedItem.botDamage += selectedLeather.increase
+	// 	selectedItem.mods.weight - selectedLeather.increase < 0 ? 0 : selectedItem.mods.weight - selectedLeather.increase
+	// 	removeItemFromPerson(selectedLeather)
+	// }
+	// if (selectedItem.type.armor) {
+	// 	if (selectedItem?.leatherworking?.[selectedArmorType]) {
+	// 		blankSpace()
+	// 		customizeEachWord(`You cannot enhance this property any further.`, 'white', line1)
+	// 		blankSpace()			
+	// 		return
+	// 	}
+	// 	if (!selectedItem.leatherworking) {
+	// 		selectedItem.leatherworking = {}
+	// 		selectedItem.leatherworking[selectedArmorType] = selectedLeather.increase
+	// 	} else {
+	// 		selectedItem.leatherworking[selectedArmorType] = selectedLeather.increase
+	// 	}
+	// 	blankSpace()
+	// 	customizeEachWord(`You have increased the effectiveness of your `, 'white', line1)
+	// 	customizeEachWord(`${selectedItem.name}'s `, selectedItem.color, line1)
+	// 	customizeEachWord(`${armorType} `, armorType, line1)
+	// 	customizeEachWord(`armor by `, 'white', line1)
+	// 	customizeEachWord(`${selectedLeather.increase}`, 'green', line1)
+	// 	customizeEachWord(`!`, 'white', line1)
+	// 	blankSpace()
+	// 	!selectedItem.mods[selectedArmorType] ? selectedItem.mods[selectedArmorType] = selectedLeather.increase: selectedItem.mods[selectedArmorType] += selectedLeather.increase
+	// 	selectedItem.mods.weight - selectedLeather.increase < 0 ? 0 : selectedItem.mods.weight - selectedLeather.increase
+	// 	removeItemFromPerson(selectedLeather)
+	// }
+}
+function enhanceItemLeather(item, leather, property) {
+	if (!item.leatherworking) {
+		item.leatherworking = {};
+	}
+	console.log(item.mods[property])
+	quickMessage(`Enhancing success!`)
+	item.leatherworking[property] = leather.increase
+	isNaN(item.mods[property]) ? item.mods[property] =  leather.increase : item.mods[property] += leather.increase
+	item.mods.weight = Math.max(0, item.mods.weight - leather.increase);
+	removeItemFromPerson(leather);
 }
 async function weave(fiber, bonus) {
 	let line1 = lineFunc()
@@ -23905,7 +26310,9 @@ async function weave(fiber, bonus) {
 		blankSpace()
 		return
 	}
-	if (!player[selectedBonus]) {
+	if (player[selectedBonus] == undefined) {
+		quickMessage(selectedBonus)
+		quickMessage(player[selectedBonus])
 		blankSpace()
 		customizeEachWord(`That is not a valid stat or skill`, 'white', line1)
 		blankSpace()
@@ -23924,16 +26331,16 @@ async function weave(fiber, bonus) {
 		return
 	}
 	// if (selectedItem.type.weapon) {
-	// 	if (selectedItem.magicTinkering) {
+	// 	if (selectedItem.magicWeaving) {
 	// 		blankSpace()
 	// 		customizeEachWord(`You cannot enhance this property any further.`, 'white', line1)
 	// 		blankSpace()			
 	// 		return
 	// 	}
-	// 	if (!selectedItem.magicTinkering) {
-	// 		selectedItem.magicTinkering = {}
-	// 		selectedItem.magicTinkering[selectedBonus] = selectedFiber.increase
-	// 		selectedItem.magicTinkering.enhanced = true
+	// 	if (!selectedItem.magicWeaving) {
+	// 		selectedItem.magicWeaving = {}
+	// 		selectedItem.magicWeaving[selectedBonus] = selectedFiber.increase
+	// 		selectedItem.magicWeaving.enhanced = true
 	// 	}
 	// 	blankSpace()
 	// 	customizeEachWord(`You have increased the damage of your `, 'white', line1)
@@ -23945,17 +26352,17 @@ async function weave(fiber, bonus) {
 	// 	//THIS IS WHERE THE CHANGE TO THE ENHANCED ITEM GOES
 	// 	removeItemFromPerson(selectedFiber)
 	// }
-		if (selectedItem?.magicTinkering?.[selectedBonus]) {
+		if (selectedItem?.magicWeaving?.[selectedBonus]) {
 			blankSpace()
 			customizeEachWord(`You cannot enhance this property any further.`, 'white', line1)
 			blankSpace()			
 			return
 		}
-		if (!selectedItem.magicTinkering) {
-			selectedItem.magicTinkering = {}
-			selectedItem.magicTinkering[selectedBonus] = selectedFiber.increase
+		if (!selectedItem.magicWeaving) {
+			selectedItem.magicWeaving = {}
+			selectedItem.magicWeaving[selectedBonus] = selectedFiber.increase
 		} else {
-			selectedItem.magicTinkering[selectedBonus] = selectedFiber.increase
+			selectedItem.magicWeaving[selectedBonus] = selectedFiber.increase
 		}
 		blankSpace()
 		customizeEachWord(`You have increased the effectiveness of your `, 'white', line1)
@@ -23966,9 +26373,6 @@ async function weave(fiber, bonus) {
 		customizeEachWord(`!`, 'white', line1)
 		blankSpace()
 		selectedItem.mods[selectedBonus] += selectedFiber.increase
-		console.log(selectedItem.mods, 'SELECTEDITEM.MODS')
-		console.log(selectedItem.mods[selectedBonus], 'SELECTEDITEM.MODS[SELECTEDBONUS]')
-		console.log(selectedBonus, 'SELECTED BONUS ONLY')
 		removeItemFromPerson(selectedFiber)
 }
 
@@ -24038,6 +26442,7 @@ let kasia = {
 	questSequence: {
 	},
 	questItem: [brightYellowFlower],
+	isQuestAvailable: true,
 	quest: async function () {
 		let line1 = lineFunc()
 		if (!kasia.questSequence.first) {
@@ -24257,6 +26662,70 @@ let crutches = {
 	},
 }
 
+let till = (() => {
+const till = {
+	x: -3,
+	y: 9,
+	z: 0,
+	name: 'Till',
+	refName: 'till',
+	nameColor: 'warrior-color',
+	prefix: 'Warrior Prospect, ',
+	prefixColor: 'brown',
+	occupation: 'Warrior Prospect',
+	race: 'Human',
+	description: 'A very annoyed looking warrior prospect',
+	keywords: ['till', 'annoyed', 'warrior', 'prospect', 'annoyed warrior', 'annoyed warrior prospect', 'warrior prospect'],
+	desc: function () {
+		npcDescription(this)
+	},
+	displayName: function (peopleDiv) {
+		displayNPCName(peopleDiv, this)
+	},
+	isQuestAvailable: false,
+	dialogueSequence: {},
+	questSequence: {
+		first: false,
+	},
+	speak: async function () {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		if (!this.questSequence.first) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"As a Warrior, I find it a lot easier to wait for the monsters to advance me first. If I time it right, I can hit it with my Ripslash ability and regular attack at the same time!"`, 'white', line1)
+			blankSpace()
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line2)
+			customizeEachWord(`"The only problem is those `, 'white', line2)
+			customizeEachWord(`Waterlings`, 'red', line2)
+			customizeEachWord(`. They spit water from far away, so I have to start my ability windup and then advance it soon as my ability is ready to execute.`, 'white', line2)
+			blankSpace()
+		} 
+	},
+	quest: async function () {
+	},
+	offer: function () {
+	},
+	get areas(){
+		return trainingFieldsRoomPack
+	},
+	npcBehavior: function() {
+		till.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, 10000) 
+	},
+	get currentArea() {
+		return fields9
+	},
+}
+    allNpcsArray.push(till);
+    return till;
+})();
+
+
 const lessa = {
 	x: -2,
 	y: 2,
@@ -24293,7 +26762,16 @@ const lessa = {
 			blankSpace()
 		} 
 	},
+	get areas(){
+		return trainingFieldsRoomPack
+	},
+	npcBehavior: function() {
+		lessa.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, 2000) 
+	},
 }
+allNpcsArray.push(lessa)
 
 const sylas = {
 	x: -3,
@@ -24320,6 +26798,7 @@ const sylas = {
 		first: false,
 	},
 	speak: async function () {
+		this.getAwayAttempts = 0
 		let line1 = lineFunc()
 		if (this.questSequence.first == false) {
 			await dialogueWait(200)
@@ -24331,7 +26810,20 @@ const sylas = {
 			blankSpace()
 		} 
 	},
+	get areas(){
+		return trainingFieldsRoomPack
+	},
+	npcBehavior: function() {
+		sylas.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, 10000) 
+	},
+	get currentArea() {
+		return fields9
+	},
 }
+allNpcsArray.push(sylas)
+
 const krista = {
 	x: -3,
 	y: 9,
@@ -24366,7 +26858,20 @@ const krista = {
 			blankSpace()
 		} 
 	},
+	get areas(){
+		return trainingFieldsRoomPack
+	},
+	npcBehavior: function() {
+		krista.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, 1000) 
+	},
+	get currentArea() {
+		return fields9
+	},
 }
+allNpcsArray.push(krista)
+
 const gaelwyn = {
 	x: -3,
 	y: 9,
@@ -24399,7 +26904,20 @@ const gaelwyn = {
 			blankSpace()
 		} 
 	},
+	get areas(){
+		return trainingFieldsRoomPack
+	},
+	npcBehavior: function() {
+		gaelwyn.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, 10000) 
+	},
+	get currentArea() {
+		return fields9
+	},
 }
+allNpcsArray.push(gaelwyn)
+
 
 const levins = {
 	npc: true,
@@ -24506,6 +27024,8 @@ const levins = {
 		}
 	},
 }
+allNpcsArray.push(levins)
+
 
 const belric = {
 	npc: true,
@@ -24575,60 +27095,7 @@ const belric = {
 	},
 }
 
-const till = {
-	x: -3,
-	y: 9,
-	z: 0,
-	name: 'Till',
-	refName: 'till',
-	nameColor: 'warrior-color',
-	prefix: 'Warrior Prospect, ',
-	prefixColor: 'brown',
-	occupation: 'Warrior Prospect',
-	race: 'Human',
-	description: 'A very annoyed looking warrior prospect',
-	keywords: ['till', 'annoyed', 'warrior', 'prospect', 'annoyed warrior', 'annoyed warrior prospect', 'warrior prospect'],
-	desc: function () {
-		npcDescription(this)
-	},
-	displayName: function (peopleDiv) {
-		displayNPCName(peopleDiv, this)
-	},
-	isQuestAvailable: false,
-	dialogueSequence: {},
-	questSequence: {
-		first: false,
-	},
-	speak: async function () {
-		let line1 = lineFunc()
-		let line2 = lineFunc()
-		if (!this.questSequence.first) {
-			await dialogueWait(200)
-			blankSpace()
-			customizeEachWord(`${this.name}: `, this.nameColor, line1)
-			customizeEachWord(`"As a Warrior, I find it a lot easier to wait for the monsters to advance me first. If I time it right, I can hit it with my Ripslash ability and regular attack at the same time!"`, 'white', line1)
-			blankSpace()
-			await dialogueWait(200)
-			blankSpace()
-			customizeEachWord(`${this.name}: `, this.nameColor, line2)
-			customizeEachWord(`"The only problem is those `, 'white', line2)
-			customizeEachWord(`Waterlings`, 'red', line2)
-			customizeEachWord(`. They spit water from far away, so instead I start my ability windup and advance it soon as my ability is ready to execute.`, 'white', line2)
-			blankSpace()
-		} 
-	},
-	quest: async function () {
-	},
-	offer: function () {
-	},
-	movesWhenPlayerIsHere: false,
-	eastCount: 2,
-	westCount: 2,
-	intervalTick: 3000,
-	npcBehavior: function () {
-		npcMovesEastToWest(this)
-	},
-}
+allNpcsArray.push(belric)
 
 
 const villagerMalchus = {
@@ -24682,12 +27149,14 @@ const villagerMalchus = {
 	eastCount: 2,
 	westCount: 2,
 	intervalTick: 5000,
-	npcBehavior: function () {
-		setInterval(() => {
-			npcMovesRandomly(this)
-		}, this.intervalTick)
-	},
+	// npcBehavior: function () {
+	// 	setInterval(() => {
+	// 		npcMovesRandomly(this)
+	// 	}, this.intervalTick)
+	// },
 }
+allNpcsArray.push(villagerMalchus)
+
 
 const villagerLinus = {
 	npc: true,
@@ -24711,13 +27180,13 @@ const villagerLinus = {
 	eastCount: 3,
 	westCount: 3,
 	intervalTick: 5000,
-	npcBehavior: function () {
-		setInterval(() => {
-			npcMovesRandomly(this)
-		}, this.intervalTick)
-	},
+	// npcBehavior: function () {
+	// 	setInterval(() => {
+	// 		npcMovesRandomly(this)
+	// 	}, this.intervalTick)
+	// },
 }
-const villagerRissah = {
+const rissah = {
 	npc: true,
 	id: 0,
 	x: -10,
@@ -24815,24 +27284,18 @@ const villagerRissah = {
 	desc: function () {
 		npcDescription(this)
 	},
-	movesWhenPlayerIsHere: true,
-	isInConversation: false,
-	// xa: [0, 1, -1, -1, 1, 0],
-	// ya: [1, 0, -1, 1, 0, -1],
-	// xb: [0, 1, -1, -1, 1, 0],
-	// yb: [1, 0, -1, 1, 0, -1],
-	xa: [0],
-	xb: [0],
-	ya: [1],
-	yb: [-1],
-	originalWaitInterval: 10000,
-	conversationInterval: 10000,
-	waitInterval: 10000,
-	isBehaviorOn: true,
+	get areas(){
+		return galvadiaSquareRoomPack
+	},
 	npcBehavior: function () {
-		specificNpcMovement(this)
+		let movementSpeed = randomNumberRange(20000, 60000)
+		this.behaviorInterval = setInterval(() => {
+			npcMovesRandomlyNew(this)
+		}, movementSpeed) 
 	},
 }
+allNpcsArray.push(rissah)
+
 const villager1 = {
 	npc: true,
 	id: 0,
@@ -25482,7 +27945,7 @@ function increaseStat(secondCommand) {
 	} else if (player.attributePoints > 0) {
 		let line1 = document.createElement('div')
 		customizeEachWord(`You have increased your `, 'white', line1)
-		customizeEachWord(`${attributeWord.toUpperCase()} `, 'green', line1)
+		customizeEachWord(`${capitalizeFirstLetter(attributeWord)} `, 'green', line1)
 		customizeEachWord(`by `, 'white', line1)
 		customizeEachWord(`1`, 'light-blue', line1)
 		customizeEachWord(`!`, 'white', line1)
@@ -25871,15 +28334,10 @@ function playerGainQuestExperience(gainedExperience) {
 	customizeEachWord(`You gain `, 'white', line1)
 	customizeEachWord(`${gainedExperience} `, 'light-blue', line1)
 	customizeEachWord(`experience points!`, 'white', line1)
+	blankSpace()
 	playerLevelFunc()
 }
-function playerGainGold(goldGained) {
-	let line1 = lineFunc()
-	player.gold += goldGained
-	customizeEachWord(`You receive `, 'white', line1)
-	customizeEachWord(`${goldGained} `, 'yellow', line1)
-	customizeEachWord(`gold!`, 'white', line1)
-}
+
 
 function questExperienceMultipleItems(questItems) {
 	let count = 0
@@ -26055,6 +28513,21 @@ function clear(secondCommand) {
 		quickMessage(`You do not see a ${secondCommand} to clear.`)
 	}
 }
+function search(secondCommand) {
+	let searchedObject = currentArea.interactables != undefined && currentArea.interactables[secondCommand] != undefined ? currentArea.interactables[secondCommand] : undefined
+	if (searchedObject != undefined && searchedObject.activate != undefined) {
+		searchedObject.activate(secondCommand)
+		return
+	} else if (searchedObject != undefined && searchedObject.activate != undefined) {
+		quickMessage(`You must specify what you want to search`)
+	} else if (searchedObject != undefined) {
+		quickMessage(`You cannot earch the ${searchedObject.names[0]}`)
+	} else if (!searchedObject) {
+		quickMessage(`You must specify what you want to search.`)
+	} else {
+		quickMessage(`You do not see a ${secondCommand} to search.`)
+	}
+}
 
 
 function actionWordFunction(secondCommand) {
@@ -26102,6 +28575,7 @@ let olivandra = {
 	},
 	questSequence: {
 	},
+	questItem: [cultTexts],
 	itemsOffered: [],
 	isQuestAvailable: false,
 	quest: async function() {
@@ -26113,6 +28587,7 @@ let olivandra = {
 		blankSpace()
 		customizeEachWord(`${this.name}: `, this.nameColor, line1)
 		customizeEachWord(`"We've received information that there have been Cultists gathering in the Graveyard. What they might be doing, we don't know, but we want to find out any details."`, 'white', line1)
+		blankSpace()
 		await dialogueWait(200)
 		blankSpace()
 		customizeEachWord(`${this.name}: `, this.nameColor, line2)
@@ -26132,6 +28607,7 @@ let olivandra = {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
 		let line3 = lineFunc()
+		let line4 = lineFunc()
 		let qItem = getAllItemsOnPerson().find(item => item.refName == this.questItem[0]().refName)
 		let qItemIndex = pushItem.indexOf(qItem)
 		await dialogueWait(200)
@@ -26194,6 +28670,8 @@ let olivandra = {
 		learnInteraction(secondCommand, npc)
 	},
 }
+allNpcsArray.push(olivandra)
+
 let scylla = {
 	name: 'Scylla',
 	prefix: 'Archmage of Ice, ',
@@ -26267,6 +28745,8 @@ let scylla = {
 		displayShopSkillsOrSpells(this, ssiq)
 	},
 }
+allNpcsArray.push(scylla)
+
 let gelvander = {
 	name: 'Gelvander',
 	prefix: 'Archmage of Fire, ',
@@ -26340,6 +28820,8 @@ let gelvander = {
 		displayShopSkillsOrSpells(this, ssiq)
 	},
 }
+allNpcsArray.push(gelvander)
+
 let blasphemy = {
 	name: 'Blasphemy',
 	prefix: 'Archmage of Lightning, ',
@@ -26413,6 +28895,8 @@ let blasphemy = {
 		displayShopSkillsOrSpells(this, ssiq)
 	},
 }
+allNpcsArray.push(blasphemy)
+
 
 
 class AreaMaker {
@@ -26448,7 +28932,7 @@ class AreaMaker {
 let galvadiaWelcomeArea = new AreaMaker(
 	0, //SPAWN RATE
 	true, //IS PLAYER HERE
-	[], // NPC
+	[egbert], // NPC
 	false, // IS HOSTILE
 	areaIdGenerator(), //ROOM ID
 	0, // X
@@ -26459,7 +28943,7 @@ let galvadiaWelcomeArea = new AreaMaker(
 		areaNameClass: yellow,
 		areaName: `Galvadia Welcome Area`,
 		zoneType: 'galvadia_basement',
-		desc: `Welcome to the lands of Galvadia. Here, you will learn everything you need to get around in the world. First, we'll start with the basics, then, we'll move on to combat training. Let's get you started moving around. You can see the all the possible directions you can move next to Obvious Exits in the room description. To move, just type the direction you want to go. If you wanted to move north, you would type "north" or "n". You can also use the NumPad to get around much faster if you'd prefer. Go ahead and try moving to the north for the next lesson.`,
+		desc: `You find yourself at the end of a long hallway in the castle Training Halls basement. There are several lit sconces that line the walls. Their oscillating glow is quite comforting.`,
 		zoneExitsBool: {
 			north: true,
 		},
@@ -26492,11 +28976,16 @@ let galvadiaWelcomeArea2 = new AreaMaker(
 		areaNameClass: yellow,
 		areaName: `Galvadia Training Area 2`,
 		zoneType: 'galvadia_basement',
-		desc: `Great job! You've just entered a new room. Each room comes with a description that will paint a picture of your surroundings. Sometimes rooms will have words highlighted to indicate something of interest. Using the EXAMINE command, you can investigate it. The wall here has something written on it. Try "examine wall" or "ex wall" to check it out.`,
-		desc: `Areas will sometimes have keywords highlighted in them which indicates that there is something of interest to investigate. By EXAMINE-ing a keyword, you can find out more information about it. Investigating keywords can be very useful as they may lead to something important like finding a hidden room or a clue to a quest. Try EXAMINE-ing the wall here by typing EXAMINE wall or EX wall.`,
+		desc: `You see something written on the wall here.`,
 		zoneExitsBool: {
-			north: true,
+			north: 'locked',
 			south: true,
+		},
+		zoneExitsLocked: {
+			north: () => {
+				let line1 = lineFunc()
+				customizeEachWord(`The way is actually open, but something is holding you back! Something written on the other wall might help you out.`, 'white', line1)
+			},
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -26521,14 +29010,32 @@ let galvadiaWelcomeArea2 = new AreaMaker(
 			desc: async function () {
 				let line1 = document.createElement('div')
 				let line2 = document.createElement('div')
+				if (egbert.questStage < 3) {
+					galvadiaWelcomeArea2.descriptions.zoneExitsBool.north = true
 					await dialogueWait(200)
 					blankSpace()
 					customizeEachWord(`You take a closer look at the wall and see that there is something written on it.`, 'white', line1)
+					blankSpace()
 					await dialogueWait(200)
-					blankSpace()
 					customizeEachWord(`The wall reads: `, 'blue', line2)
-					customizeEachWord(`"Excellent! Head north when you're ready."`, 'white', line2)
+					customizeEachWord(`"Refresh your view of the room with the LOOK or L command to see if anything changed."`, 'white', line2)
 					blankSpace()
+					advanceQuestStage(egbert, 2)
+					if (!currentArea.npc[0]) {
+						await dialogueWait(200)
+						npcEntersFromADirection('south', egbert)
+					}
+					egbert.speak()
+					} else {
+						await dialogueWait(200)
+						blankSpace()
+						customizeEachWord(`You take a closer look at the wall and see that there is something written on it.`, 'white', line1)
+						await dialogueWait(200)
+						blankSpace()
+						customizeEachWord(`The wall reads: `, 'blue', line2)
+						customizeEachWord(`"Refresh your view of the room with the LOOK or L command to see if anything changed."`, 'white', line2)
+						blankSpace()
+					}
 			},
 		},
 	}
@@ -26584,7 +29091,7 @@ let galvadiaWelcomeArea3 = new AreaMaker(
 		areaNameClass: yellow,
 		areaName: `Galvadia Welcome Area 4`,
 		zoneType: 'galvadia_basement',
-		desc: `Some rooms will appear to have no obvious exits other than the way you came in. Here, you see that there is a lever on the wall. Use what you just learned in the previous room to see if you can find a way forward.`,
+		desc: `There is a very conspicuous lever sticking out of the wall.`,
 		zoneExitsBool: {
 			south: true,
 		},
@@ -26610,9 +29117,13 @@ let galvadiaWelcomeArea3 = new AreaMaker(
 			},
 			desc: async function () {
 				let line1 = document.createElement('div')
+				let line2 = document.createElement('div')
 				await dialogueWait(200)
 				blankSpace()
-				customizeEachWord(`You see a conspicuous lever on the wall. Maybe you should try to PULL it.`, 'gray', line1)
+				customizeEachWord(`You see a conspicuous lever on the wall. Try pulling it with the PULL command by typing "pull lever".`, 'white', line1)
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`NOTE: You will always use two word commands to interact with a room's keyword. You will never have to use commands like "move the branches", "clear all the grass", "dig a hole", or "pull the lever". If the action (first word) was valid to interact with a keyword, those commands would instead be "move branches", "clear grass", "dig hole", or "pull lever". There will usually be context clues to hint at what action should be taken.`, 'white', line2)
 				blankSpace()
 			},
 			activate: async function () {
@@ -26623,13 +29134,22 @@ let galvadiaWelcomeArea3 = new AreaMaker(
 					await dialogueWait(200)
 					blankSpace()
 					customizeEachWord(`You hear a deep rumbling sound as the wall in front of you begins to move.`, 'gray', line1)
-					await dialogueWait(200)
 					blankSpace()
+					await dialogueWait(200)
 					customizeEachWord('A way has opened to the north!', 'white', line2)
 					blankSpace()
-					player.stasis = false
 					currentArea.descriptions.zoneExitsBool.north = true
 					currentArea.descriptions.zoneExitsFunc()
+					if (!currentArea.npc[0]) {
+						await dialogueWait(200)
+						npcEntersFromADirection('south', egbert)
+						advanceQuestStage(egbert, 4)
+						egbert.speak()
+					} else {
+						advanceQuestStage(egbert, 5)
+						egbert.speak()
+					}
+
 				} else if (currentArea.descriptions.zoneExitsBool.north == true) {
 					let line1 = document.createElement('div')
 					await dialogueWait(200)
@@ -26656,7 +29176,6 @@ let galvadiaWelcomeArea4 = new AreaMaker(
 		areaNameClass: yellow,
 		areaName: `Galvadia Welcome Area 5`,
 		zoneType: 'galvadia_basement',
-		desc: `Yellow directions indicate a locked door which can only be unlocked using a key. Oh look, a key on the ground. How convenient! `,
 		desc: `Locked doors are indicated by yellow text which can be unlocked by using the right key. You can use the key you found in the previous room to unlock this door by using the UNLOCK command follwed by the direction you want to unlock. When you have done this, you can move on to the next room.`,
 		zoneExitsBool: {
 			north: 'locked',
@@ -26664,9 +29183,9 @@ let galvadiaWelcomeArea4 = new AreaMaker(
 		},
 		zoneExitsLocked: {
 			north: function () {
-				if (galvadiaWelcomeArea5.descriptions.zoneExitsBool.north == 'locked') {
+				if (galvadiaWelcomeArea4.descriptions.zoneExitsBool.north == 'locked') {
 					let line1 = document.createElement('div')
-					customizeEachWord(`The way to the north is locked. The lock looks to be pretty simple.`, 'white', line1)
+					customizeEachWord(`The door has a simple lock attached to it.`, 'white', line1)
 				}
 			},
 		},
@@ -26699,10 +29218,7 @@ let galvadiaWelcomeArea5 = new AreaMaker(
 		areaNameClass: yellow,
 		areaName: `Galvadia Training Area 3`,
 		zoneType: 'galvadia_basement',
-		desc: `To pick up an item, use the GET command followed by the name of the item. Go ahead an pick up the key that's on the ground. Once you pick up and item, you can see it in your inventory by using the INVENTORY command (or just I). This will also show you everything you have in your backpack including your gold and any items you have equipped. Once you have the key, head north.
-		
-		Tip: For most items, you can use GET followed by any word in the item's name instead of using the entire name.`,
-		// It is essential that you gear yourself properly if you want to survive and slay enemys. Pick up the equipment on the ground by typing 'get sword' or 'g sword' and 'get armor' or 'g armor'. You can also pick up all the items on the ground by typing 'get all' or 'g all'. Once you pick up an item, you can see it in your inventory by typing 'inventory' or 'i'. To equip a piece of armor, you must be wielding it in either hand. To do this, type 'unpack tunic' and then 'wear tunic' ('equip tunic' or 'don tunic' also works). To equip a weapon, you simply need to be wielding it in either hand first. By unpacking your weapon into either hand, you can now swing it at your enemies! However, make sure that you are only wielding one weapon at a time unless you know the dual wielding skill. To put items from your hands into your backpack, type 'pack' or 'p' followed by the item name. You can also type 'p left' or 'p right' to put items away. If you want to remove armor to don something else, type 'remove tunic', unpack the other piece of armor, then equip it. If an item has a similar name as another item, you can type 'unpack' followed by the exact name to unpack that specific item. Once you're comfortable with equipping and unequipping gear, proceed to the north.
+		desc: `Heading down a corridor.`,
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -26726,7 +29242,7 @@ let galvadiaWelcomeArea5 = new AreaMaker(
 let galvadiaWelcomeArea6 = new AreaMaker(
 	0, //SPAWN RATE
 	true, //IS PLAYER HERE
-	[egbert], // NPC
+	[], // NPC
 	false, // IS HOSTILE
 	areaIdGenerator(), //ROOM ID
 	0, // X
@@ -26741,6 +29257,20 @@ let galvadiaWelcomeArea6 = new AreaMaker(
 		
 		You will come across a lot of people in your travels. You can interact with them by using the TALK or SPEAK command followed by their name. Talk to Egbert to see what he has to say. Use the OFFER command to complete the quest once you've finished the objective.
 		`,
+		didEventRun: false,
+		onEntry: async function() {
+			if (this.didEventRun == false) {
+				this.didEventRun = true
+				egbert.questStage = 8
+				if (!currentArea.npc[0]) {
+					await dialogueWait(200)
+					blankSpace()
+					npcEntersFromADirection('south', egbert)
+				}
+				npcRemoveFromTheirCurrentRoom(egbert)
+				npcAddToRoom(galvadiaWelcomeArea6, egbert)
+			}
+		},
 		zoneExitsBool: {
 			east: 'blocked',
 			south: true,
@@ -26749,9 +29279,6 @@ let galvadiaWelcomeArea6 = new AreaMaker(
 		east: async function () {
 			let line1 = lineFunc()
 			customizeEachWord(`You need to complete Egbert's quest before you can go here.`, 'white', line1)
-		},
-		south: function () {
-			quickMessage(`This way is BLOCKED`)
 		},
 		zoneExitsLocked: {
 			east: () => {
@@ -26822,13 +29349,14 @@ let galvadiaWelcomeArea7 = new AreaMaker(
 			desc: async function () {
 				let line1 = lineFunc()
 				let line2 = lineFunc()
-				await dialogueWait(200)
-				blankSpace()
 				if (galvadiaWelcomeArea7.quests.glassesComplete == false) {
-					customizeEachWord(`Lifting up the parchment, you accidentally knock to the ground what was lying underneath. You look down to see a pair of glasses on the floor.`, 'grey', line1)
 					await dialogueWait(200)
 					blankSpace()
+					customizeEachWord(`Lifting up the parchment, you accidentally knock to the ground what was lying underneath. You look down to see a pair of glasses on the floor.`, 'grey', line1)
+					blankSpace()
+					await dialogueWait(200)
 					customizeEachWord(`Tip: Use the LOOK command to refresh your view of the room.`, 'white', line2)
+					blankSpace()
 					questItemGen(pairOfGlasses())
 					galvadiaWelcomeArea7.quests.glassesComplete = true
 				} else {
@@ -26865,20 +29393,19 @@ let galvadiaWelcomeArea8 = new AreaMaker(
 		// 		egbert.speak()
 		// 	}
 		// },
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
 			let line4 = document.createElement('div')
 			let line5 = document.createElement('div')
 			blankSpace()
-			customizeEachWord(`The sign reads: `, 'white', line1)
+			customizeEachWord(`The sign reads: `, 'brown', line1)
 			customizeEachWord(`North: Next Lesson`, 'white', line2)
 			customizeEachWord(`East: Armor Room`, 'white', line3)
 			customizeEachWord(`South: Weapon Room`, 'white', line4)
 			customizeEachWord(`West: Egbert's Office`, 'white', line5)
 			blankSpace()
-			egbert.questSequence.second = true
 		},
 		zoneExitsBool: {
 			north: 'blocked',
@@ -27075,12 +29602,12 @@ let galvadiaWelcomeArea14 = new AreaMaker( //change name
 		zoneType: 'galvadia_basement',
 		desc: `You find yourself in the well worn halls of the Combat Training Halls. Countless adventurer's have made their way through these halls. The stone floors are worn smooth from use. The walls are decorated with knicks and scratches. 
 		There is a sign here.`,
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
 			blankSpace()
-			customizeEachWord(`The sign reads: `, 'white', line1)
+			customizeEachWord(`The sign reads: `, 'brown', line1)
 			customizeEachWord(`East: Magic combat room`, 'white', line2)
 			customizeEachWord(`West: Physical combat room`, 'white', line3)
 			blankSpace()
@@ -27350,7 +29877,7 @@ let th_b_w_wing_2 = new AreaMaker( //change name
 				blankSpace()
 				if (th_b_w_wing_2.interactables.lever.pulled == true && th_b_e_wing_2.interactables.lever.pulled == true) {
 					th_b_center_1.descriptions.zoneExitsBool.north = true
-					egbert.questSequence.tenth = true
+					advanceQuestStage(egbert, 12)
 				}
 			} else if (th_b_w_wing_2.interactables.lever.pulled == true) {
 				let line1 = document.createElement('div')
@@ -27421,7 +29948,7 @@ let th_b_e_wing_2 = new AreaMaker( //change name
 					blankSpace()
 					if (th_b_e_wing_2.interactables.lever.pulled == true && th_b_w_wing_2.interactables.lever.pulled == true) {
 						th_b_center_1.descriptions.zoneExitsBool.north = true
-						egbert.questSequence.tenth = true
+						advanceQuestStage(egbert, 12)
 					}
 				} else if (th_b_e_wing_2.interactables.lever.pulled == true) {
 					let line1 = document.createElement('div')
@@ -27479,16 +30006,26 @@ let galvadiaWelcomeArea17_combatRoom1 = new AreaMaker( //change name
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-		actionWord: ['ATTACKING', 'RETREATING', 'CASTING', 'SPELLS', 'ENGAGING', 'COMBAT'],
+		get actionWord() {
+			let actionWordArray = []
+			if (player.guild == 'Warrior' || player.guild == 'Sinistral' || player.guild == 'Monk') {
+				actionWordArray.push('ENGAGING', 'COMBAT', 'ATTACKING', 'RETREATING')
+			} else if (player.guild == 'Ranger') {
+				actionWordArray.push('ENGAGING', 'COMBAT', 'ATTACKING', 'RETREATING')
+			} else if (player.guild == 'Mage') {
+				actionWordArray.push('ENGAGING', 'COMBAT', 'CASTING', 'SPELLS', 'RETREATING')
+			}
+			return actionWordArray
+		},
 	}),
 	{
-		attacking: {
+		'ATTACKING': {
 			names: ['ATTACKING'],
 			color: function () {
 				return 'yellow'
 			},
 		},
-		casting: {
+		'CASTING': {
 			names: ['CASTING'],
 			desc: function() {
 			},
@@ -27496,7 +30033,7 @@ let galvadiaWelcomeArea17_combatRoom1 = new AreaMaker( //change name
 				return 'yellow'
 			},
 		},
-		spells: {
+		'SPELLS': {
 			names: ['SPELLS'],
 			desc: function() {
 			},
@@ -27504,19 +30041,19 @@ let galvadiaWelcomeArea17_combatRoom1 = new AreaMaker( //change name
 				return 'yellow'
 			},
 		},
-		retreating: {
+		'RETREATING': {
 			names: ['RETREATING'],
 			color: function () {
 				return 'yellow'
 			},
 		},
-		engaging: {
+		'ENGAGING': {
 			names: ['ENGAGING'],
 			color: function () {
 				return 'yellow'
 			},
 		},
-		combat: {
+		'COMBAT': {
 			names: ['COMBAT'],
 			color: function () {
 				return 'yellow'
@@ -27563,13 +30100,13 @@ let galvadiaWelcomeArea18_combatRoom2 = new AreaMaker( //change name
 		actionWord: ['ENEMY', 'ENCOUNTERS', 'ENGAGEMENT', 'AND', 'ATTACKING', 'MOVEMENT']
 	}),
 	{
-		enemy: {
+		'ENEMY': {
 			names: ['ENEMY'],
 			color: function () {
 				return 'yellow'
 			},
 		},
-		encounters: {
+		'ENCOUNTERS': {
 			names: ['ENCOUNTERS'],
 			desc: function() {
 			},
@@ -27577,7 +30114,7 @@ let galvadiaWelcomeArea18_combatRoom2 = new AreaMaker( //change name
 				return 'yellow'
 			},
 		},
-		engagement: {
+		'ENGAGEMENT': {
 			names: ['ENGAGEMENT'],
 			desc: function() {
 			},
@@ -27585,19 +30122,19 @@ let galvadiaWelcomeArea18_combatRoom2 = new AreaMaker( //change name
 				return 'yellow'
 			},
 		},
-		and: {
+		'AND': {
 			names: ['AND'],
 			color: function () {
 				return 'yellow'
 			},
 		},
-		attacking: {
+		'ATTACKING': {
 			names: ['ATTACKING'],
 			color: function () {
 				return 'yellow'
 			},
 		},
-		movement: {
+		'MOVEMENT': {
 			names: ['MOVEMENT'],
 			color: function () {
 				return 'yellow'
@@ -27819,14 +30356,14 @@ let crossroads_shops_and_fields = new AreaMaker(
 	0, // Z
 	0, //GOLD
 	(descriptions = {
-		areaNameClass: brown,
+		areaNameClass: `training-fields`,
 		areaName: `Training Fields Central`,
 		zoneType: 'galvadia_training_fields',
 		get desc() {
 			if (player.level < 5) {
-				return `You stand in a large, open area surrounded by yellow fields. Numerous trainers are here instructing and keeping close eye on those in the fields. Some prospects sit here, resting before going back in; others look nervous.`
+				return `You stand in a large, open area surrounded by golden yellow fields. Guild instructors are here teaching students how to use their skills and abilities. Some of the prospects look eager to get into action while others look on nervously toward the fields.`
 			} else {
-				return `You stand in a large, open area surrounded by yellow fields. Numerous trainers are here instructing and keeping close eye on those in the fields. Some prospects sit here, resting before going back in; others look nervous. To the south, the grass along the river bank has grown up very high. Something moving deep in the grass has drawn your attention.`
+				return `You stand in a large, open area surrounded by golden yellow fields. Guild instructors are here teaching students how to use their skills and abilities. Some of the prospects look eager to get into action while others look on nervously toward the fields. To the south, the grass along the river bank has grown up very high. Something moving deep in the grass has drawn your attention.`
 			}
 		},
 		zoneExitsBool: {
@@ -27883,9 +30420,9 @@ let crossroads_shops_and_fields = new AreaMaker(
 					let line3 = document.createElement('div')
 					await dialogueWait(200)
 					blankSpace()
-					customizeEachWord(`You manage to clear a path in the tall grass.`, 'gray', line1)
-					await dialogueWait(200)
+					customizeEachWord(`(You manage to clear a path in the tall grass)`, 'white', line1)
 					blankSpace()
+					await dialogueWait(200)
 					customizeEachWord('A way has opened to the south!', 'white', line2)
 					blankSpace()
 					player.stasis = false
@@ -27912,7 +30449,7 @@ let mud_elemental_field = new AreaMaker(
 	0, // Z
 	0, //GOLD
 	(descriptions = {
-		areaNameClass: brown,
+		areaNameClass: `training-fields`,
 		areaName: `Entrance to the Market`,
 		zoneType: 'galvadia_training_fields',
 		desc: `Entrance to the Market`,
@@ -27934,8 +30471,8 @@ let mud_elemental_field = new AreaMaker(
 	})
 )
 mud_elemental_field.onEntry = function() {
-	let doAnyExist = pushMonster.some(monster => monster.refName == 'littleMudElemental' || monster.refName == 'littleWaterElemental' || monster.refName == 'littleGrassElemental')
-	if (!bossTimeouts.littleMudElemental && !doAnyExist) {
+	// let doAnyExist = pushMonster.some(monster => monster.refName == 'littleMudElemental' || monster.refName == 'littleWaterElemental' || monster.refName == 'littleGrassElemental')
+	if (!bossTimeouts.littleElemental) {
 		let randomNumber = randomNumberRange(1, 3)
 		if (randomNumber == 1) {
 			monsterGen(littleMudElemental(currentArea))
@@ -28102,10 +30639,10 @@ let fieldsEntrance = new AreaMaker(
 	0, // Z
 	0, //GOLD
 	(descriptions = {
-		areaNameClass: 'training-fields',
+		areaNameClass: `training-fields`,
 		areaName: `Entrance To The Training Fields`,
 		zoneType: 'galvadia_training_fields',
-		desc: `The wide path into the fields is blotted with water and mud. A few people can be seen hiding just around the corner that leads farther into the fields.`,
+		desc: `The wide path into the fields is blotted with water, mud, and grass shreds. A few prospects are hiding here, just around the corner and out of sight of monsters.`,
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -28233,9 +30770,9 @@ let fields3 = new AreaMaker(
 	0, //GOLD
 	(descriptions = {
 		areaNameClass: 'training-fields',
-		areaName: `In The Fields By The Cliffside`,
+		areaName: `By The Cliffside`,
 		zoneType: 'galvadia_training_fields',
-		desc: `The forest that extends to the edge of the cliff casts shadows on the field along the eastern edge.`,
+		desc: `The forest glade, high on the cliffside to the east, casts a shadow over the eastern edge of the field. To climb the cliff would be impossible, unless of course you were athletic enough.`,
 		zoneExitsBool: {
 			north: true,
 			west: true,
@@ -28356,9 +30893,9 @@ let fields6 = new AreaMaker(
 	0, //GOLD
 	(descriptions = {
 		areaNameClass: 'training-fields',
-		areaName: `Exploring the Hills and Slops of the Fields`,
+		areaName: `Along The Cliffside`,
 		zoneType: 'galvadia_training_fields',
-		desc: `The field gives way to a gentle slope, leading to a breathtaking view of the distant mountains. Their majestic peaks pierce the sky, cloaked in a shroud of mist. The crisp mountain air carries with it a sense of adventure and possibility.`,
+		desc: `The cracked rockface of the cliff has dotted the ground near the base with small boulders and piles of stone. Behind the stone, you can barely make out what looks like intentionally shaped rock embedded into the rock wall.`,
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
@@ -28418,7 +30955,7 @@ let fields7 = new AreaMaker(
 let fields8 = new AreaMaker(
 	50, //SPAWN RATE
 	true, //IS PLAYER HERE
-	[lessa], // NPC
+	[], // NPC
 	true, // IS HOSTILE
 	areaIdGenerator(), //ROOM ID
 	-2, // X
@@ -28455,7 +30992,7 @@ let fields8 = new AreaMaker(
 let fields9 = new AreaMaker(
 	50, //SPAWN RATE
 	true, //IS PLAYER HERE
-	[till, sylas, krista, gaelwyn], // NPC
+	[till, sylas, krista, gaelwyn, lessa], // NPC
 	true, // IS HOSTILE
 	areaIdGenerator(), //ROOM ID
 	-1, // X
@@ -28464,9 +31001,9 @@ let fields9 = new AreaMaker(
 	0, //GOLD
 	(descriptions = {
 		areaNameClass: 'training-fields',
-		areaName: `Trekking far Into the Fields`,
+		areaName: `At The End Of The Cliffside`,
 		zoneType: 'galvadia_training_fields',
-		desc: `A gentle breeze sweeps across the field, causing the tall grass to ripple like waves on a vast green sea. The whispering sound it creates is both soothing and invigorating, filling you with a sense of vitality and connection to nature.`,
+		desc: `The fields end in a steep dropoff, revealing a steep cliffside of its own that extends far below. The forest glade rockface extends beyond the edge of the fields to the north, sloping downward until it meets the ground several miles away.`,
 		zoneExitsBool: {
 			south: true,
 			southwest: true,
@@ -28780,10 +31317,10 @@ let just_outside_the_castle_east = new AreaMaker(
 	0, // Z
 	0, //GOLD
 	(descriptions = {
-		areaNameClass: brown,
+		areaNameClass: `training-fields`,
 		areaName: `Path To The Training Fields`,
 		zoneType: 'galvadia_training_fields',
-		desc: `Golden fields stretch out all around you extending to the river to the south, the rockface to the east, and the cliff to the north.`,
+		desc: `Golden fields stretch out in every direction, reaching the river to the south, the rock face to the east, and the cliff edge to the north.`,
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -28935,6 +31472,8 @@ let zalbane = {
 		} 
 	},
 }
+allNpcsArray.push(zalbane)
+
 let vezzlethrax = {
 	name: 'Vezzlethrax',
 	refName: 'vezzlethrax',
@@ -28995,6 +31534,7 @@ let vezzlethrax = {
 	speak: async function() {
 	},
 }
+allNpcsArray.push(vezzlethrax)
 
 let castle_gates_east = new AreaMaker(
 	0, //SPAWN RATE
@@ -29007,10 +31547,10 @@ let castle_gates_east = new AreaMaker(
 	0, // Z
 	0, //GOLD
 	(descriptions = {
-		areaNameClass: brown,
+		areaNameClass: `training-fields`,
 		areaName: `Passing Through The East Castle Gatehouse`,
 		zoneType: 'galvadia_training_fields',
-		desc: `The air shifts to a refreshing cool as you pass through the stone gatehouse.`,
+		desc: `The warm air shifts to a refreshing cool as you pass through the stone walls of the gatehouse. The guards nod at and greet students and instructors as they pass.`,
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -29041,8 +31581,8 @@ let castle_gates_e_inside = new AreaMaker(
 	0, // Z
 	0, //GOLD
 	(descriptions = {
-		areaNameClass: brown,
-		areaName: `Back Training Halls Courtyard`,
+		areaNameClass: `training-fields`,
+		areaName: `Training Halls Back Courtyard`,
 		zoneType: 'galvadia_training_fields',
 		desc: `The back courtyard is a large area, walled off to the north and south with the only exit being east through the castle gates. A large tree towers in the middle of the courtyard, casting shade over the entire area.`,
 		zoneExitsBool: {
@@ -29078,7 +31618,7 @@ let back_training_halls_entrance = new AreaMaker(
 		areaNameClass: 'training-halls',
 		areaName: `Training Halls Back Foyer`,
 		zoneType: 'galvadia_training_halls_common_room',
-		desc: `The large doors of the back foyer are left open during the day due to their frequent use. Just beyond the doors is a large forecourt with stairs leading down into the back courtyard.`,
+		desc: `The large doors of the back foyer are left open during the day due to their frequent use. Just beyond the doors are a set of stone stairs leading down into the back courtyard.`,
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -29112,7 +31652,7 @@ let trainingHallsCommonRoom = new AreaMaker( //change name
 		areaNameClass: 'training-halls',
 		areaName: `Training Hall Common Room`, //change area name
 		zoneType: 'galvadia_training_halls_common_room',
-		desc: `You find yourself in the large, crowded room of the Training Halls. The room is full of students preparing for trials, while others resting from their training.`, //`CENTRAL TRAINING ROOM - new recruits practicing their stances and strikes. A burly guard stands at the western door`, //change area desc
+		desc: `You find yourself in the large, crowded room of the Training Halls. The room is full of students preparing themselves, while others resting from their training.`, //`CENTRAL TRAINING ROOM - new recruits practicing their stances and strikes. A burly guard stands at the western door`, //change area desc
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -29203,8 +31743,8 @@ let trainingHallsOutside = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'courtyardGreen',
-		areaName: `Training Halls Outside`, //change area name
-		desc: `Approaching the Training Halls.`,
+		areaName: `Passing By The Castle Groves`, //change area name
+		desc: `To the east and west along the path are beautifully manicured groves. Various, fruit trees grow in rows that fill the acres of lawn on each side.`,
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -29235,14 +31775,15 @@ let castle_courtyard_granery_path_1 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'courtyardGreen',
-		areaName: `Castle Courtyard Path 1 Area 1`, //change area name
-		desc: `...`,
+		areaName: `On The Path To The Castle Circle`, //change area name
+		//The road here is spacious and adorned with intricately inlaid cobblestones arranged in large, circular patterns.
+		desc: `As you walk along the path, you see the Adventurer's Guild off in the distance to the northwest and the Training Halls to the northeast. The road here is wide and adorned with inlaid cobblestones arranged in large, circular patterns.`,
 		zoneExitsBool: {
 			north: true,
 			east: true,
 			south: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			blankSpace()
@@ -29534,24 +32075,19 @@ let castleCourtyardNearMonksGuild = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'courtyardGreen',
-		areaName: `Nearing the Monk's Guild`, //change area name
-		desc: `Nearing the Monk's Guild. There is a large SIGN here`,
+		areaName: `Castle Circle South`, //change area name
+		desc: `The road connects to the Castle Circle and continues all the way around. In the middle is a tree large enough to shade the grass of the inner circle. Small stone paths branch from the road, meandering inward to an assortment of seating areas.`,
 		sign: function() {
 			let line1 = lineFunc()
 			let line2 = lineFunc()
 			let line3 = lineFunc()
-			let line4 = lineFunc()
-			blankSpace()
-			customizeEachWord(`The sign reads: `, 'white', line1)
-			customizeEachWord(`Galvadia Castle - Northwest`, 'bold', line2)
-			customizeEachWord(`Training Halls - Northeast`, 'bold', line3)
-			customizeEachWord(`Galvadia Square - South`, 'bold', line4)
+			customizeEachWord(`The sign reads:`, 'white', line1)
+			customizeEachWord(`Northeast: Training Halls`, 'white', line2)
+			customizeEachWord(`Northwest: Adventurer's Guild`, 'white', line3)
 			blankSpace()
 		},
 		zoneExitsBool: {
-			get northwest() {
-				return directionLevelCheck(10)
-			},
+			northwest: true,
 			northeast: true,
 			south: true,
 		},
@@ -29588,7 +32124,7 @@ let castleGateway = new AreaMaker( //change name
 	(descriptions = {
 		areaNameClass: castleGrey,
 		areaName: `South Castle Gatehouse`, //change area name
-		desc: `Wagons carrying supplies to the castle pass through here. Guards inspect them as they pass through.`,
+		desc: `Passing through the gatehouse are those with castle grounds business. Travelers from abroad seek the Adventurer's Guild to congregate with other travelers and adventurers or they might seek Rites of Passage if they intend to stay for a while. Guild prospects, and castle and guild officials are the most frequent passersby.`,
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -29628,7 +32164,7 @@ let castleMoat = new AreaMaker( //change name
 			southeast: true,
 			southwest: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -29686,7 +32222,10 @@ let junction_castle_town_fields = new AreaMaker( //change name
 				return player.level < 10 ? 'blocked' : true
 			},
 		},
-		sign: function () {
+		zoneExitsLocked: {
+			west: () => quickMessage(`You need to be level 10 or higher to pass through here.`),
+		},
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -29769,7 +32308,7 @@ let toGalvadiaFields2 = new AreaMaker( //change name
 		areaNameClass: 'buildingWood',
 		areaName: `Passing The Southwest Bend Of The Moat`, //change area name
 		zoneType: "galvadia_exterior_north",
-		desc: `Rounding the southwest bend of the moat, you pass by a few travelling carts and patrol guards. A few children playing by the moat are being scolded by guards for being to close to the water.`,
+		desc: `Rounding the southwest bend of the moat, you pass by a few travelling carts and patrol guards. A few children playing by the moat are being scolded by guards for being too close to the water.`,
 		zoneExitsBool: {
 			northwest: true,
 			east: true,
@@ -29952,7 +32491,7 @@ let toGalvadiaFields7 = new AreaMaker( //change name
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = lineFunc()
 			let line2 = lineFunc()
 			let line3 = lineFunc()
@@ -31622,7 +34161,7 @@ let koboldCavesRoom17 = new AreaMaker( //change name
 	(descriptions = {
 		areaNameClass: 'buildingWood',
 		areaName: `Heading Down A Well Worn Tunnel`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		desc: `The tunnel here is well worn and smooth. To the west, the sounds of yipping kobolds grows. It looks to be their living quarters. The light from their torches illuminate a sizeable pond in the middle of the room. Around the rest of the room, you see small shapes bouncing around to and fro.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
@@ -31654,8 +34193,8 @@ let koboldCavesRoom18 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'blue',
-		areaName: `At A Pond In The Middle Of A Large Room`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `In The Middle Of The Kobold's Living Quarters`, //change area name
+		desc: `A large pond sits in the middle of the room with numerous utensils for containing water skittered about the waters edge. Pathways are laid out to the north and south leading to individual sleeping rooms.`,
 		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			north: true,
@@ -31690,7 +34229,7 @@ let koboldCavesRoom19 = new AreaMaker( //change name
 	(descriptions = {
 		areaNameClass: 'buildingWood',
 		areaName: `On A Lit Path Through The Tunnels`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		desc: `The path exits the kobold's main living quarters to the west. Pickaxes and crude mining tools are laid against the wall.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
@@ -31722,8 +34261,8 @@ let koboldCavesRoom20 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `On path to fields 7`, //change area name
-		desc: `On path to fields 7`,
+		areaName: `Kobold Living Area`, //change area name
+		desc: `Makeshift pelt beds are scattered all around. Against the wall is a small cage made from sticks. Inside the cage are the bones of a rat.`,
 		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			west: true,
@@ -31942,7 +34481,7 @@ let koboldCavesRoom24 = new AreaMaker( //change name
 	(descriptions = {
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Living Area`, //change area name
-		desc: `Well worn stone has been smoothed out from the many years of use.`,
+		desc: `The stone floor has been smoothed out from the many years of use. There's no telling how many generations of kobolds have lived and died here.`,
 		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			north: true,
@@ -31976,7 +34515,7 @@ let koboldCavesRoom25 = new AreaMaker( //change name
 	(descriptions = {
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Dwelling`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		desc: `A few makeshift bows and arrows are laying on the ground here. Their craftsmanship is so poor that they're not even worth using or selling.`,
 		zoneType: "kobold_cave_main",
 		zoneExitsBool: {
 			east: true,
@@ -32007,8 +34546,8 @@ let koboldCavesRoom26 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `On path to fields 7`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `Heading Down A Dark Tunnel`, //change area name
+		desc: `The tunnel here is barely lit. Though, the ground is much cleaner than the rest of the tunnels.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
@@ -32040,8 +34579,8 @@ let koboldCavesRoom27 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `On path to fields 7`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `Rounding A Dark Tunnel`, //change area name
+		desc: `You have to feel your way through the tunnel as it curves around. You can hear kobold activity in what sounds like is coming from below you.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			southeast: true,
@@ -32073,8 +34612,8 @@ let koboldCavesRoom28 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `On path to fields 7`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `At The Top Of A Steep Incline`, //change area name
+		desc: `You stand at the top of a steep incline. At the bottom, you see flickering torchlight and low murmers of kobolds.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			northwest: true,
@@ -32106,8 +34645,8 @@ let koboldCavesFloor2Room1 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `Kobold Cave Floor 2 Entrance`, //change area name
+		desc: `The cave on this lower level is much better lit. The paths are wider and better kept. You hear the sounds of an underwater stream flowing from somewhere on this lower level.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			west: true,
@@ -32139,8 +34678,8 @@ let koboldCavesFloor2Room2 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `Heading Down A Wide Tunnel`, //change area name
+		desc: `The tunnel widens even further, and the walls here are decorated with small skulls in a variety of shapes. Most appear to be smaller creatures, but a few look to be humanoid.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
@@ -32172,8 +34711,8 @@ let koboldCavesFloor2Room3 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `At A Branch In The Cave`, //change area name
+		desc: `The sound of flowing water grows as you are met with its source to the north. A shoddily stitched patchwork pelt rug covers the entire floor here and extends westward.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
@@ -32206,8 +34745,8 @@ let koboldCavesFloor2Room4 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `Overlooking A Steep Dropoff`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `Overlooking The Cave Creek`, //change area name
+		desc: `The water is too deep to wade through, and too dark past a certain point to swim through. Across the creek is a platform of stone. Perhaps if you were agile enough, you could jump across to the other side.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			south: true,
@@ -32238,8 +34777,8 @@ let koboldCavesFloor2Room5 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `At A Bend In The Cave`, //change area name
+		desc: `The light grows brighter as do the sounds of kobolds as you trek westward. With the sounds of water flowing in the background, you can't get a good read on how close you might be to the kobolds.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			east: true,
@@ -32271,8 +34810,9 @@ let koboldCavesFloor2Room6 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'buildingWood',
-		areaName: `At The Bottom Of Uneven Stone Stairs`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		areaName: `Outside A Large Chamber`, //change area name
+		desc: `You now see the source of the noises. To the north, you see a much larger kobold, decorated with a skull headdress, colored rags, and a human sized spear, sitting at the back of the chamber.`,
+		desc: `You can only see as much of the room to the north as the tunnel walls allow you to see, but it appears to be the chambers of a kobold of higher importance. The pelt rugs on the floor are cleaner than the other ones you've seen, and the walls are adorned with several bone necklaces and figurines.`,
 		zoneType: "kobold_cave_tunnels",
 		zoneExitsBool: {
 			north: true,
@@ -32305,7 +34845,7 @@ let koboldCavesFloor2Room7 = new AreaMaker( //change name
 	(descriptions = {
 		areaNameClass: 'buildingWood',
 		areaName: `Kobold Chief Chambers`, //change area name
-		desc: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`,
+		desc: `As you enter the room, you realize that this is in fact the chambers of the kobold chief. Along the walls are scavenged weapons and various pieces of armor scraps. On the back wall is the mounted head of a gnoll, likely a display of the toughest creature they've killed. The Kobold Chief is twice the size of any other kobold you've seen. It has equipped a decorated skull headdress, colored rags, and a human sized spear.`,
 		zoneType: "kobold_cave_chief_room",
 		zoneExitsBool: {
 			south: true,
@@ -32386,7 +34926,7 @@ let trainingHallsCombatHalls1 = new AreaMaker( //change name
 		areaNameClass: 'yellow',
 		areaName: `Advanced Combat Study Halls`, //change area name
 		zoneType: 'galvadia_advanced_training_rooms',
-		desc: `You see more higher level guild prospects and even recently inducted guild members studying here. There are statues stanced in specific combat poses, demonstrating proper technique of various abilities.`,
+		desc: `Paintings and drawings line the hall, each one showing a series of movements to illustrate proper technique. A rectangular column stands in the middle of the hall, displaying information about the what each room covers.`,
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -32405,27 +34945,36 @@ let trainingHallsCombatHalls1 = new AreaMaker( //change name
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-		sign: function() {
+		column: function() {
 			let line1 = lineFunc()
 			let line2 = lineFunc()
 			let line3 = lineFunc()
+			let line4 = lineFunc()
 			blankSpace()
-			customizeEachWord(`The sign reads: `, 'white', line1)
-			customizeEachWord(`ADVANCED COMBAT TRAINING HALLS`, 'white', line2)
+			customizeEachWord(`The column reads: `, 'red', line1)
+			customizeEachWord(`The room to the west explains in detail how attributes work and what all they have an effect on.`, 'white', line2)
+			customizeEachWord(`The room to the east provides advanced information about weapon skills and what they do.`, 'white', line3)
+			customizeEachWord(`The hall to the north leads to a room that details information about swing types, armor types, armor penetration, and weight and burden.`, 'white', line4)
 			blankSpace()
 		},
-		actionWord: ['sign']
+		actionWord: ['column']
 	}),
 	{
-		sign: {
-			names: ['sign'],
+		column: {
+			names: ['column'],
 			color: function() {
-				return 'light-brown'
+				return 'red'
 			},
 			desc: function() {
 				let line1 = lineFunc()
+				let line2 = lineFunc()
+				let line3 = lineFunc()
+				let line4 = lineFunc()
 				blankSpace()
-				customizeEachWord(`A large decorated sign hangs from the ceiling. On one side is a heavily geared Warrior surrounded by monsters. On the other side is the Warrior standing amongst bodies of dead monsters.`, 'white', line1)
+				customizeEachWord(`The column reads: `, 'red', line1)
+				customizeEachWord(`The room to the west explains in detail how attributes work and what all they have an effect on.`, 'white', line2)
+				customizeEachWord(`The room to the east provides advanced information about weapon skills and what they do.`, 'white', line3)
+				customizeEachWord(`The hall to the north leads to a room that details information about swing types, armor types, armor penetration, and weight and burden.`, 'white', line4)
 				blankSpace()
 			}
 		}
@@ -32548,9 +35097,9 @@ let trainingHallEntryMessHall = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'training-halls',
-		areaName: `Training Hall entry to the Mess Hall`, //change area name
+		areaName: `Training Halls Entrance`, //change area name
 		zoneType: 'galvadia_training_halls_common_room',
-		desc: `The entryway is full of echoing chatter coming from the common room. Painting of various guild leaders line the hall. One painting depicts five people in a heated battle against a group of similar looking figures.`,
+		desc: `The entrance of the Training Halls is surrounded on three sides by the building itself. A set of statues depicting fighting and spell casting poses line the way leading to the stairs. Atop the stairs, you are met with a heavy wooden door.`,
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -32583,7 +35132,7 @@ let trainingHallEntry34525234 = new AreaMaker( //change name
 		areaNameClass: castleGrey,
 		areaName: `Nearing The Training Halls`, //change area name
 		zoneType: 'galvadia_training_halls_common_room',
-		desc: `Rounding the cobblestone path, you stand in a small courtyard in front of the Training Halls. Trees line the area providing just enough shade to cover the ground.`,
+		desc: `Rounding the circle to the east, the road splits off and leads to the entrance of the Training Halls. Rows of small trees line the path as it leads into the alcoved courtyard.`,
 		zoneExitsBool: {
 			northwest: true,
 			east: true,
@@ -33601,7 +36150,7 @@ let galvadia_fields_north_1 = new AreaMaker( //change name
 			blankSpace()
 			customizeEachWord(`The sign reads: `, 'white', line1)
 			customizeEachWord(`Northeast: Goblin Hills`, 'bold', line2)
-			customizeEachWord(`Northwest: Gnoll Fields`, 'bold', line3)
+			customizeEachWord(`Northwest: Gnoll Plains`, 'bold', line3)
 			blankSpace()
 		},
 		zoneExitsBool: {
@@ -33632,7 +36181,7 @@ let galvadia_fields_north_1 = new AreaMaker( //change name
 		}
 	}
 )
-let gnollFields1 = new AreaMaker( //change name
+let gnollPlains1 = new AreaMaker( //change name
 	0,
 	true,
 	[],
@@ -33644,7 +36193,7 @@ let gnollFields1 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 1`, //change area name
+		areaName: `Gnoll Plains 1`, //change area name
 		zoneType: 'galvadia_fields_north',
 		desc: `The path here looks lightly travelled. It slopes slightly downward between two hills for nearly a mile until it meets the entrance to the plains.`,
 		zoneExitsBool: {
@@ -33665,11 +36214,11 @@ let gnollFields1 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields2 = new AreaMaker( //change name
+let gnollPlains2 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-22, //change x coord
 	11, //change y coord
@@ -33677,9 +36226,9 @@ let gnollFields2 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 2`, //change area name
+		areaName: `Gnoll Plains Entrance`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll tents.`,
+		desc: `The grass here grows up higher than your head as you enter deep into the Gnoll Plains. If you were to wander off the trail into the grass, you could get lost for days. The trails north and west are jaggedly cut to knee height of a Human and wide enough for several wagons.`,
 		zoneExitsBool: {
 			north: true,
 			southeast: true,
@@ -33699,11 +36248,11 @@ let gnollFields2 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields4 = new AreaMaker( //change name
+let gnollPlains4 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-22, //change x coord
 	12, //change y coord
@@ -33711,12 +36260,11 @@ let gnollFields4 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 4`, //change area name
+		areaName: `On A Wide Trail Through The Plains`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 4.`,
+		desc: `Streaks of red stripe their way through the trail. The the middle of the trail is matted, as if something large has been dragged through.`,
 		zoneExitsBool: {
-			northwest: true,
-			northeast: true,
+			north: true,
 			south: true,
 		},
 		zoneExits: [],
@@ -33733,24 +36281,24 @@ let gnollFields4 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields5 = new AreaMaker( //change name
+let gnollPlains5 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
-	-21, //change x coord
+	-22, //change x coord
 	13, //change y coord
 	0,
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 5`, //change area name
+		areaName: `Continuing On A Trail Deep In The Plains`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 5.`,
+		desc: `As the grass waves with the wind, you see shapes appear and disappear through the grass..`,
 		zoneExitsBool: {
 			north: true,
-			southwest: true,
+			south: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -33766,23 +36314,23 @@ let gnollFields5 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields6 = new AreaMaker( //change name
+let gnollPlains6 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
-	-21, //change x coord
+	-22, //change x coord
 	14, //change y coord
 	0,
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 6`, //change area name
+		areaName: `At A Bend In The Trail`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 6.`,
+		desc: `Gnoll footprints embedded in the matted grass mark along the path. On the north side, a section of the grass wall is beaten down, showing signs of activity leading into the depths of the plains.`,
 		zoneExitsBool: {
-			north: true,
+			northwest: true,
 			south: true,
 		},
 		zoneExits: [],
@@ -33799,145 +36347,12 @@ let gnollFields6 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields7 = new AreaMaker( //change name
+
+let gnollPlains11 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
-	areaIdGenerator(),
-	-21, //change x coord
-	15, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 7`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 7.`,
-		zoneExitsBool: {
-			north: true,
-			east: true,
-			south: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields8 = new AreaMaker( //change name
-	0,
 	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-21, //change x coord
-	16, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 8`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 8.`,
-		zoneExitsBool: {
-			east: true,
-			south: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields9 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-20, //change x coord
-	15, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 9`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 9.`,
-		zoneExitsBool: {
-			north: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields10 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-22, //change x coord
-	15, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 10`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 10.`,
-		zoneExitsBool: {
-			east: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields11 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
 	areaIdGenerator(),
 	-23, //change x coord
 	15, //change y coord
@@ -33945,11 +36360,11 @@ let gnollFields11 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 11`, //change area name
+		areaName: `Gnoll Plains 11`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 11.`,
+		desc: `The streaks of blood in the grass continue. The trail looks to be a highway of sorts for the Gnolls, possibly for transporting their kills from the plains to their camps.`,
 		zoneExitsBool: {
-			east: true,
+			southeast: true,
 			west: true,
 		},
 		zoneExits: [],
@@ -33966,11 +36381,11 @@ let gnollFields11 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields12 = new AreaMaker( //change name
+let gnollPlains12 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-24, //change x coord
 	15, //change y coord
@@ -33978,80 +36393,11 @@ let gnollFields12 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 12`, //change area name
+		areaName: `Gnoll Plains 12`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 12.`,
+		desc: ``,
 		zoneExitsBool: {
-			east: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields13 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-25, //change x coord
-	15, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 13`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 13.`,
-		zoneExitsBool: {
-			north: true,
-			east: true,
-			southeast: true,
-			south: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields14 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-26, //change x coord
-	15, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 14`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 14.`,
-		zoneExitsBool: {
-			north: true,
+			northwest: true,
 			east: true,
 			southwest: true,
 		},
@@ -34069,11 +36415,214 @@ let gnollFields14 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields15 = new AreaMaker( //change name
+let gnollPlains13 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
+	areaIdGenerator(),
+	-25, //change x coord
+	17, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 13`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 13.`,
+		zoneExitsBool: {
+			south: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains14 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-26, //change x coord
+	17, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 14`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 14.`,
+		zoneExitsBool: {
+			east: true,
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+
+let gnollPlains1_5 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-26, //change x coord
+	13, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 15`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 15.`,
+		zoneExitsBool: {
+			east: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+
+let gnollPlains17 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-27, //change x coord
+	13, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 16`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 16.`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+			south: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains18 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-27, //change x coord
+	12, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 16`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 16.`,
+		zoneExitsBool: {
+			northwest: true,
+			north: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains19 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-28, //change x coord
+	13, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 16`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 16.`,
+		zoneExitsBool: {
+			northeast: true,
+			east: true,
+			southeast: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains20 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
 	areaIdGenerator(),
 	-27, //change x coord
 	14, //change y coord
@@ -34081,177 +36630,9 @@ let gnollFields15 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 15`, //change area name
+		areaName: `Gnoll Plains 16`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 15.`,
-		zoneExitsBool: {
-			northeast: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields16 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-28, //change x coord
-	14, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 16`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 16.`,
-		zoneExitsBool: {
-			east: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields17 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-29, //change x coord
-	14, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 16`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 16.`,
-		zoneExitsBool: {
-			north: true,
-			east: true,
-			south: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields18 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-29, //change x coord
-	13, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 16`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 16.`,
-		zoneExitsBool: {
-			northwest: true,
-			north: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields19 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-30, //change x coord
-	14, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 16`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 16.`,
-		zoneExitsBool: {
-			northeast: true,
-			east: true,
-			southeast: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields20 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-29, //change x coord
-	15, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 16`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 16.`,
+		desc: `Gnoll Plains 16.`,
 		zoneExitsBool: {
 			south: true,
 			southwest: true,
@@ -34270,11 +36651,11 @@ let gnollFields20 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields21 = new AreaMaker( //change name
+let gnollPlains21 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-25, //change x coord
 	16, //change y coord
@@ -34282,10 +36663,79 @@ let gnollFields21 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 13`, //change area name
+		areaName: `Gnoll Plains 13`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 13.`,
+		desc: `Gnoll Plains 13.`,
 		zoneExitsBool: {
+			north: true,
+			southeast: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+
+
+let gnollPlains24 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-25, //change x coord
+	14, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 24`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 24.`,
+		zoneExitsBool: {
+			northeast: true,
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains25 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-25, //change x coord
+	13, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 25`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 25.`,
+		zoneExitsBool: {
+			north: true,
 			south: true,
 			west: true,
 		},
@@ -34303,145 +36753,11 @@ let gnollFields21 = new AreaMaker( //change name
 		},
 	})
 )
-
-let gnollFields22 = new AreaMaker( //change name
+let gnollPlains26 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
-	areaIdGenerator(),
-	-24, //change x coord
-	14, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 22`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 22.`,
-		zoneExitsBool: {
-			northwest: true,
-			southeast: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields23 = new AreaMaker( //change name
-	0,
 	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-23, //change x coord
-	13, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 23`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 23.`,
-		zoneExitsBool: {
-			northwest: true,
-			southeast: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-
-let gnollFields24 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-25, //change x coord
-	14, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 24`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 24.`,
-		zoneExitsBool: {
-			north: true,
-			south: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields25 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-25, //change x coord
-	13, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 25`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 25.`,
-		zoneExitsBool: {
-			north: true,
-			south: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields26 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
 	areaIdGenerator(),
 	-25, //change x coord
 	12, //change y coord
@@ -34449,12 +36765,12 @@ let gnollFields26 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 26`, //change area name
+		areaName: `Gnoll Plains 26`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 26.`,
+		desc: `Gnoll Plains 26.`,
 		zoneExitsBool: {
 			north: true,
-			south: true,
+			southeast: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -34470,122 +36786,21 @@ let gnollFields26 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields27 = new AreaMaker( //change name
+let gnollPlains27 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-25, //change x coord
-	11, //change y coord
+	9, //change y coord
 	0,
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 26`, //change area name
+		areaName: `Gnoll Plains 26`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 26.`,
-		zoneExitsBool: {
-			north: true,
-			east: true,
-			south: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields28 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-26, //change x coord
-	11, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 26`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 26.`,
-		zoneExitsBool: {
-			south: true,
-			east: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields32 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-26, //change x coord
-	10, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 26`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 26.`,
-		zoneExitsBool: {
-			north: true,
-			east: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
-let gnollFields29 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-25, //change x coord
-	10, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 26`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 26.`,
+		desc: `Gnoll Plains 26.`,
 		zoneExitsBool: {
 			north: true,
 			west: true,
@@ -34604,11 +36819,109 @@ let gnollFields29 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields30 = new AreaMaker( //change name
+let gnollPlains28 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
+	areaIdGenerator(),
+	-26, //change x coord
+	9, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 26`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 26.`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains32 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-26, //change x coord
+	10, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 26`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 26.`,
+		zoneExitsBool: {
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains29 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
+	areaIdGenerator(),
+	-25, //change x coord
+	10, //change y coord
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'light-brown',
+		areaName: `Gnoll Plains 26`, //change area name
+		zoneType: 'galvadia_fields_north',
+		desc: `Gnoll Plains 26.`,
+		zoneExitsBool: {
+			northeast: true,
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let gnollPlains30 = new AreaMaker( //change name
+	0,
+	true,
+	[],
+	true,
 	areaIdGenerator(),
 	-24, //change x coord
 	11, //change y coord
@@ -34616,12 +36929,13 @@ let gnollFields30 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 30`, //change area name
+		areaName: `Gnoll Plains 30`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 30.`,
+		desc: `Gnoll Plains 30.`,
 		zoneExitsBool: {
+			northwest: true,
 			east: true,
-			west: true,
+			southwest: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -34637,11 +36951,11 @@ let gnollFields30 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields31 = new AreaMaker( //change name
+let gnollPlains31 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-23, //change x coord
 	11, //change y coord
@@ -34649,9 +36963,9 @@ let gnollFields31 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 31`, //change area name
+		areaName: `Gnoll Plains 31`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 31.`,
+		desc: `Gnoll Plains 31.`,
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -34670,11 +36984,11 @@ let gnollFields31 = new AreaMaker( //change name
 		},
 	})
 )
-let gnollFields33 = new AreaMaker( //change name
+let gnollPlains33 = new AreaMaker( //change name
 	0,
 	true,
 	[],
-	false,
+	true,
 	areaIdGenerator(),
 	-26, //change x coord
 	16, //change y coord
@@ -34682,12 +36996,11 @@ let gnollFields33 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 13`, //change area name
+		areaName: `North Gnoll Camp`, //change area name
 		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 13.`,
+		desc: `In the center of the camp is a large fire.`,
 		zoneExitsBool: {
-			east: true,
-			south: true,
+			north: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -34704,39 +37017,11 @@ let gnollFields33 = new AreaMaker( //change name
 	})
 )
 
-let gnollFields34 = new AreaMaker( //change name
-	0,
-	true,
-	[],
-	false,
-	areaIdGenerator(),
-	-20, //change x coord
-	16, //change y coord
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: 'light-brown',
-		areaName: `Gnoll Fields 9`, //change area name
-		zoneType: 'galvadia_fields_north',
-		desc: `Gnoll Fields 9.`,
-		zoneExitsBool: {
-			south: true,
-			west: true,
-		},
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
+
+gnollPlains1.onEntry = function() {spawnMonsterOnEntry([{enemy: gnollSkirmisher, probability: 10}, {enemy: gnollBrawler, probability: 10}, {enemy: gnollBrute, probability: 10}, {enemy: gnollPackLeader, probability: 10}])}
+gnollPlains2.onEntry = function() {spawnMonsterOnEntry([{enemy: gnollSkirmisher, probability: 10}, {enemy: gnollBrawler, probability: 10}, {enemy: gnollBrute, probability: 10}, {enemy: gnollPackLeader, probability: 10}])}
+gnollPlains4.onEntry = function() {spawnMonsterOnEntry([{enemy: gnollSkirmisher, probability: 10}, {enemy: gnollBrawler, probability: 10}, {enemy: gnollBrute, probability: 10}, {enemy: gnollPackLeader, probability: 10}])}
+gnollPlains5.onEntry = function() {spawnMonsterOnEntry([{enemy: gnollSkirmisher, probability: 10}, {enemy: gnollBrawler, probability: 10}, {enemy: gnollBrute, probability: 10}, {enemy: gnollPackLeader, probability: 10}])}
 
 let galvadia_fields_north_2 = new AreaMaker( //change name
 	0,
@@ -34754,7 +37039,7 @@ let galvadia_fields_north_2 = new AreaMaker( //change name
 		zoneType: 'galvadia_fields_north',
 		desc: `As you approach the West Castle Gatehouse, towering stone walls rise before you. The heavy wooden gates stand tall, adorned with intricate ironwork. Guards in shining armor keep a watchful eye, ensuring the security of the castle grounds.
 		There is a sign here.`,
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -35645,9 +37930,70 @@ let trainingHallsCombatRoom3 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'light-blue',
-		areaName: `Attributes: Secondary Benefits`,
+		areaName: `Swing Types | Armor Types | Armor Penetration | Weight and Burden`,
 		zoneType: 'galvadia_advanced_training_rooms',
-		desc: `Strength: Strength`,
+		desc: `There are various plaques around the room with detailed information about armor, weight, and burden.
+		There is a Swing-Types plaque here.
+		There is an Armor-Types plaque here.
+		There is an Damage-Types plaque here.
+		There is a Weight plaque here.
+		`,
+		"swing-types": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`SWING TYPES`, 'yellow', line2)
+			customizeEachWord(`There are 3 swing types: slashing, piercing, and blunt. You can inspect your weapon to see its available swing types. If your weapon is a slashing weapon, you can only perform slashing attacks. If your weapon is slashing/piercing, you can perform both slashing and piercing attacks. Your swing type is chosen at random from your weapon each time you swing. Enemies also have the ability to use different swing types. Their swing types are predetermined and will always be the same for each enemy type. For example, a Grassling will always have only a slashing swing while Mudlings will only ever have a blunt swing.`, 'white', line3)
+			blankSpace()
+		},
+		"armor-types": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plauqe reads: `, 'white', line1)
+			customizeEachWord(`ARMOR TYPES`, 'yellow', line2)
+			customizeEachWord(`There are 3 types of armor: plate, leather, and cloth.`, 'white', line3)
+			customizeEachWord(`Warrior classes should always wear plate armor when available, but they can make use of leather armor if they need to.`, 'white', line4)
+			customizeEachWord(`Rogue classes should always wear leather armor. Plate armor is very heavy, and Rogues do not invest in enough Strength to be able to offset the burden penalty.`, 'white', line5)
+			customizeEachWord(`Monk classes have the most variability in the armor they can wear because their attack power benefits equally from Strength, Dexterity, and Agility allowing Monks who invest in Strength to wear some plate armor (shouldn't invest everything into it). Mystic Monks and Elemental Monks can wear a mix of leather and cloth armor because they utilize Mysticism which can be found on cloth armor.`, 'white', line6)
+			customizeEachWord(`Ranger classes should always wear leather armor. Plate armor is very heavy, and Rangers should not invest attribute points into Strength.`, 'white', line7)
+			customizeEachWord(`Mage classes should always wear cloth armor, but they can wear the occasional leather piece if they need to fill a slot. Cloth armor is an important source of Mage stats.`, 'white', line8)
+			blankSpace()
+		},
+		"damage-types": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`DAMAGE TYPES:`, 'yellow', line2)
+			customizeEachWord(`There are 3 damage types: slashing, piercing, and blunt. When a slashing, piercing, or blunt swing lands, its damage is matched against the armor of its type. For example, if you swing a slashing/piercing weapon at an enemy that has 100 slashing armor and 0 piercing armor and the slashing swing type is chosen, the damage dealt to the enemy will be matched against the enemy's slashing armor. If you swing again and the piercing swing type is chosen, it will be matched against the enemy's piercing armor. In this case, the enemy has 0 piercing armor and will not mitigate any damage.`, 'white', line3)
+			customizeEachWord(`There are 3 armor penetration types: slashing, piercing, and blunt. Each point of penetration will negate the enemy's armor type by that amount. If an enemy has 15 slashing armor, and you have 15 slashing penetration, that will reduce their slashing armor to 0. `, 'white', line4)
+			blankSpace()
+		},
+		"weight": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`WEIGHT AND BURDEN`, 'yellow', line2)
+			customizeEachWord(`Weight is how heavy you are when adding up the weight of all your equipped weapons and armor (inventory is not factored into weight). Weight on its own is not penalizing, but if you don't have enough Strength, you will receive a Burden penalty. Having a Burden penalty will decrease your dodge, accuracy, and your swing speed. So it's very important to make sure you avoid having any Burden.`, 'white', line3)
+			customizeEachWord(`Warrior classes naturally invest attribute points into Strength to increase their damage, so they don't have to worry as much about Burden as other classes.`, 'white', line4)
+			customizeEachWord(`Rogue and Ranger classes should only invest in Strength enough to offset a burden penalty, if there is one. Daggers and leather armor is light enough to not need to invest very much Strength to offset the penalty.`, 'white', line5)
+			customizeEachWord(`Because cloth armor has no weight, Mage classes only need to invest a few points into Strength to offset the burden penalty of their weapon if they have one.`, 'white', line6)
+			blankSpace()
+		},
 		zoneExitsBool: {
 			east: true,
 		},
@@ -35663,7 +38009,39 @@ let trainingHallsCombatRoom3 = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		actionWord: [
+			'Swing-Types',
+			'Armor-Types', 
+			'Damage-Types',
+			'Weight'
+		]
+	}),
+	{
+		"Swing-Types": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Armor-Types": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Damage-Types": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Weight": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+	},
 )
 let trainingHallsCombatRoom4 = new AreaMaker( //change name
 	0,
@@ -35677,7 +38055,7 @@ let trainingHallsCombatRoom4 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-blue',
-		areaName: `Defensive Attributes`, //change area name
+		areaName: `Defense Weight and Burden`, //change area name
 		zoneType: 'galvadia_advanced_training_rooms',
 		desc: `Attack, armor, and penetration types: 
 		There are three attack types that are possible for both you and enemies: slashing, piercing, and blunt swings. Your attack type is determined by your weapon. You can check what type a weapon is by examining or inspecting it. If you swing with a weapon that has only one swing type, you will always swing that type, and your weapon's damage will be matched against the enemy's armor of that type. This works the same for an enemy attacking you. If an enemy swings at you with a slashing attack, its damage will be matched against your slashing armor: piercing attack against piercing armor, and blunt attack against blunt armor. The way in which your attack type is determined if your weapon has multiple swing types, say it's a slashing and piercing type, is random. If it's a slashing and piercing type, there is a 50/50 chance of swinging either type. If your weapon happens to have three swing types (very rare circumstances), then there would be an even split chance amongst all three types.
@@ -35712,10 +38090,135 @@ let trainingHallsCombatRoom1 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-blue',
-		areaName: `Advanced Combat`, //change area name
+		areaName: `Advanced Attributes Room`, //change area name
 		zoneType: 'galvadia_advanced_training_rooms',
-		desc: `: .
-		.`,
+		desc: `There are various plaques around the room with detailed information about attributes.
+		There is an Attributes plaque here.
+		There is a Strength plaque here.
+		There is a Dexterity plaque here.
+		There is an Agility plaque here.
+		There is an Intelligence plaque here.
+		There is a Wisdom plaque here.
+		There is a Mysticism plaque here.
+		There is a Constitution plaque here.
+		`,
+		"attributes": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			let line6 = document.createElement('div')
+			let line7 = document.createElement('div')
+			let line8 = document.createElement('div')
+			let line9 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`ATTRIBUTES OVERVIEW`, 'yellow', line2)
+			customizeEachWord(`Attributes directly influence the values of your combat and defense stats. Most attributes have a secondary benefit which is an important factor in deciding which stat you want to increase. See each individual plaque to read about their secondary benefits.`, 'white', line3)
+			blankSpace()
+			customizeEachWord(`Physical damage classes`, 'white', line4)
+			customizeEachWord(`Strength, Dexterity, and Agility will increase your attack power by varying amounts for all weapon skill types. For example, Strength is the primary stat to increase your attack power when using two-handed weapons. Dexterity and Agility will also increase your attack power for two-handed weapons, but it requires raising them a few times before you will see an increase in attack power. To learn more about what stats influence weapon skill types, visit the Advanced Weapon Skills room.`, 'white', line5)
+			blankSpace()
+			customizeEachWord(`Magic damage classes`, 'white', line6)
+			customizeEachWord(`Intelligence is the primary stat that increases your Spellpower for Mage classes.`, 'white', line7)
+			customizeEachWord(`Mysticism is the primary stat that increases your Mysticpower which incresases the healing amount of your spells, the effectiveness of defensive spells, and the strength of magic attacks from Monks.`, 'white', line8)
+			customizeEachWord(`Wisdom is the primary stat for increasing your mana resource. It also increases your Spellpower and Mysticpower by a small amount.`, 'white', line9)
+			blankSpace()
+		},
+		"strength": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plauqe reads: `, 'white', line1)
+			customizeEachWord(`STRENGTH: Secondary Benefits`, 'yellow', line2)
+			customizeEachWord(`Strength `, 'white', line4)
+			customizeEachWord(`reduces your `, 'white', line4)
+			customizeEachWord(`burden `, 'white', line4)
+			customizeEachWord(`(read burden-plaque to the east) allowing you to wear heavier armor without penalty. Each point of `, 'white', line4)
+			customizeEachWord(`Strength `, 'white', line4)
+			customizeEachWord(`will reduce your burden by 5.`, 'white', line4)
+			blankSpace()
+		},
+		"dexterity": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`DEXTERITY: Secondary Benefits`, 'yellow', line2)
+			customizeEachWord(`Dexterity increases your accuracy equally for all weapon types.`, 'white', line3)
+			blankSpace()
+		},
+		"agility": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`AGILITY: Secondary Benefits`, 'yellow', line2)
+			customizeEachWord(`Agility increases your dodge equally for all classes.`, 'white', line3)
+			blankSpace()
+		},
+		"intelligence": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`INTELLIGENCE: Secondary Benefits`, 'yellow', line2)
+			customizeEachWord(`There are no direct secondary benefits from Intelligence. Some non-Mage spells may benefit some from Intelligence, but that will be explicitly stated in the spell's description.`, 'white', line3)
+			blankSpace()
+		},
+		"wisdom": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`WISDOM: Secondary Benefits`, 'yellow', line2)
+			customizeEachWord(`Wisdom increases Spellpower and Mysticpower by a small amount.`, 'white', line3)
+			blankSpace()
+			blankSpace()
+		},
+		"mysticism": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`MYSTICISM: Secondary Benefits`, 'yellow', line2)
+			customizeEachWord(`There are no direct secondary benefits from Mysticism.`, 'white', line3)
+			blankSpace()
+		},
+		"constitution": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`CONSTITUTION: Secondary Benefits`, 'yellow', line2)
+			customizeEachWord(`There are no direct secondary benefits from Constitution.`, 'white', line3)
+			blankSpace()
+			blankSpace()
+		},
 		zoneExitsBool: {
 			east: true,
 		},
@@ -35731,7 +38234,67 @@ let trainingHallsCombatRoom1 = new AreaMaker( //change name
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
+		actionWord: [
+			'Attributes',
+			'Strength', 
+			'Dexterity', 
+			'Agility', 
+			'Intelligence', 
+			'Wisdom', 
+			'Mysticism', 
+			'Constitution', 
+		]
 	}),
+	{
+		"Attributes": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Strength": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Dexterity": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Agility": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Intelligence": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Wisdom": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Mysticism": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Constitution": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		}
+	},
 )
 
 let trainingHallsCombatRoom2 = new AreaMaker( //change name
@@ -35746,18 +38309,103 @@ let trainingHallsCombatRoom2 = new AreaMaker( //change name
 	0,
 	(descriptions = {
 		areaNameClass: 'light-blue',
-		areaName: `Combat Stats`, //change area name
+		areaName: `Advanced Weapon Skill Room`, //change area name
 		zoneType: 'galvadia_advanced_training_rooms',
-		desc: `Attack: This is the primary stat that influences your damage. Each weapon skill utilizes different stats in order to calculate attack:
-		Unarmed: Each point of either Str, Dex, or Agi will raise your attack by 1
-		One Handed Weapons: Each point of Str or Dex will raise your attack by 1
-		Two Handed Weapons: Each point of Str will increase your attack by 2
-		Daggers: Each point of Dex or Agi will increase your attack by 1
-		Bows: Each point of Dex or Agi will increase your attack by 1
-
-		Speed: This is the speed at which you can swing your weapon for regular attacks. It can only be lowered by training your weapon skill, and the fastest swing you can acquire is two seconds.
-		Accuracy: Your accuracy represents your percent chance of hitting an enemy with 0 dodge and the same level as you. Accuracy is increased primarily through the Dexterity attribute, but is also increased by training your weapon skill. Some guilds offer additional skills that will increase your accuracy as well.
-		Dodge: Dodge is similar to accuracy in that in that it represents your percent chance of dodging an enemy's regular attack that has 0 accuracy and the same level as you. Dodge is increased primarily through the Agility attribute, and various skills typically taught by trainers of the Rogue's Guild.`,
+		desc: `There are various plaques around the room with detailed information about weapon skills.
+		There is a Weapon-Skill plaque here.
+		There is a Two-Handed weapons plaque here.
+		There is a One-Handed weapons plaque here.
+		There is a Daggers plaque here.
+		There is a Unarmed plaque here.
+		There is a Bows plaque here.
+		`,
+		"weapon-skill": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The plaque reads: `, 'white', line1)
+			customizeEachWord(`WEAPON SKILLS OVERVIEW`, 'yellow', line2)
+			customizeEachWord(`Your current weapon skill is determined by the weapons you're wielding. If you're wielding a two-handed weapon, your attacks will based on your two-handed weapon skill level. If you are wielding a single dagger or dual wielding daggers, your attacks will be based on your Daggers skill. To use the Unarmed weapon skill, you must either equip fist weapons or both hands must be empty. If you dual wield two different weapon types (you should never do this), your weapon skill will be based on the weapon you're wielding in your right hand.`, 'white', line3)
+			blankSpace()
+		},
+		"two-handed": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`Two-handed `, 'green', line1)
+			customizeEachWord(`weapon skill`, 'white', line1)
+			customizeEachWord(`Attack Power: The primary attribute for raising your attack power with two-handed weapons is Strength. You will gain 1 point of attack power for each point of Strength. You will gain 1 attack power for every 4 Dexterity or Agility combined (i.e. 1 Dex and 3 Agi, 2 Dex and 2 Agi, etc).`, 'white', line2)
+			customizeEachWord(`Speed: Weapon skill is the only skill that increases your attack speed making it one of the most important skills you can learn. This should be learned as high as possible before learning any other skills.`, 'white', line3)
+			customizeEachWord(`Accuracy: Increasing your weapon skill level will also increase your accuracy for that skill by a small amount.`, 'white', line4)
+			customizeEachWord(`Berserkers are the only class to utilize two-handed weapons. Because they wear heavy armor and are geared towards dealing damage while taking damage, Dexterity should take priority over Agility as a secondary stat. Dexterity provides an increase in accuracy for all weapon skills and Agility provides a bonus to dodge rating.`, 'white', line5)
+			blankSpace()
+		},
+		"one-handed": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`One-handed `, 'green', line1)
+			customizeEachWord(`weapon skill`, 'white', line1)
+			customizeEachWord(`Attack Power: The primary attributes for raising your attack power with one-handed weapons is both Strength and Dexterity equally. You will gain 1 point of attack power for every 2 points of Strength or Dexterity combined (i.e. 1 points of Strength and 1 point of Dexterity will raise your attack power by 1). You will gain 1 attack power for every 4 points of Agility.`, 'white', line2)
+			customizeEachWord(`Speed: Weapon skill is the only skill that increases your attack speed making it one of the most important skills you can learn. This should be learned as high as possible before learning any other skills.`, 'white', line3)
+			customizeEachWord(`Accuracy: Increasing your weapon skill level will also increase your accuracy for that skill by a small amount.`, 'white', line4)
+			customizeEachWord(`Determining which stat to raise can be situational. If you can wear the armor you want to wear without a burden penalty, then you will get more benefit from raising Dexterity. If you have any burden penalty, you will want to raise your Strength enough to negate the penalty before increasing your Dexterity. If you're a class that dual wields one-handed weapons, Dexterity is even more important because of the 10% accuracy penalty.`, 'white', line5)
+			blankSpace()
+		},
+		"daggers": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`Daggers `, 'green', line1)
+			customizeEachWord(`weapon skill`, 'white', line1)
+			customizeEachWord(`Attack Power: The primary attributes for raising your attack power with Daggers is both Dexterity and Agility equally. You will gain 1 point of attack power for every 2 points of Dexterity or Agility combined (i.e. 1 points of Dexterity and 1 point of Agility will raise your attack power by 1). You will gain 1 attack power for every 4 points of Strength.`, 'white', line2)
+			customizeEachWord(`Speed: Weapon skill is the only skill that increases your attack speed making it one of the most important skills you can learn. This should be learned as high as possible before learning any other skills.`, 'white', line3)
+			customizeEachWord(`Accuracy: Increasing your weapon skill level will also increase your accuracy for that skill by a small amount.`, 'white', line4)
+			customizeEachWord(`Rogue classes benefit well from both Dexterity and Agility. As a Rogue class, it's important to dodge attacks to mitigate damage. Rogue classes also learn skills that grant them offensive and defensive bonuses when they dodge. For this reason, Agility can be more important than Dexterity if you're not hurting for accuracy. If you can wear the armor you want to wear without a burden penalty, then you will get more benefit from raising Dexterity. Strength should only be raised to negate burden penalties, but a properly built Rogue will likely never need to increase their Strength.`, 'white', line5)
+			blankSpace()
+		},
+		"unarmed": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`Unarmed `, 'green', line1)
+			customizeEachWord(`weapon skill`, 'white', line1)
+			customizeEachWord(`Attack Power: The primary attributes for raising your attack power with Unarmed is Strength, Dexterity, and Agility equally. You will gain 1 point of attack power for every 2 points of Dexterity or Agility combined (i.e. 1 points of Dexterity and 1 point of Agility will raise your attack power by 1). You will gain 1 attack power for every 4 points of Strength.`, 'white', line2)
+			customizeEachWord(`Speed: Weapon skill is the only skill that increases your attack speed making it one of the most important skills you can learn. This should be learned as high as possible before learning any other skills.`, 'white', line3)
+			customizeEachWord(`Accuracy: Increasing your weapon skill level will also increase your accuracy for that skill by a small amount.`, 'white', line4)
+			customizeEachWord(`Rogue classes benefit well from both Dexterity and Agility. As a Rogue class, it's important to dodge attacks to mitigate damage. Rogue classes also learn skills that grant them offensive and defensive bonuses when they dodge. For this reason, Agility can be more important than Dexterity if you're not hurting for accuracy. If you can wear the armor you want to wear without a burden penalty, then you will get more benefit from raising Dexterity. Strength should only be raised to negate burden penalties, but a properly built Rogue will likely never need to increase their Strength.`, 'white', line5)
+			blankSpace()
+		},
+		"bows": function () {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			let line5 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`Bows `, 'green', line1)
+			customizeEachWord(`weapon skill`, 'white', line1)
+			customizeEachWord(`Attack Power: The primary attributes for raising your attack power with Bows is Agility and Dexterity equally. You will gain 1 point of attack power for every 2 points of Agility or Dexterity combined (i.e. 1 points of Agility and 1 point of Dexterity will raise your attack power by 1). You will gain 1 attack power for every 4 points of Strength.`, 'white', line2)
+			customizeEachWord(`Speed: Weapon skill is the only skill that increases your attack speed making it one of the most important skills you can learn. This should be learned as high as possible before learning any other skills.`, 'white', line3)
+			customizeEachWord(`Accuracy: Increasing your weapon skill level will also increase your accuracy for that skill by a small amount.`, 'white', line4)
+			customizeEachWord(`Rangers benefit equally from the secondary benefits of Agiliy and Dexterity. As a Ranger, it's important to dodge attacks to mitigate damage. You can do this by evading and attacking enemies at range, but you'll find yourself in situations where enemies swinging at you is unavoidable. In those situations, dodging their attacks is very important. Rangers have access to skills that grant them bonuses to their offense and defense when they dodge attacks.`, 'white', line5)
+			blankSpace()
+		},
 		zoneExitsBool: {
 			west: true,
 		},
@@ -35773,7 +38421,61 @@ let trainingHallsCombatRoom2 = new AreaMaker( //change name
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		actionWord: [
+			'Weapon-Skill',
+			'Two-Handed', 
+			'One-Handed', 
+			'Daggers', 
+			'Bows', 
+			'Unarmed', 
+			'Mysticism', 
+			'Constitution', 
+		]
+	}),
+	{
+		"Weapon-Skill": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Two-Handed": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"One-Handed": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Daggers": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Bows": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Unarmed": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+		"Mysticism": {
+			names: ['sign'],
+			color: function() {
+				return 'light-green'
+			},
+		},
+	},
 )
 
 ////////////////////////////////////////////////////////OLD STARTING AREA BELOW////////////////////////////////////////////////////////////////////////////////////////
@@ -36763,32 +39465,32 @@ let theShallows23 = new AreaMaker(
 		},
 	})
 )
-theShallows1.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows2.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows3.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows4.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows5.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows6.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows7.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows8.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows9.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows10.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows11.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows12.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows13.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows14.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows15.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows16.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows17.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows18.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows19.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows20.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows21.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows22.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows23.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows24.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows25.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
-theShallows26.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 10}, {enemy: stag, probability: 10}, {enemy: impling, probability: 10}])}
+theShallows1.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows2.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows3.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows4.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows5.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows6.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows7.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows8.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows9.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows7.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows11.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows12.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows13.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows14.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows15.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows16.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows17.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows18.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows19.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows20.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows21.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows22.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows23.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows24.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows25.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
+theShallows26.onEntry = function() {spawnMonsterOnEntry([{enemy: wildBoar, probability: 7}, {enemy: stag, probability: 7}, {enemy: impling, probability: 7}, {enemy: bandit, probability: 7}])}
 
 
 let centralGlade = new AreaMaker(
@@ -36804,7 +39506,7 @@ let centralGlade = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: `The Central Glade of Galvadia`,
-		desc: `Between the town and castle walls, deep within the Galvadian forest, you find yourself standing in a massive glade. The surrounding trees tower high above you, and in the very middle stands the biggest tree youve ever seen. Roots extend from the base of the tree like giant tendrils. A massive trunk extends through the top of the forest canopy, the crown blossoms beyond the glade itself. The bits of light that make its way through cast soft spotlights around the glade. Despite the lack of direct light, the forest itself glows a comforting amber.`,
+		desc: `The roots extend from the central tree like tendrils. A its trunk extends through the top of the forest canopy, the crown blossoms beyond the glade itself. Bits of light that make its way through the branches cast soft spotlights around the glade. Despite the lack of direct light, the forest itself pulses a comforting amber glow.`,
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
@@ -36844,7 +39546,7 @@ let westGladeOfGalvadia = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Traveling to the west of the Glade',
-		desc: 'Two giant trees standing opposite each other mark the end of the path leading to the glade. Heading away from the glade is a tunnel of trees extending out of sight. The branches intertwine to form an arc high above the forest path. To the west is the path back to town. To the east is the Glade of Galvadia - a massive glade the size of a small town resting inside the bowl of a very shallow crater. Though the Central Glade is a safe haven, the outskirts are known to have bandits and hostile creatures skittering about.',
+		desc: 'The entrance opens up to reveal a massive glade the size of the town square. In the middle, a tree rises above the surrounding forest, its leaves spreading across the entire expanse of the glade.',
 		zoneExitsBool: {
 			north: true,
 			northeast: false,
@@ -36852,6 +39554,13 @@ let westGladeOfGalvadia = new AreaMaker(
 			southeast: false,
 			south: true,
 			west: true,
+		},
+		zoneChange: {
+			west: function() {
+				player.x = -1
+				player.y = 0
+				player.z = 0
+			}
 		},
 		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
@@ -36880,8 +39589,8 @@ let northwestGladeOfGalvadia = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: galvadianGreen,
-		areaName: 'Northwestern edge of the Glade',
-		desc: 'Just ahead of you, a few deer are bounding around playfully. They stop briefly to look up and take note of your presence before going back to playing. Approaching them is tempting, but you think better of disrupting their play.',
+		areaName: 'Northwestern Area Of The Glade',
+		desc: 'A narrow creek winds through this part of the glade, with a small wooden bridge arching over it. The sound of water gently flowing over the rocks creates a feeling of serenity that captures the overall feel of the glade.',
 		zoneExitsBool: {
 			east: true,
 			southeast: true,
@@ -36916,7 +39625,8 @@ let northGladeOfGalvadia = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Traveling to the north side of the Glade',
-		desc: 'Heading north, you start to notice that there are fewer people around. You again become aware of the natural sounds happening around you.',
+		//A few birds flit between the branches overhead, their chirping a cheerful contrast to the quiet murmur of the water. The air is cool, with a faint scent of pine from the nearby forest.
+		desc: `A few birds flit between the branches overhead, their chirping a gentle warning to others as your presence startles them. In the forest to the north, you catch sight of movement, possibly an animal stirring in the underbrush.`,
 		zoneExitsBool: {
 			east: true,
 			southeast: true,
@@ -36953,12 +39663,23 @@ let northeastGladeOfGalvadia = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Northeastern edge of the Glade',
-		desc: 'NORTHEAST PART',
+		desc: `As you enter the area, you catch the brief scent of animal dung. To the north, a path opens up in the wall of trees.
+		There is a sign here.`,
 		zoneExitsBool: {
 			north: true,
 			south: true,
 			southwest: true,
 			west: true,
+		},
+		sign: function() {
+			let line1 = document.createElement('div')
+			let line2 = document.createElement('div')
+			let line3 = document.createElement('div')
+			let line4 = document.createElement('div')
+			blankSpace()
+			customizeEachWord(`The sign reads: `, 'brown', line1)
+			customizeEachWord(`To the north is The Shallows. Beware of wild animals and other devious creatures!`, 'white', line2)
+			blankSpace()
 		},
 		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
@@ -36973,7 +39694,16 @@ let northeastGladeOfGalvadia = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		actionWord: ['sign']
+	}),
+	{
+		sign: {
+			names: ['sign'],
+			color: function() {
+				return 'light-brown'
+			}
+		}
+	}
 )
 
 let eastGladeOfGalvadia = new AreaMaker(
@@ -36989,11 +39719,10 @@ let eastGladeOfGalvadia = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Eastern side of the Glade',
-		desc: 'In the vast openness of the glade, on this side lies an oasis of trees.',
+		desc: 'This area is quieter, the sounds of the nearby creek fading into the background. A few flat stones are scattered across the ground that are often used as places to sit.',
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
-			east: 'locked',
 			south: true,
 			southwest: true,
 			west: true,
@@ -37025,8 +39754,8 @@ let southeastGladeOfGalvadia = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: galvadianGreen,
-		areaName: 'Southeastern edge of the Glade',
-		desc: 'In the vast openness of the glade, on this side lies an oasis of trees.',
+		areaName: 'Southeastern Edge Of The Glade',
+		desc: 'The collection of streams all merge here into a confluence and flows out of the glade southward.',
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
@@ -37045,7 +39774,37 @@ let southeastGladeOfGalvadia = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
-	})
+		fishMods: {
+			levelRequirement: 1,
+			fishList: ['Mud Sucker', 'Leaf Perch', 'Corn Wallup'],
+			mudSucker: 50,
+			leafPerch: 30,
+			cornWallup: 20,
+			fishPicker: function() {
+				let randomNumber = randomNumberRange(1, 100)
+				if (randomNumber <= 50) {return mudSucker}
+				if (randomNumber <= 80) {return leafPerch}
+				if (randomNumber <= 100) {return cornWallup}
+			}
+		},
+		actionWord: ['confluence']
+	}),
+	{
+		confluence: {
+			names: ['confluence'],
+			color: function() {
+				return 'river-blue'
+			},
+			desc: async function () {
+				let line1 = document.createElement('div')
+				let line2 = document.createElement('div')
+					await dialogueWait(200)
+					blankSpace()
+					customizeEachWord(`Before the creek flows deeper into the untrekkable foliage, it widens into a pond-like shape. The stream appears to pause here, its flow nearly still, before continuing as it exits the glade. You can see a variety of fish swimming below the surface.`, 'white', line1)
+					blankSpace()
+			},
+		}
+	}
 )
 
 let southGladeOfGalvadia = new AreaMaker(
@@ -37061,7 +39820,7 @@ let southGladeOfGalvadia = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'South Part of the Glade',
-		desc: 'In the vast openness of the glade, on this side lies an oasis of trees.',
+		desc: 'Several streams meander through here, many with their own little footbridges. The landscape looks like many tiny islands, each created by the winding and intercecting streams.',
 		zoneExitsBool: {
 			northwest: true,
 			north: true,
@@ -37098,17 +39857,11 @@ let southwestGladeOfGalvadia = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Southwestern Part of the Glade',
-		desc: 'In the vast openness of the glade, on this side lies an oasis of trees.',
+		desc: 'A creek flows through this part of the glade with a small wooden bridge arching over it. The creek splits into several smaller streams as it winds to the east.',
 		zoneExitsBool: {
 			north: true,
 			northeast: true,
 			east: true,
-			south: 'locked',
-		},
-		zoneExitsLocked: {
-			south: () => {
-				gameDialogue(`This is the entrance to the Ranger's Guild`)
-			},
 		},
 		zoneType: 'galvadian_glade_center',
 		zoneExits: [],
@@ -37126,40 +39879,6 @@ let southwestGladeOfGalvadia = new AreaMaker(
 	})
 )
 
-let entranceToGladeOfGalvadia3 = new AreaMaker(
-	0,
-	false,
-	[],
-	false,
-	areaIdGenerator(),
-	0,
-	0,
-	0,
-	0,
-	(descriptions = {
-		areaNameClass: galvadianGreen,
-		areaName: 'Entrance to the Galvadian Forest',
-		desc: 'Two giant trees standing opposite each other mark the end of the path leading to the glade. Heading away from the glade is a tunnel of trees extending out of sight. The branches intertwine to form an arc high above the forest path. To the west is the path back to town. To the east is the Glade of Galvadia - a massive glade the size of a small town resting inside the bowl of a very shallow crater. Though the Central Glade is a safe haven, the outskirts are known to have bandits and hostile creatures skittering about.',
-		zoneExitsBool: {
-			east: true,
-			south: true,
-			west: true,
-		},
-		zoneType: 'galvadian_glade_entrance',
-		zoneExits: [],
-		zoneExitsFunc: function () {
-			let directionsArray = Object.values(this.zoneExitsBool)
-			let compiledDirections = []
-			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
-				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
-					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
-				}
-			}
-			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
-			this.zoneExits = compiledDirections
-		},
-	})
-)
 let entranceToGladeOfGalvadia2 = new AreaMaker(
 	0,
 	false,
@@ -37173,10 +39892,17 @@ let entranceToGladeOfGalvadia2 = new AreaMaker(
 	(descriptions = {
 		areaNameClass: galvadianGreen,
 		areaName: 'Entrance to the Galvadian Forest',
-		desc: 'Two giant trees standing opposite each other mark the end of the path leading to the glade. Heading away from the glade is a tunnel of trees extending out of sight. The branches intertwine to form an arc high above the forest path. To the west is the path back to town. To the east is the Glade of Galvadia - a massive glade the size of a small town resting inside the bowl of a very shallow crater. Though the Central Glade is a safe haven, the outskirts are known to have bandits and hostile creatures skittering about.',
+		desc: 'The branches intertwine to form an arc high above the forest path.',
 		zoneExitsBool: {
 			east: true,
 			west: true,
+		},
+		zoneChange: {
+			east: function() {
+				player.x = 1
+				player.y = 0
+				player.z = 0
+			}
 		},
 		zoneType: 'galvadian_glade_entrance',
 		zoneExits: [],
@@ -37205,8 +39931,9 @@ let entranceToGladeOfGalvadia1 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: galvadianGreen,
-		areaName: 'Entrance to the Galvadian Forest',
-		desc: 'Two giant trees standing opposite each other mark the end of the path leading to the glade. Heading away from the glade is a tunnel of trees extending out of sight. The branches intertwine to form an arc high above the forest path. To the west is the path back to town. To the east is the Glade of Galvadia - a massive glade the size of a small town resting inside the bowl of a very shallow crater. Though the Central Glade is a safe haven, the outskirts are known to have bandits and hostile creatures skittering about.',
+		areaName: 'Entrance To The Galvadian Forest',
+		desc: `Two giant trees standing opposite each other marks the start of the path. The path inward is walled by a tunnel of trees that leads to the glade.`,
+		// desc: `Heading away from the glade is a tunnel of trees extending out of sight. The branches intertwine to form an arc high above the forest path. To the west is the path back to town. To the east is the Glade of Galvadia - a massive glade the size of a small town resting inside the bowl of a very shallow crater. Though the Central Glade is a safe haven, the outskirts are known to have bandits and hostile creatures skittering about.`,
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -37239,10 +39966,11 @@ let outsideEntranceToGladeOfGalvadia = new AreaMaker(
 	0,
 	0,
 	(descriptions = {
-		areaNameClass: dirtPath,
-		areaName: 'Approaching the Entrance to The Glade of Galvadia',
-		zoneType: "galvadia_exterior_north",
-		desc: 'As you near the glade entrance, you notice how much larger the trees are here. With each step you take, You feel as though the forest can feel your presence. ',
+		areaNameClass: galvadianGreen,
+		areaName: 'Approaching The Entrance To The Glade Of Galvadia',
+		zoneType: "galvadian_glade_entrance",
+		//You feel as though the forest can recognize your presence
+		desc: `As you approach the glade entrance, the trees grow noticeably larger. Apart from the path behind you, your view is dominated by towering trees.`,
 		zoneExitsBool: {
 			northeast: true,
 			west: true,
@@ -37276,7 +40004,7 @@ let pathNearingEntranceToGladeOfGalvadia = new AreaMaker(
 		areaNameClass: dirtPath,
 		areaName: 'Nearing the Entrance to the Glade of Galvadia',
 		zoneType: "galvadia_exterior_north",
-		desc: 'Nearing the entrance to the Glade',
+		desc: 'Looking off the path to the north, you have a spectacular view of the Training Fields far in the distance. To the south, trees obscure the view of the ground, but you can still see some of the houses in Glen Alley Grove.',
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -37308,9 +40036,9 @@ let onPathToGladeOfGalvadia = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: dirtPath,
-		areaName: 'On the path to the Glade of Galvadia',
+		areaName: 'On An Inclined Path To The Glade',
 		zoneType: "galvadia_exterior_north",
-		desc: 'On the path to the Glade',
+		desc: `The path follows a steady incline that extends a few kilometers from the bottom of the hill to the shallow plateau where the glade entrance is.`,
 		zoneExitsBool: {
 			east: true,
 			southwest: true,
@@ -37344,7 +40072,7 @@ let wellWornPathToTheGlade = new AreaMaker(
 		areaNameClass: dirtPath,
 		areaName: 'At A Bend In The Road',
 		zoneType: "galvadia_exterior_north",
-		desc: `The inside of the bend shallowly slopes off until it meets the river's edge. The water here is calm and slow flowing making it a nice place to sit and relax. The water is only disturbed by the occasional fish gulping an insect from beneath the surface.`,
+		desc: `The road bends to the northeast, creating a small plot of land between the river and road. The water here is calm and yet flowing steadily, making it a nice spot to fish or relax. The water's surface is disturbed only by the occasional fish gulping an insect from the surface.`,
 		zoneExitsBool: {
 			northeast: true,
 			west: true,
@@ -37363,7 +40091,7 @@ let wellWornPathToTheGlade = new AreaMaker(
 		},
 		fishMods: {
 			levelRequirement: 1,
-			fishList: [mudSucker, 'Leaf Perch', 'Corn Wallup'],
+			fishList: ['Mud Sucker', 'Leaf Perch', 'Corn Wallup'],
 			mudSucker: 50,
 			leafPerch: 30,
 			cornWallup: 20,
@@ -37408,7 +40136,7 @@ let bridgeOverTheRiver = new AreaMaker(
 		areaNameClass: dirtPath,
 		areaName: 'On the bridge overlooking the river',
 		zoneType: "galvadia_exterior_north",
-		desc: `Going over the bridge crossing the river`,
+		desc: `The fortified river flows into the castle moat to the north, supplying all the water that flows around the castle. A few passersby stop to look over the bridge.`,
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -37440,9 +40168,9 @@ let castlePathNearRiver = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: dirtPath,
-		areaName: 'By the edge of the river banks near the bridge',
+		areaName: 'By The Edge Of The River Bank Near The Bridge',
 		zoneType: "galvadia_exterior_north",
-		desc: `Steep banks near the river bridge`,
+		desc: ``,
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -37480,20 +40208,26 @@ let offTheCastlePath = new AreaMaker(
 		There is a sign here.`,
 		zoneExitsBool: {
 			northwest: true,
-			east: true,
+			east: 'locked',
 			southwest: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
 			let line4 = document.createElement('div')
 			blankSpace()
-			customizeEachWord(`The sign reads: `, 'white', line1)
+			customizeEachWord(`The sign reads: `, 'brown', line1)
 			customizeEachWord(`Northwest: Castle`, 'white', line2)
 			customizeEachWord(`East: Glade of Galvadia`, 'white', line3)
 			customizeEachWord(`Southwest: Town Square`, 'white', line4)
 			blankSpace()
+		},
+		zoneExitsLocked: {
+			east: () => {
+				let line1 = lineFunc()
+				customizeEachWord(`You should probably visit the ${player.guild}'s Guild before doing anything else.`, 'white', line1)
+			}
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -37761,7 +40495,7 @@ let northTownGate = new AreaMaker(
 			northeast: true,
 			south: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -37796,7 +40530,7 @@ let northTownGate = new AreaMaker(
 		}
 	}
 )
-let northMostGalvadianTown = new AreaMaker(
+let galvadiaTownSquareNorth = new AreaMaker(
 	0,
 	false,
 	[],
@@ -37831,7 +40565,7 @@ let northMostGalvadianTown = new AreaMaker(
 		},
 	})
 )
-let galvadiaShop1 = new AreaMaker(
+let galvadiaTownSquareNorthwest = new AreaMaker(
 	0,
 	false,
 	[benjamin],
@@ -37844,7 +40578,7 @@ let galvadiaShop1 = new AreaMaker(
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
 		areaName: `Town Square Bakery`,
-		desc: `The bakery draws a large crowd as the only food shop in the square, though it is quite large, seating the same as a castle mess hall. The sound of conversation, laughs, and clatter fills the air. `,
+		desc: `The bakery draws a large crowd as the only food shop in the square. Many large tables, each almost fully seated, dominate this area of the square. The sound of conversation, and clattering plates drowns out most other sounds. `,
 		zoneType: "galvadia_town",
 		fire: true,
 		zoneExits: [],
@@ -37866,7 +40600,7 @@ let galvadiaShop1 = new AreaMaker(
 		},
 	})
 )
-let galvadiaShop2 = new AreaMaker(
+let galvadiaTownSquareNortheast = new AreaMaker(
 	0,
 	false,
 	[joch, clyde],
@@ -37883,9 +40617,10 @@ let galvadiaShop2 = new AreaMaker(
 		zoneType: "galvadia_town",
 		zoneExits: [],
 		zoneExitsBool: {
+			east: true,
 			south: true,
 			southwest: true,
-			east: true,
+			west: true,
 		},
 		zoneExitsFunc: function () {
 			let directionsArray = Object.values(this.zoneExitsBool)
@@ -37936,7 +40671,7 @@ let galvadiaForge = new AreaMaker(
 let galvadiaTownSquare = new AreaMaker(
 	0,
 	false,
-	[villagerRissah, deylani, timtim, sally, travellingWagon, strayKitty, kasia, allSkillsMan],
+	[rissah, deylani, timtim, sally, travellingWagon, strayKitty, kasia, allSkillsMan],
 	false,
 	areaIdGenerator(),
 	-10,
@@ -37945,9 +40680,9 @@ let galvadiaTownSquare = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Galvadia Town Square',
+		areaName: 'Town Square Of Galvadia',
 		zoneType: "galvadia_town",
-		desc: `The town square is full of hustle and bustle. The mix of chatter, laughter, tinks and clangs of metal, smells of food and brewing potions, 
+		desc: `The town square is the largest and busiest area in Galvadia. The streets are full of people shopping for wares and wandering about leisurely. The sounds of children's laughter can be heard as they chase each other through the alleys. The clangs and tinks of metal echo from the blacksmith. Colorful stalls line the cobblestone paths with the largest shops at each corner of the square. The smells of smoked meat and fish in the air changes to the curious smells of brewing potions with each shift of the wind.
 		There is a sign here.`,
 		zoneExitsBool: {
 			northwest: true,
@@ -37959,7 +40694,7 @@ let galvadiaTownSquare = new AreaMaker(
 			southwest: true,
 			west: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -37985,7 +40720,7 @@ let galvadiaTownSquare = new AreaMaker(
 			customizeEachWord(`North: Castle Crossroads`, 'white', line8)
 			customizeEachWord(`East: East Residential, Graveyard`, 'white', line9)
 			customizeEachWord(`South: Guild Plaza`, 'white', line10)
-			customizeEachWord(`West: West Residential`, 'white', line11)
+			customizeEachWord(`West: Tavern, Profession Buildings`, 'white', line11)
 			blankSpace()
 		},
 		zoneExits: [],
@@ -38011,7 +40746,7 @@ let galvadiaTownSquare = new AreaMaker(
 		}
 	}
 )
-let galvadiaCity_East = new AreaMaker(
+let galvadiaTownSquareEast = new AreaMaker(
 	0,
 	false,
 	[],
@@ -38023,8 +40758,8 @@ let galvadiaCity_East = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'East Of The Town Square',
-		desc: 'This is the only road to and from the East Residential District -- the main housing for Galvadian citizens. Across the bridge to the east, the road winds and weaves from house to house. Lanes disappear into neighborhoods far out of sight.',
+		areaName: 'East Side Of The Square',
+		desc: `The blacksmith and magic shop stand opposite each other, north and south. Each shop is busy with Warrior's and Mage's checking out the equipment they can upgrade to. The road leading eastward grows quieter as it stretches toward the town's residential district, Glenhaven.`,
 		zoneType: "galvadia_town",
 		zoneExitsBool: {
 			north: true,
@@ -38059,7 +40794,7 @@ let galvadiaCity_East2 = new AreaMaker(
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
 		areaName: 'By The East Residential Bridge',
-		desc: 'By The East Residential Bridge',
+		desc: 'This is the only road to and from Glenhaven which serves as the main residential area. The bridge to the east is busiest in the mornings and a night when the townsfolk are flowing in and out of town.',
 		zoneType: "galvadia_town",
 		zoneExitsBool: {
 			east: true,
@@ -38091,8 +40826,8 @@ let galvadiaCity_East3 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'On a Bridge Overlooking The River',
-		desc: 'On a Bridge Overlooking The River',
+		areaName: 'On A Bridge Overlooking The River',
+		desc: 'The river flows northward, winding past the castle and continuing on far to the north until it reaches its waterfall. The river enters from the south, meandering through the canals that weave around the Guild Plaza and Town Square.',
 		zoneType: "galvadia_town",
 		zoneExitsBool: {
 			east: true,
@@ -38124,15 +40859,15 @@ let galvadiaCity_East4 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Just Outside The Residential District',
-		desc: `Just Outside The Residential District
+		areaName: 'Just Outside Glenhaven',
+		desc: `The cobblestone street curves to the southeast, shaded completely by trees from both sides.
 		There is a sign here.`,
 		zoneType: "galvadia_town",
 		zoneExitsBool: {
 			southeast: true,
 			west: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -38631,7 +41366,7 @@ let galvadia_city_east_residential_path3 = new AreaMaker(
 			east: true,
 			south: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -38774,7 +41509,7 @@ let galvadia_city_east_residential_path7 = new AreaMaker(
 			north: true,
 			southwest: true,
 		},
-		sign: function () {
+		sign: function() {
 			let line1 = document.createElement('div')
 			let line2 = document.createElement('div')
 			let line3 = document.createElement('div')
@@ -38947,7 +41682,7 @@ let graveyard1 = new AreaMaker(
 		zoneExitsBool: {
 			north: true,
 			east: true,
-			south: true,
+			south: 'blocked',
 			west: true,
 		},
 		zoneExits: [],
@@ -39100,7 +41835,7 @@ let graveyard4 = new AreaMaker(
 		desc: 'You stand at a junction in the graveyard. More graves lie to the west and south. The western path extends passed several more graves before nearing the river. The path to the south leads to a gloomier side of the cemetery with larger, more entricately engraved tombs.',
 		zoneExitsBool: {
 			east: true,
-			south: true,
+			south: 'blocked',
 			west: true,
 		},
 		zoneExits: [],
@@ -39234,7 +41969,7 @@ let graveyard7 = new AreaMaker(
 		zoneExitsBool: {
 			north: true,
 			east: true,
-			south: true,
+			south: 'blocked',
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -39394,9 +42129,9 @@ let graveyard11 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Nearing',
+		areaName: 'On The North Graveyard Path',
 		zoneType: "galvadia_graveyard",
-		desc: 'Just Outside The Residential District',
+		desc: 'A little farther beyond the graveyard fence is the enormous walls of the Guild Halls that separates the two. You think you see a shadowy figure dart behind one of the nearby graves.',
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -39428,9 +42163,9 @@ let gravestone4 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Nearing',
+		areaName: 'At A Gravestone',
 		zoneType: "galvadia_graveyard",
-		desc: 'Just Outside The Residential District',
+		desc: `The gravestone here is huge with several engravings written in a language you can't read. The headstone and surrounding area is kept very clean. It somehow feels less sullen than the other gravestones.`,
 		zoneExitsBool: {
 			south: true,
 		},
@@ -39446,25 +42181,39 @@ let gravestone4 = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
+		actionWord: ['gravestone']
 	}),
 	{
-		tombstone: {
-			names: ['tombstone'],
+		gravestone: {
+			names: ['gravestone'],
 			color: function() {
 				return 'sinistral-color'
 			},
-			desc: function() {
-				let doesPlayerHaveJewel = pushItem.some(item => item.refName == 'secretText')
+			desc: async function() {
 				let line1 = lineFunc()
-				if (player.guild == 'Monk' && !doesPlayerHaveJewel){
-					customizeEachWord(`Inspecting the tombstone, you spot something shiny just under a leaf. You clear away the leaves to see an engraved jewel in the soil.`, 'white', line1)
-					questItemGen(secretText(currentArea))
-				} else {
-					customizeEachWord(`You see that the tombstone is fresh. The engraving reads, "Here lies Gulard"`, 'white', line1)
-				}
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`You see a shadow sticking out from behind the gravestone. You wonder if you should search the gravestone..`, 'white', line1)
+				blankSpace()
 			},
-			activate: function() {
-				quickMessage(`test`)
+			activate: async function() {
+				if (!gravestone4.interactables.gravestone.isQuestComplete) {
+				let line1 = lineFunc()
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`You search around the gravestone and find a `, 'white', line1)
+				customizeEachWord(`Shadowy Figure `, 'shadowyDealer-name', line1)
+				customizeEachWord(`lurking behind it. `, 'white', line1)
+				blankSpace()
+				npcAddToRoom(currentArea, shadowyDealer)
+				gravestone4.interactables.gravestone.isQuestComplete = true
+				} else {
+					let line1 = lineFunc()
+					await dialogueWait(200)
+					blankSpace()
+					customizeEachWord(`You take a look around the gravestone, but find nothing noteworthy. `, 'white', line1)
+					blankSpace()
+				}
 			}
 		}
 	}
@@ -39481,9 +42230,9 @@ let graveyard12 = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Nearing',
+		areaName: 'Between Gravesites On The North Graveyard Path',
 		zoneType: "galvadia_graveyard",
-		desc: 'Just Outside The Residential District',
+		desc: 'Off the path and far ahead, you see shadowy figures moving hastely together.',
 		zoneExitsBool: {
 			east: true,
 			west: true,
@@ -40219,7 +42968,7 @@ let galvadiaMagicWeave = new AreaMaker(
 		},
 	})
 )
-let galvadiaCityWest = new AreaMaker(
+let galvadiaTownSquareWest = new AreaMaker(
 	0,
 	false,
 	[],
@@ -40231,14 +42980,14 @@ let galvadiaCityWest = new AreaMaker(
 	0,
 	(descriptions = {
 		areaNameClass: 'galvadian-green',
-		areaName: 'Galvadia Town West',
+		areaName: 'Galvadia Square West',
 		zoneType: "galvadia_town",
-		desc: 'The town square is easily one of the more crowded areas within the walls. A large fountain is in the center of the square, allowing people to sit or take a drink. There are shopkeepers on every corner selling their wares, from food and potions to swords and armor. In front of the fountain is a large SIGN',
+		desc: `Standing between the bakery and leatherworking shop, you can smell the rich smells of cooked meat and baked goods and hear the sounds of wood whittling and bows being strung. There are lots of Rangers and Rogues inspecting weapons to purchase.`,
 		zoneExitsBool: {
 			north: true,
 			east: true,
 			south: true,
-			west: 'blocked',
+			west: true,
 		},
 		zoneExitsLocked: {
 			west: () => quickMessage(`This direction is locked`),
@@ -40257,6 +43006,1041 @@ let galvadiaCityWest = new AreaMaker(
 		},
 	})
 )
+let amblersAlleyEntrance = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-12,
+	-5,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'galvadian-green',
+		areaName: `Starting Down Ambler's Alley`,
+		zoneType: "amblers_alley",
+		desc: `The street here opens up wwide as it stretches into Ambler Alley. You can hear shouts and laughs coming from the tavern. Small groups of people cluster around the shops on the street. The joy and comradery is enticing.`,
+		zoneExitsBool: {
+			east: true,
+			west: true,
+		},
+		zoneExitsLocked: {
+			west: () => quickMessage(`This direction is locked`),
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersAlley1 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-13,
+	-5,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-alley',
+		areaName: `Ambler's Alley By The Blacksmith And Magic Weaving Professions Building`,
+		zoneType: "amblers_alley",
+		desc: `Ambler's Alley is filled with all manner of people from townsfolk to powerful looking figures. The gambling house attracts many as does the tavern. On each side of the road are the pforessions shops. Those leaving look eager to use their new skills to enhance their gear.`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+			south: true,
+			west: true,
+		},
+		// zoneExitsLocked: {
+		// 	west: () => quickMessage(`This direction is locked`),
+		// },
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersAlley2BlacksmithingProfessionsShop = new AreaMaker(
+	0,
+	false,
+	[blacksmithingProfessionTrainer],
+	false,
+	areaIdGenerator(),
+	-13,
+	-4,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-alley',
+		areaName: `Blacksmithing Professions Shop`,
+		zoneType: "amblers_alley",
+		desc: `This shop is more of a workshop than a forge. There are several stations each with their own anvil and tools. You can see the teachers adjusting the posture and grip of the students to improve their striking technique.`,
+		zoneExitsBool: {
+			south: true,
+		},
+		// zoneExitsLocked: {
+		// 	west: () => quickMessage(`This direction is locked`),
+		// },
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersAlley3MagicWeavingProfessionsShop = new AreaMaker(
+	0,
+	false,
+	[magicWeavingProfessionTrainer],
+	false,
+	areaIdGenerator(),
+	-13,
+	-6,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-alley',
+		areaName: `Magic Weaving Professions Shop`,
+		zoneType: "amblers_alley",
+		desc: `Inside the Magic Weaving shop is a tapestry of color. Students are seen practicing their weaves on the many looms before applying what they learn to weapons and armor. Scraps of string litter the ground.`,
+		zoneExitsBool: {
+			north: true,
+		},
+		// zoneExitsLocked: {
+		// 	west: () => quickMessage(`This direction is locked`),
+		// },
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersAlley4 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-14,
+	-5,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-alley',
+		areaName: `Ambler's Alley By The Leatherworking Profession Building`,
+		zoneType: "amblers_alley",
+		desc: `Outside the leatherworking building, you can hear the sounds of hides being tanned and the ripping and tearing of leather. Above the doorframe is a large mounted Stag head with enormous antlers.`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+			west: true,
+		},
+		// zoneExitsLocked: {
+		// 	west: () => quickMessage(`This direction is locked`),
+		// },
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersAlley5LeatherworkingProfessionsBuilding = new AreaMaker(
+	0,
+	false,
+	[leatherworkingProfessionTrainer],
+	false,
+	areaIdGenerator(),
+	-14,
+	-4,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-alley',
+		areaName: `Leatherworking Professions Shop`,
+		zoneType: "amblers_alley",
+		desc: `.`,
+		zoneExitsBool: {
+			south: true,
+		},
+		// zoneExitsLocked: {
+		// 	west: () => quickMessage(`This direction is locked`),
+		// },
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersAlley6 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-15,
+	-5,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-alley',
+		areaName: `Standing In Front Of Ambler's Tavern`,
+		zoneType: "amblers_alley",
+		desc: `The large double doors of the Tavern stand before you. During the day, the doors are propped open. At night, the doors stay shut.`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+		},
+		zoneChange: {
+			north: function () {
+				player.x = -15
+				player.y = -4
+				player.z = -100
+			},
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern1 = new AreaMaker(
+	0,
+	false,
+	[bromwelBoulderbash, telgremGreyhorn, ulfregSnagdril],
+	false,
+	areaIdGenerator(),
+	-15,
+	-4,
+	-100,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Ambler's Tavern`,
+		zoneType: "amblers_alley",
+		desc: `Opposite the entrance against the far wall is the bar. The counter spans thirty feet with several bartenders to tend to all the customers. Nearly all the barstools are occupied. Placed around the tavern hall are dozens of large tables to accomodate groups. Even with the tavern packed, there's enough space in front of the bar to navigate to and from the seating area.
+		There is a sign here.`,
+		zoneExitsBool: {
+			east: true,
+			south: true,
+			west: true,
+		},
+		zoneChange: {
+			south: function () {
+				player.x = -15
+				player.y = -5
+				player.z = 0
+			},
+		},
+		sign: function() {
+			let line1 = lineFunc()
+			let line2 = lineFunc()
+			let line3 = lineFunc()
+			customizeEachWord(`The sign reads:`, 'white', line1)
+			customizeEachWord(`West`, 'green', line2)
+			customizeEachWord(`: Lounge`, 'white', line2)
+			customizeEachWord(`East: `, 'white', line3)
+			customizeEachWord(`Game And Gambling Rooms`, 'white', line3)
+			blankSpace()
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern2 = new AreaMaker(
+	0,
+	false,
+	[gulthradGreenbeard, seltathSilverwood, arlasSilverwood],
+	false,
+	areaIdGenerator(),
+	-16,
+	-4,
+	-100,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Tavern Lounge`,
+		zoneType: "amblers_alley",
+		desc: `The lounge is spacious room with couch seating around the perimeter and small tables scattered around. A group of Dwarves seat one of the tables while a group of mostly Elf and Half-Elf looking mages seat a table on the far wall. There are some classic billiard games set up along with some magic games around the room.`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern3 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-16,
+	-3,
+	-100,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Backroom Of The Tavern`,
+		zoneType: "amblers_alley",
+		desc: `The backroom is for those who want to avoid the loud rambunctiousness of the main tavern hall and the lounge. The seating is more isolated to allow for private conversation. Each table has circular booth seating.`,
+		zoneExitsBool: {
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern4 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-14,
+	-4,
+	-100,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Bottom Landing Of The Tavern`,
+		zoneType: "amblers_alley",
+		desc: `Just through the doorway of the tavern hall is a large staircase leading up to the second floor.`,
+		zoneExitsBool: {
+			west: true,
+			up: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern5 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-14,
+	-4,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Upstairs Landing Of The Tavern`,
+		zoneType: "amblers_alley",
+		desc: `At the top of the stairs, the sounds of drunken chatter begins to mix with the sounds of feint cheering dotted with exasperation.`,
+		zoneExitsBool: {
+			north: true,
+			south: true,
+			down: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern6 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-14,
+	-3,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `North Hall 1`,
+		zoneType: "amblers_alley",
+		desc: `North Hall 1`,
+		zoneExitsBool: {
+			east: true,
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern7 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-13,
+	-3,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `North Hall 2`,
+		zoneType: "amblers_alley",
+		desc: `North Hall 2`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGameRoom1 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-13,
+	-2,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Snail Racing Room`,
+		zoneType: "amblers_alley",
+		desc: `Game Room 1`,
+		zoneExitsBool: {
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+
+let amblersTavern8 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-12,
+	-3,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `North Hall 3`,
+		zoneType: "amblers_alley",
+		desc: `North Hall 3`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGameRoom2 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-12,
+	-2,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Game Room 2`,
+		zoneType: "amblers_alley",
+		desc: `Game Room 2`,
+		zoneExitsBool: {
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern9 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-11,
+	-3,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `North Hall 4`,
+		zoneType: "amblers_alley",
+		desc: `North Hall 4`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGameRoom3 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-11,
+	-2,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Game Room 3`,
+		zoneType: "amblers_alley",
+		desc: `Game Room 3`,
+		zoneExitsBool: {
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern10 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-10,
+	-3,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `North Hall 5`,
+		zoneType: "amblers_alley",
+		desc: `North Hall 5`,
+		zoneExitsBool: {
+			north: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGameRoom4 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-10,
+	-2,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Game Room 4`,
+		zoneType: "amblers_alley",
+		desc: `Game Room 4`,
+		zoneExitsBool: {
+			south: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern11 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-14,
+	-5,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `South Hall 1`,
+		zoneType: "amblers_alley",
+		desc: `South Hall 1`,
+		zoneExitsBool: {
+			north: true,
+			east: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern12 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-13,
+	-5,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `South Hall 2`,
+		zoneType: "amblers_alley",
+		desc: `South Hall 2`,
+		zoneExitsBool: {
+			east: true,
+			south: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGamblingRoom1 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-13,
+	-6,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Gambling Room 1`,
+		zoneType: "amblers_alley",
+		desc: `Gambling Room 1`,
+		zoneExitsBool: {
+			north: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern13 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-12,
+	-5,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `South Hall 3`,
+		zoneType: "amblers_alley",
+		desc: `South Hall 3`,
+		zoneExitsBool: {
+			east: true,
+			south: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGamblingRoom2 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-12,
+	-6,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Gambling Room 2`,
+		zoneType: "amblers_alley",
+		desc: `Gambling Room 2`,
+		zoneExitsBool: {
+			north: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern14 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-11,
+	-5,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `South Hall 4`,
+		zoneType: "amblers_alley",
+		desc: `South Hall 4`,
+		zoneExitsBool: {
+			east: true,
+			south: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGamblingRoom3 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-11,
+	-6,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Gambling Room 3`,
+		zoneType: "amblers_alley",
+		desc: `Gambling Room 3`,
+		zoneExitsBool: {
+			north: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavern15 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-10,
+	-5,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `South Hall 5`,
+		zoneType: "amblers_alley",
+		desc: `South Hall 5`,
+		zoneExitsBool: {
+			south: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let amblersTavernGamblingRoom4 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-10,
+	-6,
+	-99,
+	0,
+	(descriptions = {
+		areaNameClass: 'amblers-tavern',
+		areaName: `Gambling Room 4`,
+		zoneType: "amblers_alley",
+		desc: `Gambling Room 4`,
+		zoneExitsBool: {
+			north: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true) {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+
 let galvadiaCitySouthwest = new AreaMaker(
 	0,
 	false,
@@ -40324,7 +44108,7 @@ let galvadiaTanner = new AreaMaker(
 		},
 	})
 )
-let galvadiaSouthSquare = new AreaMaker(
+let galvadiaTownSquareSouth = new AreaMaker(
 	0,
 	false,
 	[],
@@ -40373,7 +44157,7 @@ let galvadiaSouthBridge = new AreaMaker(
 		areaNameClass: 'bridge',
 		areaName: 'Crossing The Guild Plaza Bridge',
 		zoneType: "galvadia_town",
-		desc: `The bridge connecting the town square and guild plaza stretches across the canals. The bridge is almost as wide as it is long to accommodate the influx of people at high traffic times. A variety of wizardly clothed students to fully clad, plate armored knights occupy the bridge.`,
+		desc: `The bridge connecting the town square and guild plaza stretches across the canals. The bridge is almost as wide as it is long to accommodate the busy flow between the town square and guild plaza. A variety of wizardly clothed students to fully clad, plate armored knights occupy the bridge.`,
 		zoneExitsBool: {
 			north: true,
 			south: true,
@@ -40406,7 +44190,7 @@ let galvadiaGuildPlaza = new AreaMaker(
 		areaNameClass: 'galvadian-green',
 		areaName: 'North Side Of The Guild Plaza',
 		zoneType: "galvadia_guild_square",
-		desc: 'Entering the guild district, buildings tower on all sides. During classes, the plaza is nearly empty, but the sounds of metal clanging and distant blasts can be heard.',
+		desc: 'The view to the south from this side of the Guild Plaza is taken up entirely by the Guild Halls that tower over the plaza from every side.',
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -40441,7 +44225,7 @@ let galvadiaGuildSquare = new AreaMaker(
 		areaNameClass: 'galvadian-green',
 		areaName: 'Guild Square',
 		zoneType: "galvadia_guild_square",
-		desc: 'Surrounded by the 3 guild buildings',
+		desc: 'At The very center of the plaza is a large fountain encircled by five enormous statues. Students are dotted around the fountain steps taking a rest inbetween classes.',
 		zoneExitsBool: {
 			north: true,
 			northeast: true,
@@ -40481,7 +44265,7 @@ let rangersGuildOutside = new AreaMaker(
 		areaNameClass: 'ranger-color',
 		areaName: `Outside the Ranger's Guild`,
 		zoneType: "galvadia_guild_square",
-		desc: `Outside the Ranger's Guild`,
+		desc: `The Ranger's Guild is covered from top to bottom in thick vines.`,
 		zoneExitsBool: {
 			north: true,
 			east: true,
@@ -40551,8 +44335,41 @@ let rangersGuildStaircase = new AreaMaker(
 		zoneType: "galvadia_guild_square",
 		desc: '',
 		zoneExitsBool: {
+			north: true,
 			east: true,
 			down: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let rangersGuildTilwinOffice = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-8,
+	-8,
+	1,
+	0,
+	(descriptions = {
+		areaNameClass: 'ranger-color',
+		areaName: `Tilwin's Office`,
+		zoneType: "galvadia_guild_square",
+		desc: '',
+		zoneExitsBool: {
+			south: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -40790,7 +44607,73 @@ let sinistralsGuildEntranceRoom = new AreaMaker(
 		zoneType: "galvadia_guild_square",
 		zoneExitsBool: {
 			northwest: true,
+			east: true,
 			down: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let sinistralsGuildOfficeHallway = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-6,
+	-11,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'sinistral-color',
+		areaName: `Sinistral's Guild Outside Zell's Office`,
+		desc: `Sinistral's Guild darkened room`,
+		zoneType: "galvadia_guild_square",
+		zoneExitsBool: {
+			east: true,
+			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let sinistralsGuildZellOffice = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-5,
+	-11,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'sinistral-color',
+		areaName: `Zell's Office`,
+		desc: `Sinistral's Guild darkened room`,
+		zoneType: "galvadia_guild_square",
+		zoneExitsBool: {
+			west: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -41479,10 +45362,16 @@ let warriorsGuildDownstairsInterior2 = new AreaMaker(
 			let line4 = lineFunc()
 			let line5 = lineFunc()
 			customizeEachWord(`The sign reads:`, 'white', line1)
-			customizeEachWord(`Northwest/Northeast: Guild Leader Offices`, 'white', line2)
-			customizeEachWord(`East: Knight's Wing`, 'white', line3)
-			customizeEachWord(`South: Berserker's Wing`, 'white', line4)
-			customizeEachWord(`West: Fighter's Wing`, 'white', line5)
+			customizeEachWord(`Northwest`, 'green', line2)
+			customizeEachWord(`/`, 'white', line2)
+			customizeEachWord(`Northeast`, 'green', line2)
+			customizeEachWord(`: Guild Leader Offices`, 'yellow', line2)
+			customizeEachWord(`East`, 'green', line3)
+			customizeEachWord(`: Knight's Wing`, 'yellow', line3)
+			customizeEachWord(`South`, 'green', line4)
+			customizeEachWord(`: Berserker's Wing`, 'yellow', line4)
+			customizeEachWord(`West`, 'green', line5)
+			customizeEachWord(`: Fighter's Wing`, 'yellow', line5)
 			blankSpace()
 		},
 		zoneExits: [],
@@ -41543,7 +45432,7 @@ let warriorsGuildBerserkersWingEntrance = new AreaMaker(
 let warriorsGuildBerserkersCommonRoom = new AreaMaker(
 	0,
 	false,
-	[magvello],
+	[magvello, noviceBerserkerTrainer, apprenticeBerserkerTrainer, adeptBerserkerTrainer, skilledBerserkerTrainer],
 	false,
 	areaIdGenerator(),
 	-10,
@@ -41556,9 +45445,10 @@ let warriorsGuildBerserkersCommonRoom = new AreaMaker(
 		desc: `Large common room of the Warrior's Guild`,
 		zoneExitsBool: {
 			north: true,
-			east: true,
-			south: true,
-			west: true,
+			get east() {return player.level >= 10 || 'blocked'},
+			get south() {return player.level >= 15 || 'blocked'},
+			get west() {return player.level >= 20 || 'blocked'},
+			get down() {return player.level >= 30 || 'blocked'},
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -41572,6 +45462,12 @@ let warriorsGuildBerserkersCommonRoom = new AreaMaker(
 			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
 			this.zoneExits = compiledDirections
 		},
+		zoneExitsLocked: {
+			east: function() {quickMessage(`You must be level 10 or higher to pass through here`)},
+			south: function() {quickMessage(`You must be level 15 or higher to pass through here`)},
+			west: function() {quickMessage(`You must be level 20 or higher to pass through here`)},
+			down: function() {quickMessage(`You must be level 30 or higher to pass through here`)},
+		}
 	})
 )
 let warriorsGuildBerserkersLevel10Room = new AreaMaker(
@@ -42366,7 +46262,73 @@ let monksGuildCommonRoom = new AreaMaker(
 		zoneType: "galvadia_guild_square",
 		zoneExitsBool: {
 			east: true,
+			west: true,
 			up: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let monksGuildBaseLevel1 = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-14,
+	-9,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'monk-color',
+		areaName: `Monk's Guild Room 1`,
+		desc: `Monk's Guild Room 1`,
+		zoneType: "galvadia_guild_square",
+		zoneExitsBool: {
+			north: true,
+			east: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let monksGuildSitoriaOffice = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-14,
+	-8,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'monk-color',
+		areaName: `Sitoria's Office`,
+		desc: `Sitoria's Office`,
+		zoneType: "galvadia_guild_square",
+		zoneExitsBool: {
+			south: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -42904,7 +46866,39 @@ let mageGuildCommonRoom = new AreaMaker(
 			north: true,
 			northeast: true,
 			east: true,
+			south: true,
 			west: true,
+		},
+		zoneExits: [],
+		zoneExitsFunc: function () {
+			let directionsArray = Object.values(this.zoneExitsBool)
+			let compiledDirections = []
+			for (let i = 0; i < Object.keys(this.zoneExitsBool).length; i++) {
+				if (directionsArray[i] == true || directionsArray[i] == 'locked') {
+					compiledDirections = `${compiledDirections} ${Object.keys(this.zoneExitsBool)[i]}`
+				}
+			}
+			compiledDirections = compiledDirections.slice(1, compiledDirections.length)
+			this.zoneExits = compiledDirections
+		},
+	})
+)
+let mageGuildOlivandraOffice = new AreaMaker(
+	0,
+	false,
+	[],
+	false,
+	areaIdGenerator(),
+	-13,
+	-12,
+	0,
+	0,
+	(descriptions = {
+		areaNameClass: 'mage-color',
+		areaName: `Olivandra's Office`,
+		desc: 'Mage Guild Common Room',
+		zoneExitsBool: {
+			north: true,
 		},
 		zoneExits: [],
 		zoneExitsFunc: function () {
@@ -44088,7 +48082,7 @@ function applyRetreatPenalty(ability) {
 		} else {
 		player.debuffMods.retreatTimer = player.debuffMods.retreatTimer - 0.01
 		remainingTime -= 10
-		console.log(player.debuffMods.retreatTimer)
+		// console.log(player.debuffMods.retreatTimer)
 		}
 	}, 10)
 }
@@ -44265,6 +48259,7 @@ function eat(secondCommand) {
 }
 
 function playerAbilityHitChance(monster) {
+
 	let playerLevel = player.level
 	let playerAccuracy = player.currentWeaponSkill.accuracy
 	let monsterLevel = monster.level
@@ -44443,7 +48438,7 @@ function shadowDaggersFunction(secondCommand, thirdCommand) {
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
 	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
 	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
-	let doesApplyShadowMark = false
+	// let doesApplyShadowMark = false
 	let allEnemies = getAllEnemiesInRoom()
 	if (checkAvailableEnemy(allEnemies[0])) {return}
 	if (doesPlayerHaveAbility(ability)) {return}
@@ -44451,28 +48446,27 @@ function shadowDaggersFunction(secondCommand, thirdCommand) {
 	if (abilityResourceCheck(ability)) {return}
 	if (abilityCooldownCheck(ability)) {return}
 	resourceConsumed(ability)
-	if (player.isStealthed) {
-		player.isStealthed = false
-		doesApplyShadowMark = true
-	}
+	// if (player.isStealthed) {
+	// 	// player.isStealthed = false
+	// 	doesApplyShadowMark = true
+	// }
 	let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
-	for (let i = 0; i < ability.numberOfHits(); i++) {
+	let enemiesInRoom = getAllEnemiesInRoom()
+	let numberOfEnemiesToHit = Math.min(enemiesInRoom.length, ability.numberOfHits())
+	for (let i = 0; i < numberOfEnemiesToHit; i++) {
 		let hitChance = playerAbilityHitChance(targetEnemy)
 		if (hitChance == false) {
-			ability.flavorTextMiss(targetEnemy, weaponUsed)
+			ability.flavorTextMiss(enemiesInRoom[i], weaponUsed)
 			// combatCount(weaponSkillSpeed)
 		} else if (hitChance == true) {
-			baseDamage = player[ability.refName].damage(targetEnemy)
+			baseDamage = player[ability.refName].damage(enemiesInRoom[i])
 			penetrationType = calculatePenetrationRoll()
 			penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
-			damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
+			damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(enemiesInRoom[i], baseDamage, penetrationType)
 			damageBlocked = baseDamage - damageAfterArmor
-			if (doesApplyShadowMark) {
-				applyDebuff(targetEnemy, player.shadowMark.debuff)
-			}
-			applyDebuff(targetEnemy, ability.debuff[0])
-			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, 0)
-			applyDamageToEnemy(targetEnemy, damageAfterArmor)				
+			applyDebuff(enemiesInRoom[i], player.shadowMark.debuff)
+			ability.flavorText(enemiesInRoom[i], weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, 0)
+			applyDamageToEnemy(enemiesInRoom[i], damageAfterArmor)				
 			// combatCount(weaponSkillSpeed)
 			}
 	}
@@ -44551,8 +48545,11 @@ function shadowsurgeFunction(secondCommand, thirdCommand) {
 
 				let enemyStacks = shadowMarkedEnemies[i].debuffs.shadowMark.stacks
 				removeDebuff(shadowMarkedEnemies[i], shadowMarkedEnemies[i].debuffs.shadowMark)
-				applyBuff(player.shadowsurge.buff)
-				player.buffs.shadowbane.stacks = (enemyStacks - 1)  + player.buffs.shadowbane.stacks > player.buffs.shadowbane.maxStacks() ? player.buffs.shadowbane.maxStacks() : (enemyStacks - 1) + player.buffs.shadowbane.stacks
+				for (let i = 0; i < enemyStacks; i++) {
+					// if (player?.buffs?.shadowsurge?.stacks)
+						applyBuff(player.shadowsurge.buff)
+				}
+				// player.buffs.shadowbane.stacks = (enemyStacks - 1)  + player.buffs.shadowbane.stacks > player.buffs.shadowbane.maxStacks() ? player.buffs.shadowbane.maxStacks() : (enemyStacks - 1) + player.buffs.shadowbane.stacks
 			}
 		}
 
@@ -44569,7 +48566,6 @@ function shadowNovaFunction(secondCommand, thirdCommand) {
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
 	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
 	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
-	let doesApplyShadowMark = false
 	let allEnemies = getAllEnemiesInRoom()
 	if (checkAvailableEnemy(allEnemies[0])) {return}
 	if (doesPlayerHaveAbility(ability)) {return}
@@ -44577,50 +48573,26 @@ function shadowNovaFunction(secondCommand, thirdCommand) {
 	if (abilityResourceCheck(ability)) {return}
 	if (abilityCooldownCheck(ability)) {return}
 	resourceConsumed(ability)
-	if (player.isStealthed) {
-		player.isStealthed = false
-		doesApplyShadowMark = true
-	}
 		let targetEnemy = targetFirstEnemy(secondCommand, thirdCommand)
 		let hitChance = playerAbilityHitChance(targetEnemy)
 		if (hitChance == false) {
 			ability.flavorTextMiss(targetEnemy, weaponUsed)
 			// combatCount(weaponSkillSpeed)
 		} else if (hitChance == true) {
-			let allEnemiesInCombat = getAllEnemiesInCombat()
-			let targetEnemyIndex = allEnemiesInCombat.indexOf(targetEnemy)
-			allEnemiesInCombat.splice(targetEnemyIndex, 1)
 			baseDamage = player[ability.refName].damage(targetEnemy)
 			penetrationType = calculatePenetrationRoll()
 			penetrationFlavorText = penetrationType == 'slashingPen' ? 'slashing' : penetrationType == 'piercingPen' ? 'piercing' : 'blunt'
 			damageAfterArmor = calculateAbilityDamageAgainstEnemyArmor(targetEnemy, baseDamage, penetrationType)
 			damageBlocked = baseDamage - damageAfterArmor
 
-			if (player?.buffs?.shadowbane) {
-				let shadowbaneStacks = player?.buffs?.shadowbane?.stacks ? player?.buffs?.shadowbane?.stacks : 0
-				let splitStacks = Math.floor(shadowbaneStacks / allEnemiesInCombat.length)
-				if (splitStacks > 0) {
-					for (let i = 0; i < allEnemiesInCombat.length; i++) {
-						let newMarkedEnemy = allEnemiesInCombat[i]
-						applyDebuff(newMarkedEnemy, player.shadowMark.debuff)
-						newMarkedEnemy.debuffs.shadowMark.stacks + (splitStacks - 1) > newMarkedEnemy.debuffs.shadowMark.maxStacks() ? newMarkedEnemy.debuffs.shadowMark.stacks = newMarkedEnemy.debuffs.shadowMark.maxStacks() : newMarkedEnemy.debuffs.shadowMark.stacks += splitStacks - 1
-					}
-				} else {
-					for (let i = 0; i < shadowbaneStacks; i++) {
-						let newMarkedEnemy = allEnemiesInCombat[i]
-						applyDebuff(newMarkedEnemy, player.shadowMark.debuff)
-					}
-				}
-			}
 			ability.flavorText(targetEnemy, weaponUsed, damageAfterArmor, penetrationFlavorText, damageBlocked, 0)
 			applyDamageToEnemy(targetEnemy, damageAfterArmor)				
 			// combatCount(weaponSkillSpeed)
 			}
-	
+	removeBuff(player.buffs.shadowbane)
 	ability.cooldown = ability.cooldownSet
 	initiateAbilityCooldown(ability)
 	updateScroll()
-
 }
 
 
@@ -45669,6 +49641,7 @@ function callOfWindFunctionCombat(secondCommand, thirdCommand) {
 			removeDebuff(targetEnemy, ability.debuff)
 		}
 		resourceConsumed(ability)
+		resourceGained(ability, ability.resourceBonus(), player.maxFocus)
 	} 
 	ability.cooldown = ability.cooldownSet
 	initiateAbilityCooldown(ability)
@@ -45951,7 +49924,9 @@ function quakeFistFunction(secondCommand, thirdCommand) {
 function lightningFistFunction(secondCommand, thirdCommand) {
 	let ability = player.lightningFist
 	let abilityName = ability.refName
+	console.log(ability)
 	let weaponTypesToCheck = player[abilityName].weaponTypesUsed
+	console.log(weaponTypesToCheck)
 	let weapon1 = weaponTypesToCheck.some(types => getWeapon1().skillUsed.includes(types)) == true ? getWeapon1() : undefined
 	let weapon2 = weaponTypesToCheck.some(types => getWeapon2().skillUsed.includes(types)) == true ? getWeapon2() : undefined
 	let weaponUsed = weapon1 != undefined && weapon2 != undefined ? weapon1 : weapon1 != undefined && weapon2 == undefined ? weapon1 : weapon1 == undefined && weapon2 != undefined ? weapon2 : undefined
@@ -46733,7 +50708,7 @@ function calculateOnHitDamage(enemy, swingObject) {
 	switch (player.guild) {
 		case 'Warrior':
 			damage += calculateBleedDamage(enemy, swingObject)
-			damage += calculateFuryBonus(enemy, swingObject)
+			// damage += calculateFuryBonus(enemy, swingObject)
 			damage += calculateKnightsResolveBonus()
 			break;
 		case 'Monk':
@@ -46853,6 +50828,10 @@ function calculateFireSealBreak(enemy) {
 				let mainEnemyIndex = combatEnemies.indexOf(enemy)
 				let additionalEnemyIndex1 = mainEnemyIndex == 0 ? 2 : mainEnemyIndex - 1
 				let additionalEnemyIndex2 = mainEnemyIndex + 1
+
+				let enemy2Index = mainEnemyIndex == combatEnemies.length -1 ? mainEnemyIndex -1 : mainEnemyIndex + 1
+				let enemy3Index = mainEnemyIndex == combatEnemies.length -1 ? mainEnemyIndex -2 : mainEnemyIndex + 2
+
 				let sealDamage = debuffToCalculateOffOf.damage()
 				let resistType = debuffToCalculateOffOf.resistType
 				let damageAfterResist = calculateMagicDamageWithResist(sealDamage, enemy[resistType], player.firePen)
@@ -46860,23 +50839,23 @@ function calculateFireSealBreak(enemy) {
 				let element = debuffToCalculateOffOf.element
 				debuffToCalculateOffOf.flavorText(enemy, damageAfterResist, element, damageResisted)
 				applyDamageToEnemy(enemy, damageAfterResist)
-				if (combatEnemies[additionalEnemyIndex2]) {
+				if (combatEnemies[enemy2Index] && player.fireSeal.level >= 3) {
 					let sealDamage = debuffToCalculateOffOf.damage()
 					let resistType = debuffToCalculateOffOf.resistType
-					let damageAfterResist = calculateMagicDamageWithResist(sealDamage, combatEnemies[additionalEnemyIndex2][resistType], player.firePen)
+					let damageAfterResist = calculateMagicDamageWithResist(sealDamage, combatEnemies[enemy2Index][resistType], player.firePen)
 					let damageResisted = sealDamage - damageAfterResist
 					let element = debuffToCalculateOffOf.element
-					debuffToCalculateOffOf.flavorTextCleave(combatEnemies[additionalEnemyIndex2], damageAfterResist, element, damageResisted)
-					applyDamageToEnemy(combatEnemies[additionalEnemyIndex2], damageAfterResist)
+					debuffToCalculateOffOf.flavorTextCleave(combatEnemies[enemy2Index], damageAfterResist, element, damageResisted)
+					applyDamageToEnemy(combatEnemies[enemy2Index], damageAfterResist)
 				}
-				if (combatEnemies[additionalEnemyIndex1]) {
+				if (combatEnemies[enemy3Index] && player.fireSeal.level >= 7) {
 					let sealDamage = debuffToCalculateOffOf.damage()
 					let resistType = debuffToCalculateOffOf.resistType
-					let damageAfterResist = calculateMagicDamageWithResist(sealDamage, combatEnemies[additionalEnemyIndex1][resistType], player.firePen)
+					let damageAfterResist = calculateMagicDamageWithResist(sealDamage, combatEnemies[enemy3Index][resistType], player.firePen)
 					let damageResisted = sealDamage - damageAfterResist
 					let element = debuffToCalculateOffOf.element
-					debuffToCalculateOffOf.flavorTextCleave(combatEnemies[additionalEnemyIndex1], damageAfterResist, element, damageResisted)
-					applyDamageToEnemy(combatEnemies[additionalEnemyIndex1], damageAfterResist)
+					debuffToCalculateOffOf.flavorTextCleave(combatEnemies[enemy3Index], damageAfterResist, element, damageResisted)
+					applyDamageToEnemy(combatEnemies[enemy3Index], damageAfterResist)
 				}
 				enemy.debuffs.fireSeal.stacks = 0
 				if (player.fireSeal.buff) {
@@ -47059,24 +51038,27 @@ function calculateBleedDamage(enemy, swingObject) {
 function calculateBleedBonus(enemy, baseDamage) {
 	let bleedBonus = 0
 	if (enemy?.debuffs?.bleed) {
+		console.log(baseDamage, ' BASE DAMAGE')
+		console.log(enemy.debuffs.bleed.stacks, ' ENEMY DEBUFFS STACKS')
+		console.log(player.bleed.bonusModifier(), ' PLAYER BLEED BONUS MOD')
 		bleedBonus = (player.bleed.bonusModifier() * enemy.debuffs.bleed.stacks) * baseDamage
 		console.log(bleedBonus, ' BLEED BONUS')
 	}
 	return bleedBonus
 }
-function calculateFuryBonus(enemy, swingObject) {
-	let furyBonus = 0
-	if (!enemy?.debuffs?.fury) {return furyBonus}
-	if (enemy?.debuffs?.fury) {
-		furyBonus = (player.dualStrike.debuff.bonusModifier * enemy.debuffs.fury.stacks) * swingObject.totalDamage
-		let stacks = enemy.debuffs.fury.stacks
-		let ability = player.dualStrike
-		resourceGained(ability, stacks, 'maxMight')
-		removeDebuff(enemy, enemy.debuffs.fury)
-	}
-	console.log(furyBonus, ' FURY BONUS 50% OF DAMAGE')
-	return Math.ceil(furyBonus)
-}
+// function calculateFuryBonus(enemy, swingObject) {
+// 	let furyBonus = 0
+// 	if (!enemy?.debuffs?.fury) {return furyBonus}
+// 	if (enemy?.debuffs?.fury) {
+// 		furyBonus = (player?.dualStrike?.debuff?.bonusModifier * enemy.debuffs.fury.stacks) * swingObject.totalDamage
+// 		let stacks = enemy.debuffs.fury.stacks
+// 		let ability = player.dualStrike
+// 		resourceGained(ability, stacks, 'maxMight')
+// 		removeDebuff(enemy, enemy.debuffs.fury)
+// 	}
+// 	console.log(furyBonus, ' FURY BONUS 50% OF DAMAGE')
+// 	return Math.ceil(furyBonus)
+// }
 function calculateKnightsResolveBonus() {
 	let knightsResolveBonus = 0
 	if (player.knightsResolve.level <= 0) {return knightsResolveBonus}
@@ -47156,10 +51138,14 @@ function removeDebuff(enemy, debuff) {
 	updateMonsterBox()
 }
 
-function gameStageEvents() {
-	const { complete, tutorialEventsRan } = player.gameStages.tutorial
-	if (complete && !tutorialEventsRan) {
-
+function gameStageEvents(stageOfTheGame) {
+	//Object passed through is player.gameStages."whatever game stage needs to run"
+	let { isComplete, haveEventsRun, gameEvent } = stageOfTheGame
+	//This checks to make sure the gameStage has been completed AND the gameStageEvent has not executed.
+	//Once the gameStageEvent executes, it's marked as true so that event will never happen again.
+	if (isComplete && !haveEventsRun) {
+		gameEvent()
+		haveEventsRun = true
 	}
 }
 
@@ -47233,23 +51219,33 @@ function displayBuffTextAndTimer(buff, duration) {
     }
   }
 
-  function removeBuff(buff) {
+function removeBuff(buff) {
 	if (!buff) {return}
     const buffContainer = document.getElementById('buffs-container');
     const buffElement = buffContainer.querySelector(`.${buff.refName}`);
-	// const durationElement = buffContainer.querySelector(`.duration`)
 	const durationElement = buffElement.nextElementSibling
-	// const currentDurationElement = durationElements[i]
 	//buff1interval
 	buffElement.innerHTML = ''
 	durationElement.innerHTML = ``
 	buffElement.classList.remove('occupied');
 	buffElement.classList.remove(buff.refName)
+	removeBuffStats(buff)
 	clearTimeout(player.buffs[buff.refName].timeout)
 	clearInterval(playerBuffIntervals[buff.refName])
 	delete playerBuffIntervals[buff.refName]
 	delete player.buffs[buff.refName]
-  }
+}
+function removeBuffStats(buff) {
+	console.log(buff, ' BUFF')
+	if (buff.mods) {
+		let modKeys = Object.keys(buff.mods)
+		for (const key of modKeys) {
+			console.log(player.buffs)
+			player.buffMods[key] -= buff.mods[key]
+			console.log(player.buffs)
+		}
+	}
+}
 
 function applyWeaponEnchant(weaponOrWeapons, enchantment) {
 	console.log(enchantment, ' ENCHANTMENT')
@@ -47312,88 +51308,49 @@ function applyBuff(buff) {
 	console.log(buff)
 	let duration = typeof(buff.duration) == 'function' ? buff.duration() : buff.duration
 	//stacks
-	// let buff1 = document.querySelector('#buff1')
 	let counter = duration / 1000
-	// buff1.textContent = counter
 	clearInterval(buff1Interval)
 	buff1Interval = setInterval(() => {
 		counter--
 		// buff1.textContent = counter
 		if (counter == 0) {
 			clearInterval(buff1Interval)
+			updatePlayerStats()
 		}
 	}, 1000)
 	//if player buff does not exist, apply it
-
-	/////////////////////////////////ORIGINAL////////////////////////////////
 	if (!player.buffs[buff.refName]) {
 		player.buffs[buff.refName] = {
 		...buff,
 		timeout: setTimeout(() => {
-		// for (let addBuff in buff) {
-		// 	if (player[addBuff] != undefined) {
-		// 		player[addBuff] -= buff[addBuff]
-		// 	}
-		// }	
-		updatePlayerStats()
-		delete player.buffs[buff.refName];
-		delete player.sealCounter[buff.refName]
-		}, duration),
+			delete player.buffs[buff.refName];
+			delete player.sealCounter[buff.refName];
+			updatePlayerStats()
+			}, duration),
+		}
 	}
-		// for (let addBuff in buff) {
-		// 	if (player[addBuff] != undefined) {
-		// 		player[addBuff] += buff[addBuff]
-		// 		updatePlayerStats()
-		// 	}
-		// }
-	}
-	/////////////////////////////////ORIGINAL////////////////////////////////
 
-	//stack
 	//if the player buff does exist, replace it to refresh the duration
 	if (player.buffs[buff.refName]) {
 		clearInterval(buff1Interval)
+		updatePlayerStats()
 		// buff1.textContent = counter
 			buff1Interval = setInterval(() => {
 			counter--
 			// buff1.textContent = counter
 			if (counter == 0) {
 				clearInterval(buff1Interval)
+				updatePlayerStats()
 			}
 		}, 1000)
-	//////////////////////////////ORIGINAL//////////////////////////////////////////////
-		// for (let addBuff in buff) {
-		// 	//if player.str exists
-		// 	console.log(player.buffs[buff.refName], ' REFERENCE THE MAX STACKS HERE')
-		// 	if (player[addBuff] && player.buffs[buff.refName].stacks < player.buffs[buff.refName].maxStacks()) {
-		// 		//buffMod = number of stacks of the buff the player has
-		// 		let buffMod = player.buffs[buff.refName].stacks
-		// 		let previousStatValue = buff[addBuff] * (buffMod - 1)
-		// 		let statValue = buff[addBuff] * buffMod
-		// 		//player.str = buff.str * number of stacks
-		// 		//player.str becomes 
-		// 		player[addBuff] -= previousStatValue
-		// 		player[addBuff] += statValue
-		// 		updatePlayerStats()
-		// 	}
-		// }
-		//////////////////////////////ORIGINAL//////////////////////////////////////////
-		//////////////////////////////ORIGINAL//////////////////////////////////////////
 		if (player.buffs[buff.refName].stacks != undefined) {
 			player.buffs[buff.refName].stacks < player.buffs[buff.refName].maxStacks() ? player.buffs[buff.refName].stacks++ : player.buffs[buff.refName].stacks
 		}
-		//////////////////////////////ORIGINAL//////////////////////////////////////////
 		clearTimeout(player.buffs[buff.refName].timeout)
 		player.buffs[buff.refName].timeout =  setTimeout(() => {
-			// for (let addBuff in buff) {
-			// 	if (player[addBuff] != undefined) {
-			// 		let buffMod = player.buffs[buff.refName].stacks
-			// 		player[addBuff] -= buff[addBuff] * buffMod
-			// 	}
-			// }		
-			updatePlayerStats()
 			delete player.buffs[buff.refName];
 			delete player.sealCounter[buff.refName]
+			updatePlayerStats()
 			}, duration)
 		} 
 	displayBuffTextAndTimer(buff, duration)
@@ -47401,7 +51358,6 @@ function applyBuff(buff) {
   }
 
 function applyDebuff(enemy, debuff) {
-	// When applying the debuff, calculate the amount to debuff by multiplying by stacks
 	if (!enemy.debuffs) {
 		enemy.debuffs = {};
 	}
@@ -48081,7 +52037,7 @@ function updateScroll() {
 	masterArea.scrollTop = masterArea.scrollHeight
 }
 
-newLocation = function (x, y, z, s) {
+const newLocation = (x, y, z, s) => {
 	currentArea.isPlayerHere = false
 	let newArea = allAreas.find(area => area.x == x && area.y == y && area.z == z)
 	if (!newArea) {
@@ -48567,7 +52523,10 @@ function cultTexts() {
 		refName: 'cultTexts',
 		color: 'green',
 		keywords: ['cult', 'texts', 'text', 'cult texts'],
-		type: { quest: true },
+		type: { 
+			quest: true,
+			unique: true,
+		},
 		sellValue: 0,
 		description: `A book adorned with strange symbols`,
 		desc: function () {
@@ -49496,7 +53455,7 @@ function lightHide(level, isMonsterDrop) { //used for crafting tier 1 and 2
 		color: 'green',
 		keywords: ['light', 'hide', 'light hide'],
 		tier: 1,
-		increase: 1,
+		increase: 2,
 		type: { 
 			quest: true,
 			crafting: true,
@@ -49524,7 +53483,7 @@ function thickHide(level, isMonsterDrop) { //used for crafting tier 3 and 4
 		color: 'green',
 		keywords: ['thick', 'hide', 'thick hide'],
 		tier: 2,
-		increase: 2,
+		increase: 4,
 		type: { 
 			quest: true ,
 			crafting: true,
@@ -49583,6 +53542,7 @@ function copperOre() { //used in crafting to craft leather armor
 		type: {
 			quest: true ,
 			crafting: true,
+			copper: true,
 		},
 		sellValue: 47,
 		description: `A small lump of copper ore. Turn this in to a blacksmith or armor smith so they can craft more items.`,
@@ -49611,6 +53571,7 @@ function ironOre() { //used in crafting to craft leather armor
 		type: { 
 			quest: true ,
 			crafting: true,
+			iron: true,
 		},		
 		sellValue: 84,
 		description: `A small lump of iron ore. Turn this in to a blacksmith or armor smith so they can craft more items.`,
@@ -50695,6 +54656,7 @@ function trainingDagger(monsterLevel) { //tier 1
 			weight: 0,
 		},
 		type: {
+			skillUsed: "Daggers",
 			weapon: true,
 			daggers: true,
 			dagger: true,
@@ -50959,13 +54921,13 @@ function mageMasher(monsterLevel) { //tier 5
 //////////////////////////////////////////////++ONE HANDED WEAPONS++///////////////////////////////////////////
 function muddyShortsword(monsterLevel) { //tier 0.5
 	let muddyShortsword = {
-		id: () => {
+		id: (() => {
 			for (let i = 0; i < 50; i++) {
 				if (!pushItem[i]) {
 					return i
 				}
 			}
-		},
+		  })(),
 		roomId: currentArea.id,
 		name: 'Muddy Shortsword',
 		picture: 'images/weapons/one handed swords/training shortsword/training shortsword.png',
@@ -51573,13 +55535,13 @@ function flangedMace(monsterLevel) { //tier 4
 //////////////////////////////////////////////++TWO HANDED WEAPONS++///////////////////////////////////////////
 function trainingTwoHandedSword(monsterLevel) {//tier 1
 	let trainingTwoHandedSword = {
-		id: () => {
+		id: (() => {
 			for (let i = 0; i < 50; i++) {
 				if (!pushItem[i]) {
 					return i
 				}
 			}
-		},
+		  })(),
 		roomId: currentArea.id,
 		name: 'Training Two-Handed Sword',
 		picture: "images/weapons/two handed swords/training two handed sword/training two handed sword.png",
@@ -51599,7 +55561,6 @@ function trainingTwoHandedSword(monsterLevel) {//tier 1
 			tier: 1,
 			skillUsed: 'Two Handed',
 			damageType: `Slashing/piercing`,
-			skillUsed: `Two Handed`,
 			weapon: true,
 			twoHanded: true,
 			sword: true,
@@ -52430,12 +56391,13 @@ function trainingMailChestpiece() {
 	roomId: currentArea.id,
 	name: 'Training Mail Chestpiece',
 	color: 'green',
-	keywords: ['mail', 'chest', 'training chest', 'training mail chestpiece'],
+	keywords: ['mail', 'chest', 'training chestpiece', 'training mail chestpiece', 'chestpiece'],
 	mods: {
 		weight: 10,
 		slashingArmor: 1,
 		piercingArmor: 0,
 		bluntArmor: 0,
+		fireResist: 10,
 	},
 	type: {
 		tier: 1,
@@ -53600,34 +57562,10 @@ function leatherCap(source) { //tier 2
 		color: 'green',
 		keywords: ['leather', 'cap', 'leather cap'],
 		mods: {
+			slashingArmor: 1,
+			piercingArmor: 1,
+			bluntArmor: 1,
 			weight: 1,
-			slashingRandom: randomNumberRange(0, 1),
-			piercingRandom: randomNumberRange(0, 1),
-			bluntRandom: randomNumberRange(0, 1),
-			get slashingArmor() {
-				let baseArmor = 1
-				if (!leatherCap.isShopItem) {
-					return this.slashingRandom + baseArmor
-				} else {
-					return baseArmor
-				}
-			},
-			get piercingArmor() {
-				let baseArmor = 1
-				if (!leatherCap.isShopItem) {
-					return this.piercingRandom + baseArmor
-				} else {
-					return baseArmor
-				}
-			},			
-			get bluntArmor() {
-				let baseArmor = 1
-				if (!leatherCap.isShopItem) {
-					return this.bluntRandom + baseArmor
-				} else {
-					return baseArmor
-				}
-			},		
 		},
 		type: {
 			armor: true,
@@ -54391,10 +58329,167 @@ function oldRing(monsterLevel) {
 	}
 	return oldRing
 }
-
 ///////////////////////////////////////////////++JEWELRY++//////////////////////////////////////////////////
 ///////////////////////////////////////////////++JEWELRY++//////////////////////////////////////////////////
 
+///////////////////////////////////////////////++CLOAKS++//////////////////////////////////////////////////
+///////////////////////////////////////////////++CLOAKS++//////////////////////////////////////////////////
+function shabbyCloak(monsterLevel) {
+	let shabbyCloak = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Shabby Cloak',
+		color: 'green',
+		keywords: ['shabby', 'cloak', 'shabby cloak'],
+		mods: {
+			str: 3,
+		},
+		type: {
+			armor: true,
+			cloak: true,
+			back: true,
+		},
+		slot: slot7,
+		price: 200,
+		sellValue: 5,
+		description: `A shabby cloak covered in dirt. It appears to have some light magic in its fibers.`,
+		desc: function () {
+			itemDescription(this)
+		},
+	}
+	return shabbyCloak
+}
+function shoddyCloak(monsterLevel) {
+	let shoddyCloak = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Shoddy Cloak',
+		color: 'green',
+		keywords: ['shoddy', 'cloak', 'shoddy cloak'],
+		mods: {
+			int: 3,
+		},
+		type: {
+			armor: true,
+			cloak: true,
+			back: true,
+		},
+		slot: slot7,
+		price: 200,
+		sellValue: 5,
+		description: `A shoddy cloak covered in dirt. It appears to have some light magic in its fibers.`,
+		desc: function () {
+			itemDescription(this)
+		},
+	}
+	return shoddyCloak
+}
+function shreddedCloak(monsterLevel) {
+	let shreddedCloak = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Shredded Cloak',
+		color: 'green',
+		keywords: ['shredded', 'cloak', 'shredded cloak'],
+		mods: {
+			dex: 3,
+		},
+		type: {
+			armor: true,
+			cloak: true,
+			back: true,
+		},
+		slot: slot7,
+		price: 200,
+		sellValue: 5,
+		description: `A shredded cloak covered in dirt. It appears to have some light magic in its fibers.`,
+		desc: function () {
+			itemDescription(this)
+		},
+	}
+	return shreddedCloak
+}
+function shiftyCloak(monsterLevel) {
+	let shiftyCloak = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Shifty Cloak',
+		color: 'green',
+		keywords: ['shifty', 'cloak', 'shifty cloak'],
+		mods: {
+			agi: 3,
+		},
+		type: {
+			armor: true,
+			cloak: true,
+			back: true,
+		},
+		slot: slot7,
+		price: 200,
+		sellValue: 5,
+		description: `A shifty cloak covered in dirt. It appears to have some light magic in its fibers.`,
+		desc: function () {
+			itemDescription(this)
+		},
+	}
+	return shiftyCloak
+}
+function shelledCloak(monsterLevel) {
+	let shelledCloak = {
+		id: () => {
+			for (let i = 0; i < 50; i++) {
+				if (!pushItem[i]) {
+					return i
+				}
+			}
+		},
+		roomId: currentArea.id,
+		name: 'Shelled Cloak',
+		color: 'green',
+		keywords: ['shelled', 'cloak', 'shelled cloak'],
+		mods: {
+			wis: 3,
+			mys: 3,
+		},
+		type: {
+			armor: true,
+			cloak: true,
+			back: true,
+		},
+		slot: slot7,
+		price: 200,
+		sellValue: 5,
+		description: `A shelled cloak covered in dirt and snail shells. It appears to have some light magic in its fibers.`,
+		desc: function () {
+			itemDescription(this)
+		},
+	}
+	return shelledCloak
+}
 //////////////////////////////////////////////////++CONSUMABLES++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++CONSUMABLES++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++CONSUMABLES++//////////////////////////////////////////////////
@@ -55771,7 +59866,7 @@ function enemyDeath(enemy) {
 		pushMonster.splice(removeThisMonster, 1)
 		roomEnemies.splice(removeThisRoomEnemy, 1)
 		enemy.itemDrops.forEach(droppedItem => (droppedItem.roomId = currentArea.id))
-		enemy.itemDrops.forEach(addItem => pushItem.push(addItem)) //add to combatCheck?
+		enemy.itemDrops.forEach(addItem => pushItem.push(addItem))
 		currentArea.gold = currentArea.gold + enemy.gold
 		combatCheck()
 		playerLevelFunc()
@@ -56030,8 +60125,8 @@ function mudling(area) {
 		refName: 'mudling',
 		keywords: ['mudling'],
 		level: randomNumberRange(1, 3),
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
+		health: () => 10 + (this.level * this.con),
+		maxHealth: () => 10 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -56042,12 +60137,12 @@ function mudling(area) {
 		},
 		attackPower: () => this.level,
 		damageCalculation: function() {
-			let botDamage = this.attackPower * 0.5
-			let topDamage =  this.attackPower * 1.5
+			let botDamage = this.attackPower * 1.0
+			let topDamage =  this.attackPower * 1.0
 			return randomNumberRange(botDamage, topDamage)
 		},
 		gold: function() {
-			return randomNumberRange(5, 8)
+			return randomNumberRange(1, 5)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [mudBall]
@@ -56156,7 +60251,7 @@ function waterling(area) {
 		entersExitsRoomPhrase: `bounces`,
 		hostile: true,
 		combat: false,
-		armor: 1,
+		armor: 0,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -56164,8 +60259,8 @@ function waterling(area) {
 		refName: 'waterling',
 		keywords: ['waterling'],
 		level: randomNumberRange(1, 3),
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
+		health: () => 10 + (this.level * this.con),
+		maxHealth: () => 10 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -56176,13 +60271,13 @@ function waterling(area) {
 		},		
 		attackPower: () => this.level,
 		damageCalculation: function() {
-			let botDamage = this.attackPower * 0.5
-			let topDamage =  this.attackPower * 1.5
+			let botDamage = this.attackPower * 1.0
+			let topDamage =  this.attackPower * 1.0
 			return randomNumberRange(botDamage, topDamage)
 		},
 		itemDrops: [],
 		gold: function () {
-			return randomNumberRange(5, 8)
+			return randomNumberRange(1, 5)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [waterBerry]
@@ -56295,7 +60390,7 @@ function grassling(area) {
 		entersExitsRoomPhrase: `blows`,
 		hostile: true,
 		combat: false,
-		armor: 1,
+		armor: 0,
 
 		statusEffects: {},
 		roomId: area.id,
@@ -56304,8 +60399,8 @@ function grassling(area) {
 		refName: 'grassling',
 		keywords: ['grassling'],
 		level: randomNumberRange(1, 3),
-		health: () => 20 + (this.level * this.con),
-		maxHealth: () => 20 + (this.level * this.con),
+		health: () => 10 + (this.level * this.con),
+		maxHealth: () => 10 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -56316,8 +60411,8 @@ function grassling(area) {
 		},		
 		attackPower: () => this.level,
 		damageCalculation: function() {
-			let botDamage = this.attackPower * 0.5
-			let topDamage =  this.attackPower * 1.5
+			let botDamage = this.attackPower * 1.0
+			let topDamage =  this.attackPower * 1.0
 			return randomNumberRange(botDamage, topDamage)
 		},
 		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
@@ -56331,7 +60426,7 @@ function grassling(area) {
 		piercingArmor: 0,
 		bluntArmor: 0,
 		gold: function () {
-			return randomNumberRange(5, 8)
+			return randomNumberRange(1, 5)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [grassFruit]
@@ -56443,8 +60538,8 @@ function mudlet(area) {
 		refName: 'mudlet',
 		keywords: ['mudlet'],
 		level: randomNumberRange(3, 4),
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
+		health: () => 20 + (this.level * this.con),
+		maxHealth: () => 20 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -56619,8 +60714,8 @@ function waterlet(area) {
 		refName: 'waterlet',
 		keywords: ['waterlet'],
 		level: randomNumberRange(3, 4),
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
+		health: () => 20 + (this.level * this.con),
+		maxHealth: () => 20 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -56808,8 +60903,8 @@ function grasslet(area) {
 		refName: 'grasslet',
 		keywords: ['grasslet'],
 		level: randomNumberRange(3, 4),
-		health: () => 30 + (this.level * this.con),
-		maxHealth: () => 30 + (this.level * this.con),
+		health: () => 20 + (this.level * this.con),
+		maxHealth: () => 20 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -56979,8 +61074,8 @@ function littleMudElemental(area) {
 		refName: 'littleMudElemental',
 		keywords: ['little', 'mud', 'elemental', 'little mud elemental'],
 		level: 5,
-		health: () => 50 + (this.level * this.con),
-		maxHealth: () => 50 + (this.level * this.con),
+		health: () => 25 + (this.level * this.con),
+		maxHealth: () => 25 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -56996,7 +61091,7 @@ function littleMudElemental(area) {
 			return randomNumberRange(botDamage, topDamage)
 		},
 		gold: function () {
-			return randomNumberRange(15, 25)
+			return randomNumberRange(10, 15)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [mudBall, muddyGloves]
@@ -57014,7 +61109,7 @@ function littleMudElemental(area) {
 		slashingArmor: 2,
 		piercingArmor: 2,
 		bluntArmor: 2,
-		enemyMoveSpeed: 6000,
+		enemyMoveSpeed: 5000,
 		x: function () {return currentArea.x},
 		y: function () {return currentArea.y},
 		z: function () {return currentArea.z},
@@ -57151,8 +61246,8 @@ function littleWaterElemental(area) {
 		refName: 'littleWaterElemental',
 		keywords: ['little', 'water', 'elemental', 'little water elemental', 'water elemental', 'little water'],
 		level: 5,
-		health: () => 50 + (this.level * this.con),
-		maxHealth: () => 50 + (this.level * this.con),
+		health: () => 25 + (this.level * this.con),
+		maxHealth: () => 25 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -57168,7 +61263,7 @@ function littleWaterElemental(area) {
 			return randomNumberRange(botDamage, topDamage)
 		},
 		gold: function () {
-			return randomNumberRange(15, 25)
+			return randomNumberRange(10, 15)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [waterBerry, waterloggedBoots]
@@ -57217,7 +61312,7 @@ function littleWaterElemental(area) {
 		let hitRoll = Math.floor(Math.random() * 100) + 1
 		return enemyHitChance >= hitRoll
 		},
-		enemyMoveSpeed: 6000,
+		enemyMoveSpeed: 5000,
 		desc: function () {
 			let description = `The little Water Elemental looks to be a low form of water elemental`
 			enemyDescription(this, description)
@@ -57291,8 +61386,8 @@ function littleGrassElemental(area) {
 		refName: 'littleGrassElemental',
 		keywords: ['little', 'grass', 'elemental', 'little grass elemental'],
 		level: 5,
-		health: () => 50 + (this.level * this.con),
-		maxHealth: () => 50 + (this.level * this.con),
+		health: () => 25 + (this.level * this.con),
+		maxHealth: () => 25 + (this.level * this.con),
 		con: () => 5,
 		accuracy: () => 0,
 		dodge: () => 0,
@@ -57309,7 +61404,7 @@ function littleGrassElemental(area) {
 		},
 		itemDrops: [],
 		gold: function () {
-			return randomNumberRange(15, 25)
+			return randomNumberRange(10, 15)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [grassFruit, grassStainedHat]
@@ -57357,7 +61452,7 @@ function littleGrassElemental(area) {
 		let hitRoll = Math.floor(Math.random() * 100) + 1
 		return enemyHitChance >= hitRoll
 		},
-		enemyMoveSpeed: 6000,
+		enemyMoveSpeed: 5000,
 		rangedAbilityCalculation: {
 			abilityUseChance: {
 				ability1: 100,
@@ -57451,9 +61546,9 @@ function skeleton(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
-		slashingArmor: 4,
-		piercingArmor: 8,
-		bluntArmor: 4,
+		slashingArmor: 2,
+		piercingArmor: 4,
+		bluntArmor: 2,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -57461,8 +61556,8 @@ function skeleton(area) {
 		refName: 'skeleton',
 		keywords: ['skeleton'],
 		level: randomNumberRange(5, 10),
-		health: () => 100 + (this.level * this.con),
-		maxHealth: () => 100 + (this.level * this.con),
+		health: () => 60 + (this.level * this.con),
+		maxHealth: () => 60 + (this.level * this.con),
 		con: () => 10,
 		accuracy: () => 5,
 		dodge: () => 0,
@@ -57479,12 +61574,11 @@ function skeleton(area) {
 		},
 		itemDrops: [],
 		gold: function () {
-			let goldAmount = randomNumberRange(20, 35)
-			return goldAmount
+			return randomNumberRange(20, 30)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [smallBone, largeBone, crackedBone, copperOre]
-			const probability = [10, 10, 20, 5]
+			const probability = [10, 5, 20, 2]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		damageTypes: ['slashing'], //if it has any, should be slashing, piercing, and or blunt
@@ -57595,7 +61689,6 @@ function cultist(area) {
 		hostile: true,
 		combat: false,
 		armor: 0,
-
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -57603,8 +61696,8 @@ function cultist(area) {
 		refName: 'cultist',
 		keywords: ['cultist'],
 		level: randomNumberRange(5, 10),
-		health: () => 100 + (this.level * this.con),
-		maxHealth: () => 100 + (this.level * this.con),
+		health: () => 60 + (this.level * this.con),
+		maxHealth: () => 60 + (this.level * this.con),
 		con: () => 10,
 		accuracy: () => 5,
 		dodge: () => 0,
@@ -57620,12 +61713,13 @@ function cultist(area) {
 			return randomNumberRange(botDamage, topDamage)
 		},
 		gold: function () {
-			return randomNumberRange(15, 40)
+			return randomNumberRange(20, 30)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [cultRobes, crucifix]
-			const probability = [20, 20]
-			if (!pushItem.some(item => item.refName == 'cultTexts')) {
+			const probability = [10, 20]
+			console.log(isThereAUniqueItem)
+			if (!isThereAUniqueItem('cultTexts')) {
 				itemDrops.push(cultTexts)
 				probability.push(100)
 			}
@@ -57638,9 +61732,9 @@ function cultist(area) {
 			meleeAbility: 0,
 			rangedAbility: 0,
 		},
-		slashingArmor: 5,
-		piercingArmor: 5,
-		bluntArmor: 5,
+		slashingArmor: 3,
+		piercingArmor: 3,
+		bluntArmor: 3,
 		itemDrops: [],
 
 		x: function () {return currentArea.x},
@@ -57754,9 +61848,9 @@ function giantRat(area) {
 		missPhrase: 'bites at you and misses!',
 		rangedAttackPhrase: '',
 		rangedMissPhrase: '',
-		slashingArmor: 5,
-		piercingArmor: 5,
-		bluntArmor: 5,
+		slashingArmor: 2,
+		piercingArmor: 2,
+		bluntArmor: 2,
 		statusEffects: {},
 		roomId: area.id,
 		randomItemDrops: Math.floor(Math.random() * 4) + 1,
@@ -57782,11 +61876,11 @@ function giantRat(area) {
 		},
 		itemDrops: [],
 		gold: function () {
-			return randomNumberRange(10, 15)
+			return randomNumberRange(5, 15)
 		},
 		itemDropsRoll: function () {
-			const itemDrops =  [ratTail, ratSkin, lightHide]
-			const probability = [10, 20, 10]
+			const itemDrops =  [ratTail, lightHide]
+			const probability = [10, 2]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		x: function () {return currentArea.x},
@@ -57910,11 +62004,11 @@ function graveWorm(area) {
 			return randomNumberRange(botDamage, topDamage)
 		},
 		gold: function () {
-			return randomNumberRange(10, 15)
+			return randomNumberRange(5, 15)
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [wormGuts]
-			const probability = [30]
+			const probability = [20]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		itemDrops: [],
@@ -58042,7 +62136,7 @@ function wildBoar(area) {
 		con: () => 10,
 		accuracy: () => 5,
 		dodge: () => 5,
-		baseExperience: 50,
+		baseExperience: 60,
 		experience: () => {
 			let baseLevel = 10
 			return enemyKillExperience(this, baseLevel)
@@ -58189,7 +62283,7 @@ function stag(area) {
 		accuracy: () => 5,
 		dodge: () => 5,
 		dodge: () => 5,
-		baseExperience: 50,
+		baseExperience: 60,
 		experience: () => {
 			let baseLevel = 10
 			return enemyKillExperience(this, baseLevel)
@@ -58206,7 +62300,7 @@ function stag(area) {
 		},
 		itemDropsRoll: function () {
 			const itemDrops =  [lightHide, stagAntlers]
-			const probability = [5, 10]
+			const probability = [2, 10]
 			enemyItemDrops(itemDrops, probability, this)
 		},
 		damageTypes: ['blunt'], //if it has any, should be slashing, piercing, and or blunt
@@ -58332,7 +62426,7 @@ function impling(area) {
 		accuracy: () => 10,
 		dodge: () => 5,
 		dodge: () => 5,
-		baseExperience: 55,
+		baseExperience: 70,
 		experience: () => {
 			let baseLevel = 10
 			return enemyKillExperience(this, baseLevel)
@@ -58504,7 +62598,7 @@ function bandit(area) {
 		accuracy: () => 10,
 		dodge: () => 20,
 		dodge: () => 5,
-		baseExperience: 55,
+		baseExperience: 70,
 		experience: () => {
 			let baseLevel = 10
 			return enemyKillExperience(this, baseLevel)
@@ -59586,9 +63680,6 @@ function koboldChief(area) {
 //gnoll magi
 //gnoll skirmisher
 //gnoll pack leader
-
-
-
 function gnollSkirmisher(area) {
 	let gnollSkirmisher = {
 		get color() {
@@ -60801,12 +64892,16 @@ function calculateEnemyRangedAbility(enemy) {
 	let enemyAbilityObject = enemy.rangedAbilityCalculation
 	let chosenAbilityName = determineEnemyAbility(enemyAbilityObject) //this will be a string like ability1, ability2, ability3, etc
 	let chosenAbility = enemyAbilityObject[chosenAbilityName]
-	if (chosenAbility.damageType == 'fire') {
-		
+	let magicDamageType = {
+		fire: 'fireResist',
+		ice: 'iceResist',
+		lightning:'lightningResist',
+		water: 'waterResist',
+		wind: 'windResist',
 	}
 	if (chosenAbility.damageType != 'physical') {
 		chosenAbility.rawDamage = chosenAbility.damage()
-		chosenAbility.totalDamage = Math.floor(chosenAbility.rawDamage * (1 - player.magicResist[chosenAbility.damageType] * 0.01))
+		chosenAbility.totalDamage = Math.floor(chosenAbility.rawDamage * (1 - player[magicDamageType[chosenAbility.damageType]] * 0.01))
 		chosenAbility.mitigationAmount = Math.floor(chosenAbility.rawDamage - chosenAbility.totalDamage)
 		return chosenAbility
 	} else {
@@ -60832,9 +64927,16 @@ function calculateEnemyMeleeAbility(enemy) {
 	let enemyAbilityObject = enemy.meleeAbilityCalculation
 	let chosenAbilityName = determineEnemyAbility(enemyAbilityObject) //this will be a string like ability1, ability2, ability3, etc
 	let chosenAbility = enemyAbilityObject[chosenAbilityName]
+	let magicDamageType = {
+		fire: 'fireResist',
+		ice: 'iceResist',
+		lightning:'lightningResist',
+		water: 'waterResist',
+		wind: 'windResist',
+	}
 	if (chosenAbility.damageType != 'physical') {
 		chosenAbility.rawDamage = chosenAbility.damage()
-		chosenAbility.totalDamage = Math.floor(chosenAbility.rawDamage * (1 - player.magicResist[chosenAbility.damageType] * 0.01))
+		chosenAbility.totalDamage = Math.floor(chosenAbility.rawDamage * (1 - player[magicDamageType[chosenAbility.damageType]] * 0.01))
 		chosenAbility.mitigationAmount = Math.floor(chosenAbility.rawDamage - chosenAbility.totalDamage)
 		return chosenAbility
 	} else {
@@ -63022,49 +67124,6 @@ function updateMonsterBox() {
 			}
 		}
 	});
-	
-
-	
-	// let allEnemiesInRoom = getAllEnemiesInRoom()
-	// let allMonsterBoxes = document.querySelectorAll('.monster-nameplate')
-	// for (let i = 0; i < allMonsterBoxes.length; i++) {
-	// 	let monsterName = allMonsterBoxes[i].querySelector('.monster-name')
-	// 	let monsterPicture = allMonsterBoxes[i].querySelector('.monster-picture')
-	// 	let monsterHealthBar = allMonsterBoxes[i].querySelector('.enemy-health-bar')
-	// 	let monsterStatusEffects = allMonsterBoxes[i].querySelectorAll('#monster-status-effects')
-
-	// 	if (allEnemiesInRoom[i]) {
-	// 		quickMessage('1')	
-	// 		monsterName.textContent = allEnemiesInRoom[i].name
-	// 		monsterPicture.src = allEnemiesInRoom[i].picture
-	// 		monsterHealthBar.style.width = `${allEnemiesInRoom[i].health / allEnemiesInRoom[i].maxHealth * 100}%`
-	// 			for (let j = 0; j < 5; j++) {
-	// 				if (allEnemiesInRoom[i].debuffs) {
-	// 					quickMessage(`2`)
-	// 					for (let debuff in allEnemiesInRoom[i].debuffs) {
-	// 						console.log(debuff)
-	// 						console.log(monsterStatusEffects[j], ' MONSTER STATUS EFFECTS J')
-	// 						if (monsterStatusEffects[j].classList.contains(debuff)) {
-	// 							//do nothing
-	// 						} else {
-	// 							monsterStatusEffects[j].className = debuff
-	// 						}
-	// 					}
-	// 				} else {
-	// 				// monsterStatusEffects[i].className = ``
-
-	// 			}
-	// 		}
-	// 	} else {
-	// 		// monsterName.textContent = ``
-	// 		// monsterPicture.src = ``
-	// 		// monsterHealthBar.style.width = ``
-	// 	}
-	// }
-
-
-
-
 	if (allEnemiesInRoom.length === 0) {
 		allMonsterBoxes.forEach(box => box.classList.add('hide'));
 	} else {
@@ -63089,7 +67148,12 @@ function updateMonsterBox() {
 	// 	}
 	// }
 }
-
+function tester() {
+	console.log('too many?')
+}
+function isThereAUniqueItem(uniqueItemToCheck) {
+	return pushItem.some(item => item.refName == uniqueItemToCheck) || pushMonster.some(monster => monster.itemDrops.some(item => item.refName == uniqueItemToCheck))
+}
 
 
 class Monster {
@@ -63248,20 +67312,22 @@ class ChestItem {
 		this.desc = desc
 	}
 }
-
 function questItemGen(item) {
-	this.id = item.id()
-	this.roomId = item.roomId
-	this.name = item.name
-	this.refName = item.refName
-	this.color = item.color
-	this.keywords = item.keywords
-	this.type = item.type
-	this.sellValue = item.sellValue
-	this.description = item.description
-	this.desc = item.desc
-	pushItem.push(new QuestItem(this.id, this.roomId, this.name, this.refName, this.color, this.keywords, this.type, this.sellValue, this.description, this.desc))
+	pushItem.push(item)
 }
+// function questItemGen(item) {
+// 	this.id = item.id()
+// 	this.roomId = item.roomId
+// 	this.name = item.name
+// 	this.refName = item.refName
+// 	this.color = item.color
+// 	this.keywords = item.keywords
+// 	this.type = item.type
+// 	this.sellValue = item.sellValue
+// 	this.description = item.description
+// 	this.desc = item.desc
+// 	pushItem.push(new QuestItem(this.id, this.roomId, this.name, this.refName, this.color, this.keywords, this.type, this.sellValue, this.description, this.desc))
+// }
 class QuestItem {
 	constructor(id, roomId, name, refName, color, keywords, type, sellValue, description, desc) {
 		this.id = id
@@ -63394,28 +67460,11 @@ class Fish {
 
 
 
-function weaponGen(item) {
-	this.isShopItem = armor.isShopItem
-	this.id = item.id()
-	this.roomId = item.roomId
-	this.name = item.name
-	this.picture = item.picture
-	this.color = item.color
-	this.keywords = item.keywords
-	this.botDamage = item.botDamage
-	this.topDamage = item.topDamage
-	this.mods = item.mods
-	this.requirements = item.requirements
-	this.type = item.type
-	this.enchantment = item.enchantment
-	this.skillUsed = item.skillUsed
-	this.price = item.price
-	this.sellValue = item.sellValue
-	this.description = item.description
-	this.desc = item.desc
-	this.swing = item.swing
-	this.miss = item.miss
-	pushItem.push(new Weapon(this.isShopItem, this.id, this.roomId, this.name, this.picture, this.color, this.keywords, this.topDamage, this.botDamage, this.mods, this.requirements, this.type, this.enchantment, this.skillUsed, this.price, this.sellValue, this.description, this.desc, this.swing, this.miss))
+function weaponGen(weapon) {
+	pushItem.push(weapon)
+}
+function spawnItem(item) {
+	pushItem.push(item)
 }
 class Weapon {
 	constructor(isShopItem, id, roomId, name, picture, color, keywords, topDamage, botDamage, mods, requirements, type, enchantment, skillUsed, price, sellValue, description, desc, swing) {
@@ -63442,23 +67491,26 @@ class Weapon {
 	}
 }
 function armorGen(armor) {
-	this.isShopItem = armor.isShopItem
-	this.id = armor.id()
-	this.roomId = armor.roomId
-	this.name = armor.name
-	this.picture = armor.picture
-	this.color = armor.color
-	this.keywords = armor.keywords
-	this.mods = armor.mods
-	this.requirements = armor.requirements
-	this.type = armor.type
-	this.price = armor.price
-	this.sellValue = armor.sellValue
-	this.description = armor.description
-	this.slot = armor.slot
-	this.desc = armor.desc
-	pushItem.push(new Armor(this.isShopItem, this.id, this.roomId, this.name, this.picture, this.color, this.keywords, this.mods, this.requirements, this.type, this.price, this.sellValue, this.description, this.slot, this.desc))
+	pushItem.push(armor)
 }
+// function armorGen(armor) {
+// 	this.isShopItem = armor.isShopItem
+// 	this.id = armor.id()
+// 	this.roomId = armor.roomId
+// 	this.name = armor.name
+// 	this.picture = armor.picture
+// 	this.color = armor.color
+// 	this.keywords = armor.keywords
+// 	this.mods = armor.mods
+// 	this.requirements = armor.requirements
+// 	this.type = armor.type
+// 	this.price = armor.price
+// 	this.sellValue = armor.sellValue
+// 	this.description = armor.description
+// 	this.slot = armor.slot
+// 	this.desc = armor.desc
+// 	pushItem.push(new Armor(this.isShopItem, this.id, this.roomId, this.name, this.picture, this.color, this.keywords, this.mods, this.requirements, this.type, this.price, this.sellValue, this.description, this.slot, this.desc))
+// }
 class Armor {
 	constructor(isShopItem, id, roomId, name, picture, color, keywords, mods, requirements, type, price, sellValue, description, slot, desc) {
 		this.isShopItem = isShopItem
@@ -63538,7 +67590,9 @@ function speak(secondCommand) {
 	let validNpcs = currentArea.npc
 	const specifiedNpc = validNpcs.find(({ keywords }) => keywords.some(keyword => keyword == secondCommand))
 	console.log(specifiedNpc)
-	if (validNpcs) {
+	if (validNpcs.length == 1) {
+		validNpcs[0].speak()
+	} else if (validNpcs) {
 		if (secondCommand == undefined) {
 			quickMessage(`You must specify who you want to talk to`)
 		} else if (specifiedNpc == undefined) {
@@ -64365,7 +68419,7 @@ function startBerserker(event) {
 
 		player.playerClass = berserkerClass
 		player.guild = 'Warrior'
-		preClass.healthPerLevel = 6.0
+		preClass.healthPerLevel = 4.0
 		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 1.0
 		preClass.manaPerWIS = 1
@@ -64414,7 +68468,7 @@ function startFighter(event) {
 
 		player.playerClass = fighterClass
 		player.guild = 'Warrior'
-		preClass.healthPerLevel = 6.0
+		preClass.healthPerLevel = 4.0
 		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 1.0
 		preClass.manaPerWIS = 1
@@ -64438,6 +68492,8 @@ function startFighter(event) {
 
 		fieldsTrainer = {...velthash}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 		pack('right')
@@ -64462,7 +68518,7 @@ function startKnight(event) {
 
 		player.playerClass = knightClass
 		player.guild = 'Warrior'
-		preClass.healthPerLevel = 6.0
+		preClass.healthPerLevel = 4.0
 		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 1.0
 		preClass.manaPerWIS = 1
@@ -64487,6 +68543,8 @@ function startKnight(event) {
 
 		fieldsTrainer = {...velthash}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 		pack('right')
@@ -64513,7 +68571,7 @@ function startThief(event) {
 		player.playerClass = thiefClass
 		player.guild = 'Sinistral'
 		preClass.healthPerLevel = 3.0
-		preClass.healthPerCON = 2
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 1.0
 		preClass.manaPerWIS = 1
 		preClass.maxAdrenaline = 50
@@ -64537,8 +68595,10 @@ function startThief(event) {
 		updatePlayerStats()
 
 
-		fieldsTrainer = {...zel}
+		fieldsTrainer = {...zell}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 		pack('right')
@@ -64564,7 +68624,7 @@ function startAssassin(event) {
 		player.playerClass = assassinClass
 		player.guild = 'Sinistral'
 		preClass.healthPerLevel = 3.0
-		preClass.healthPerCON = 2
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 1.0
 		preClass.manaPerWIS = 1
 		preClass.maxAdrenaline = 50
@@ -64588,8 +68648,10 @@ function startAssassin(event) {
 		combineClassAndRaceValues()
 		updatePlayerStats()
 
-		fieldsTrainer = {...zel}
+		fieldsTrainer = {...zell}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 		pack('right')
@@ -64615,7 +68677,7 @@ function startShadowblade(event) {
 		player.playerClass = shadowbladeClass
 		player.guild = 'Sinistral'
 		preClass.healthPerLevel = 3.0
-		preClass.healthPerCON = 2
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 1.0
 		preClass.manaPerWIS = 1
 		preClass.maxAdrenaline = 50
@@ -64638,8 +68700,10 @@ function startShadowblade(event) {
 		combineClassAndRaceValues()
 		updatePlayerStats()
 
-		fieldsTrainer = {...zel}
+		fieldsTrainer = {...zell}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
@@ -64667,10 +68731,10 @@ function startMartialMonk(event) {
 		player.playerClass = martialMonkClass
 		player.guild = 'Monk'
 		preClass.healthPerLevel = 4.0
-		preClass.healthPerCON = 3
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 4.0
 		preClass.manaPerWIS = 3
-		preClass.maxFocus = 20
+		preClass.maxFocus = 60
 		// preClass.maxHealth = 5
 		preClass.maxMana = 5
 		preClass.healthPerLevel = 4
@@ -64692,6 +68756,8 @@ function startMartialMonk(event) {
 
 		fieldsTrainer = {...sitoria}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
@@ -64716,10 +68782,10 @@ function startMysticMonk(event) {
 		player.playerClass = mysticMonkClass
 		player.guild = 'Monk'
 		preClass.healthPerLevel = 4.0
-		preClass.healthPerCON = 3
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 4.0
 		preClass.manaPerWIS = 3
-		preClass.maxFocus = 30
+		preClass.maxFocus = 60
 		// preClass.maxHealth = 5
 		preClass.maxMana = 5
 		preClass.healthPerLevel = 4
@@ -64733,14 +68799,16 @@ function startMysticMonk(event) {
 		preClass.unarmed = 1
 		preClass.dodging = 1
 		preClass.toughness = 1
-		player.advanceTimer = 2
-		player.retreatTimer = 2
+		player.baseStats.advanceTimer = 2
+		player.baseStats.retreatTimer = 2
 		applyMysticMonkClassDescription()
 		combineClassAndRaceValues()
 		updatePlayerStats()
 
 		fieldsTrainer = {...sitoria}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
@@ -64765,10 +68833,10 @@ function startElementalMonk(event) {
 		player.playerClass = elementalMonkClass
 		player.guild = 'Monk'
 		preClass.healthPerLevel = 4.0
-		preClass.healthPerCON = 3
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 4.0
 		preClass.manaPerWIS = 3
-		preClass.maxFocus = 30
+		preClass.maxFocus = 60
 		// preClass.maxHealth = 5
 		preClass.maxMana = 5
 		preClass.healthPerLevel = 4
@@ -64782,14 +68850,16 @@ function startElementalMonk(event) {
 		preClass.unarmed = 1
 		preClass.dodging = 1
 		preClass.toughness = 1
-		player.advanceTimer = 2
-		player.retreatTimer = 2
+		player.baseStats.advanceTimer = 2
+		player.baseStats.retreatTimer = 2
 		applyElementalMonkClassDescription()
 		combineClassAndRaceValues()
 		updatePlayerStats()
 
 		fieldsTrainer = {...sitoria}
 		fieldsTrainer.speak = fieldsTrainerDialogue.speak
+		fieldsTrainer.offer = fieldsTrainerOffer.offer
+		fieldsTrainer.quest = fieldsTrainerQuest.quest
 		fieldsTrainer.questSequence = fieldsTrainerQuestSequence
 		crossroads_shops_and_fields.npc = [fieldsTrainer]
 
@@ -64815,7 +68885,7 @@ function startPyromancer(event) {
 		player.playerClass = pyromancerClass
 		player.guild = 'Mage'
 		preClass.healthPerLevel = 2.0
-		preClass.healthPerCON = 2.0
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 5.0
 		preClass.manaPerWIS = 5.0
 		// preClass.maxHealth = 0
@@ -64829,8 +68899,8 @@ function startPyromancer(event) {
 		preClass.int = 4
 		preClass.wis = 4
 		preClass.mys = 1
-		player.advanceTimer = 3
-		player.retreatTimer = 3
+		player.baseStats.advanceTimer = 3
+		player.baseStats.retreatTimer = 3
 		preClass.fireflames = 1
 		applyPyromancerClassDescription()
 		combineClassAndRaceValues()
@@ -64862,7 +68932,7 @@ function startCryoMage(event) {
 		player.playerClass = cryoMageClass
 		player.guild = 'Mage'
 		preClass.healthPerLevel = 2.0
-		preClass.healthPerCON = 2.0
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 5.0
 		preClass.manaPerWIS = 5.0
 		preClass.maxHealth = 0
@@ -64876,8 +68946,8 @@ function startCryoMage(event) {
 		preClass.int = 4
 		preClass.wis = 4
 		preClass.mys = 1
-		player.advanceTimer = 2
-		player.retreatTimer = 2
+		player.baseStats.advanceTimer = 3
+		player.baseStats.retreatTimer = 3
 		preClass.frostfreeze = 1
 		applyCryoMageClassDescription()
 		combineClassAndRaceValues()
@@ -64909,7 +68979,7 @@ function startLightningMagus(event) {
 		player.playerClass = lightningMagusClass
 		player.guild = 'Mage'
 		preClass.healthPerLevel = 2.0
-		preClass.healthPerCON = 2.0
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 5.0
 		preClass.manaPerWIS = 5.0
 		preClass.maxHealth = 0
@@ -64923,8 +68993,8 @@ function startLightningMagus(event) {
 		preClass.int = 4
 		preClass.wis = 4
 		preClass.mys = 1
-		player.advanceTimer = 2
-		player.retreatTimer = 2
+		player.baseStats.advanceTimer = 3
+		player.baseStats.retreatTimer = 3
 		preClass.flashbolt = 1
 		applyLightningMagusClassDescription()
 		combineClassAndRaceValues()
@@ -64957,7 +69027,7 @@ function startRanger(event) {
 		player.playerClass = rangerClass
 		player.guild = 'Ranger'
 		preClass.healthPerLevel = 4.0
-		preClass.healthPerCON = 2
+		preClass.healthPerCON = 4
 		preClass.manaPerLevel = 4.0
 		preClass.manaPerWIS = 3
 		preClass.maxFocus = 30
@@ -64972,8 +69042,8 @@ function startRanger(event) {
 		preClass.wis = 1
 		preClass.mys = 3
 		preClass.bows = 1
-		player.advanceTimer = 2
-		player.retreatTimer = 2
+		player.baseStats.advanceTimer = 3
+		player.baseStats.retreatTimer = 3
 		applyRangerClassDescription()
 		combineClassAndRaceValues()
 		updatePlayerStats()
@@ -65500,16 +69570,14 @@ function displayClassSelection() {
 	classAndRaceContainer.classList.add('class-and-race-container')
 
 	let characterCreationWindow = document.createElement('div')
-	let characterCreationNode = document.createTextNode('Character creation')
+	// let characterCreationNode = document.createTextNode('Character creation')
 	characterCreationWindow.classList.add('character-creation')
-	characterCreationWindow.appendChild(characterCreationNode)
+	// characterCreationWindow.appendChild(characterCreationNode)
 
-	classAndRaceContainer.appendChild(characterCreationWindow)
+	// classAndRaceContainer.appendChild(characterCreationWindow)
 
 	const confirmationMainDiv = document.createElement('div')
-	const confirmationMainNode = document.createTextNode(
-		'Select your class and race by clicking on the portrait. Your class will dictate which guild you join, and each class has their own unique sets of combat abilities. Your race is supplemental to your class, providing you with minor starting skills and small stat boosts.'
-	)
+	const confirmationMainNode = document.createTextNode(`To begin playing, you must create your character by selecting the class and race you want to play. Each class has its own set of unique abilities and playstyle. Each race comes with their own stat and skill bonuses. Your class will dictate your combat gameplay while your race adds roleplay flavor and can supplement your class's base stats.`)
 	confirmationMainDiv.classList.add('character-confirmation')
 	confirmationMainDiv.appendChild(confirmationMainNode)
 	classAndRaceContainer.appendChild(confirmationMainDiv)
@@ -65916,7 +69984,7 @@ function displayClassDetails() {
 	abilitiesContainer.appendChild(abilitiesDetails6)
 
 	const guildDescriptionContainer = createDivElement(``, ['guildDescriptionContainer'])
-	const guildHeading = createDivElement(`Warrior's Guild`, ['guildHeading'])
+	const guildHeading = createDivElement(``, ['guildHeading'])
 	const guildDescription = createDivElement(warriorsGuildDescription, ['guildDescription'])
 	guildDescriptionContainer.appendChild(guildHeading)
 	guildDescriptionContainer.appendChild(guildDescription)
@@ -67229,29 +71297,11 @@ function decreaseWeaponSkill() {
 }
 
 function gainLevel() {
-	player.level++
-	player.skillPoints += player.level + 3
-	player.attributePoints += player.level % 2 == 0 ? 2 : 1
-	let skillPoints = player.level + 3
-	let attributePoints = player.level % 2 == 0 ? 2 : 1
-	blankSpace()
-	quickMessage(`Dev level up! You are now level ${player.level}!`)
-	quickMessage(`You gain ${skillPoints} skill points!`)
-	quickMessage(`You gain ${attributePoints} attribute points!`)
-	blankSpace()
+	playerGainKillExperience(30)
 	updatePlayerStats()
 }
 function loseLevel() {
-	player.skillPoints -= player.level + 3
-	player.attributePoints -= player.level % 2 == 0 ? 2 : 1
-	let skillPoints = player.level + 3
-	let attributePoints = player.level % 2 == 0 ? 2 : 1
-	player.level--
-	blankSpace()
-	quickMessage(`Dev level down! You are now level ${player.level}!`)
-	quickMessage(`You lose ${skillPoints} skill points!`)
-	quickMessage(`You lose ${attributePoints} attribute points!`)
-	blankSpace()
+	playerGainKillExperience(-30)
 	updatePlayerStats()
 }
 
@@ -67262,43 +71312,118 @@ manaBarTest.addEventListener('click', loseLevel)
 
 
 function welcome() {
-	let welcomeWindow = document.createElement('div')
-	let welcomeNode = document.createElement('img')
-	welcomeNode.src = "images/banner and misc/galvadia_title2.jpg"
+	let welcomeWindow = document.createElement('img')
+	// let welcomeNode = document.createElement('img')
+	// welcomeNode.src = "images/banner and misc/galvadia_title2.jpg"
+	welcomeWindow.src = "images/Galvadia Cropped Banner.png"
 	welcomeWindow.classList.add('welcome')
-	welcomeWindow.appendChild(welcomeNode)
+	// welcomeWindow.appendChild(welcomeNode)
 	masterArea.appendChild(welcomeWindow)
 }
 
-function confirmationButtonFunction() {
+function confirmCharacterNameCheck(playerName) {
+	// Trim any leading/trailing whitespace
+	playerName = playerName.trim();
+
+	if (playerName === "") {
+		return { valid: false, message: "You need to come up with a name before confirming your character." };
+	}
+	if (/\s/.test(playerName)) {
+		return { valid: false, message: "Your name cannot contain any spaces." };
+	}
+	if (!/^[a-zA-Z]+$/.test(playerName)) {
+		return { valid: false, message: "Your name can only contain letters." };
+	}
+	playerName = playerName.charAt(0).toUpperCase() + playerName.slice(1).toLowerCase();
+	
+	// Return the formatted name and valid status
+	return { valid: true, message: "Name is valid.", formattedName: playerName };
+}
+
+async function confirmationButtonFunction() {
+	let mainAndStats = document.getElementById('main-and-stats')
+	let body = document.querySelector('body')
+	let galvadiaBanner = document.querySelector('.welcome')
+	let nameInputElement = document.querySelector('#name-character-input')
+	let playerName = nameInputElement.value
+	let namePassOrFail = confirmCharacterNameCheck(playerName)
 	const disappear = document.getElementById('class-and-race-container')
+	const playerNameDisplay = document.querySelector('.name')
+
+	if (!player.playerClass.name) {
+		window.alert(`You need to select a class before confirming your character.`)
+		return
+	}
+	if (player.race.length < 1) {
+		window.alert(`You need to select a race before confirming your character.`)
+		return
+	}
+	if (namePassOrFail.valid === false) {
+		window.alert(namePassOrFail.message)
+		return
+	}
+	let isPlayerReady = window.confirm(`
+Name: ${namePassOrFail.formattedName}
+Class: ${player.playerClass.name}
+Race: ${player.race}
+Do you wish to confirm your character and start the game?
+`)
+	if (!isPlayerReady) {return}
+	player.name = namePassOrFail.formattedName
+	playerNameDisplay.textContent = nameInputElement.value
+	body.classList.remove('fade-in')
+	body.classList.add('fade-out')
+	await dialogueWait(4000)
+	player.dialogueStasis = true
 	disappear.remove()
+	galvadiaBanner.remove()
+	unhideElements([mainAndStats])
+	body.classList.add('fade-in')
+	body.classList.remove('fade-out')
+	recall(0, 0, -2)
+	masterArea.innerHTML = ''
 	commandLine.focus()
 	areaCompiler(currentArea)
-	setTimeout(() => {
-		//
-		// setTimeout(() => {
-		// 	gameDialogue(
-		// 		`You just woke up in your home. You've spent the last year training at the academy in hopes of one day joining the ${player.playerClass}'s guild. Today is your final evaluation where you must put all your training to the test. Travel west to the Castle Training Halls where will begin your test`
-		// 	)
-		// }, 1000)
-	}, 1000)
-	// displayArea(currentArea)
+	await dialogueWait(2000)
+	gameStartMessage()
+}
+
+function gameStartMessage() {
+	let line1 = lineFunc()
+	let line2 = lineFunc()
+	blankSpace()
+	customizeEachWord(`Welcome to Galvadia! Your adventure begins in the basement of the castle's Training Halls geared with nothing but an old man. He will walk you through the basics, teaching you how to navigate and interact with the world around you. For more detailed information, be sure to check the Player's Guide in the game folder. When you're ready to proceed, use the SPEAK or TALK command followed by his name. Try, 'speak egbert' or 'talk egbert' to begin your journey.`, 'white', line1)
+	customizeEachWord(`NOTE: Every command can be typed lower case. There is no command that requires capitalization.`, 'white', line2)
+	blankSpace()
 }
 
 function displayCharacterConfirmation() {
+	const finishCharacterText = document.createElement(`div`)
+	const nameCharacterHeading = document.createElement(`h2`)
+	finishCharacterText.textContent = `When you are ready to start the game, name your character and click the confirmation button.`
+	nameCharacterHeading.textContent = `Character Name`
+	finishCharacterText.classList.add('name-character-heading')
+	nameCharacterHeading.classList.add('name-character-heading')
+
+	const nameCharacterInputContainer = document.createElement('div')
+	const nameCharacterInput = document.createElement(`input`)
+	nameCharacterInput.maxLength = 20
+	nameCharacterInput.setAttribute('id', 'name-character-input')
+	nameCharacterInputContainer.appendChild(nameCharacterInput)
+	nameCharacterInputContainer.classList.add('name-character-input-container')
+
 	const confirmationButtonDiv = document.createElement('div')
 	const confirmationButton = document.createElement('button')
+
 	confirmationButton.addEventListener('click', confirmationButtonFunction)
 	confirmationButtonDiv.classList.add('character-confirmation')
 	confirmationButton.textContent = 'Confirm Character'
 	confirmationButton.classList.add('character-confirmation-button')
 	confirmationButtonDiv.appendChild(confirmationButton)
+	document.getElementById('class-and-race-container').appendChild(finishCharacterText)
+	document.getElementById('class-and-race-container').appendChild(nameCharacterHeading)
+	document.getElementById('class-and-race-container').appendChild(nameCharacterInputContainer)
 	document.getElementById('class-and-race-container').appendChild(confirmationButtonDiv)
-	trainingHallsCommonRoom.west = 'locked'
-	player.gold = 0
-	player.skillPoints = 0
-
 }
 
 function advanceAndRetreatCheck() {
@@ -67413,8 +71538,11 @@ function playerAbility1Alt() {
 		}
 	updateMonsterBox()
 }
-function playerAbility1ShiftAndALt() {
+function playerAbility1ShiftAndAlt() {
 	switch (player.playerClass.name) {
+		case 'Elemental Monk':
+			quakeFistFunction()
+			break;
 		default:
 		quickMessage(`Nothing yet`)
 		break;
@@ -67468,8 +71596,7 @@ function playerAbility3ShiftAndALt() {
 function playerAbility4() {
 	switch (player.playerClass.name) {
 		case 'Shadowblade':
-			quickMessage('shadow nova used')
-			shadowNovaFunction()
+			shadowVenomFunction()
 			break;
 		case 'Pyromancer':
 			spellFunction(player.barrier)
@@ -67571,7 +71698,7 @@ function playerAbility3() {
 			baneFunction()
 			break;
 		case 'Shadowblade':
-			shadowVenomFunction()
+			shadowNovaFunction()
 			break;
 		case 'Martial Monk':
 			knuckleBlitzFunction()
@@ -67642,29 +71769,36 @@ function playerNormalAttack() {
 }
 
 function playerNormalAttackShift() {
-	switch (player.playerClass.name) {
-		case 'Berserker':
-			if (player.charge.level > 0) {
-				chargeFunction()
-				return
-			}
-			attack()
-			break;
-		case 'Fighter':
-			if (player.charge.level > 0) {
-				chargeFunction()
-				return
-			}
-			attack()
-			break;
-		case 'Knight':
-			if (player.charge.level > 0) {
-				chargeFunction()
-				return
-			}
-			attack()
-			break;
-		}
+	let targetEnemy = targetFirstEnemy()
+	if (targetEnemy) {
+		player.combat = true
+		targetEnemy.combat = true
+	}
+	attackGodMode()
+	// return
+	// switch (player.playerClass.name) {
+	// 	case 'Berserker':
+	// 		if (player.charge.level > 0) {
+	// 			chargeFunction()
+	// 			return
+	// 		}
+	// 		attackGodMode()
+	// 		break;
+	// 	case 'Fighter':
+	// 		if (player.charge.level > 0) {
+	// 			chargeFunction()
+	// 			return
+	// 		}
+	// 		attackGodMode()
+	// 		break;
+	// 	case 'Knight':
+	// 		if (player.charge.level > 0) {
+	// 			chargeFunction()
+	// 			return
+	// 		}
+	// 		attackGodMode()
+	// 		break;
+	// 	}
 }
 
 function warriorKeybinds() {}
@@ -68067,13 +72201,21 @@ function stopAnimation() {
 
 
 function gameStart() {
+	let testing = true
+	player.combat = false
+	player.dialogueStasis = true
+	if (testing) {
+	player.stasis = false
+	player.dialogueStasis = false
 	//INITIALIZE NPCS AND MONSTER BEHAVIOR
 	// strayKitty.npcBehavior()
 	// annoyedSquire.npcBehavior()
 	// villagerMalchus.npcBehavior()
 	// villagerLinus.npcBehavior()
-	villagerRissah.npcBehavior()
-	deylani.npcBehavior()
+	// rissah.npcBehavior()
+	// deylani.npcBehavior()
+	// timtim.npcBehavior()
+	// sally.npcBehavior()
 	// frederickGregory.npcBehavior()
 	// villager1.npcBehavior()
 
@@ -68084,15 +72226,8 @@ function gameStart() {
 	pushMonster.push(trainingDummy5(currentArea))
 	pushMonster.push(trainingDummy6(currentArea))
 
-	player.stasis = false
-	player.combat = false
 
-	welcome()
-	displayClassSelection()
-	displayClassDetails()
-	displayRaceSelection()
-	displayRaceDetails()
-	displayCharacterConfirmation()
+
 	weaponGen(trainingShortsword())
 	weaponGen(trainingShortsword())
 	weaponGen(trainingTwoHandedSword())
@@ -68109,63 +72244,424 @@ function gameStart() {
 	pushItem[7].roomId = 'backpack'
 	pushItem[8].roomId = 'backpack'
 	pushItem[9].roomId = 'backpack'
-	// pushItem[10].roomId = 'backpack'
-	// // pushItem[11].roomId = 'backpack'
-	// pushItem[12].roomId = 'backpack'
-	// pushItem[13].roomId = 'backpack'
-	// // pushItem[14].roomId = 'backpack'
-	// // pushItem[15].roomId = 'backpack'
-	// pushItem[16].roomId = 'backpack'
-	// // pushItem[17].roomId = 'backpack'
-	// // pushItem[18].roomId = 'backpack'
-	// // pushItem[19].roomId = 'backpack'
-	// pushItem[20].roomId = 'backpack'
-	// pushItem[21].roomId = 'backpack'
-	// pushItem[22].roomId = 'backpack'
-	// pushItem[23].roomId = 'backpack'
-	// pushItem[24].roomId = 'backpack'
-	// pushItem[25].roomId = 'backpack'
-	// pushItem[26].roomId = 'backpack'
-	// pushItem[27].roomId = 'backpack'
-	// pushItem[28].roomId = 'backpack'
-	// pushItem[29].roomId = 'backpack'
-	// pushItem[30].roomId = 'backpack'
-	// pushItem[31].roomId = 'backpack'
-	// pushItem[32].roomId = 'backpack'
-	// pushItem[33].roomId = 'backpack'
-	// pushItem[34].roomId = 'backpack'
-	// pushItem[35].roomId = 'backpack'
-	// pushItem[36].roomId = 'backpack'
-	// pushItem[38].roomId = 'backpack'
-	// pushItem[39].roomId = 'backpack'
-	// pushItem[40].roomId = 'backpack'
-	// pushItem[41].roomId = 'backpack'
-	// pushItem[42].roomId = 'backpack'
-	// pushItem[43].roomId = 'backpack'
-	// pushItem[44].roomId = 'backpack'
-	// pushItem[45].roomId = 'backpack'
-	player.str = 1
-	player.dex = 1
-	player.agi = 1
-	player.con = 1
-	player.wis = 1
-	player.int = 1
-	player.twoHanded.level = 1
-	player.bows.level = 1
-	player.daggers.level = 1
-	player.unarmed.level = 1
-	player.oneHanded.level = 1
-	player.sideStep.level = 0
-	player.counterAttack.level = 0
-	player.preemptiveStrike.level = 0
-	// player.heal = { ...heal }
 	updateScroll()
 	updatePlayerStats()
 	player.gold = 1000
 	player.attributePoints = 100
 	player.skillPoints = 1000
+	recall(0, 0, -2)
+	masterArea.innerHTML = ''
+	} else {
+		// till.npcBehavior()
+		// krista.npcBehavior()
+		// sylas.npcBehavior()
+		// gaelwyn.npcBehavior()
+		// lessa.npcBehavior()
+	}
+	openingTest()
+	let mainAndStats = document.getElementById('main-and-stats')
 
-	recall()
+	unhideElements([mainAndStats])
 }
 
+async function openingTest() {
+	welcome()
+	displayClassSelection()
+	displayClassDetails()
+	displayRaceSelection()
+	displayRaceDetails()
+	displayCharacterConfirmation()
+
+	let mainAndStats = document.getElementById('main-and-stats')
+	hideElements([mainAndStats])
+}
+
+function hideElements(elementsToHide) {
+	//elementsToHide should be an array
+	for (const element of elementsToHide) {
+		element.classList.add('hide')
+	}
+}
+function unhideElements(elementsToUnhide) {
+	//elementsToUnhide should be an array
+	for (const element of elementsToUnhide) {
+		element.classList.remove('hide')
+	}
+}
+
+const trainingFieldsRoomPack = [fields1, fields2, fields3, fields4, fields5, fields6, fields7, fields8, fields9]
+const galvadiaSquareRoomPack = [galvadiaTownSquareNorthwest, galvadiaTownSquareNortheast, galvadiaTownSquare, galvadiaTownSquareEast, galvadiaTownSquareNorth, galvadiaTownSquareWest, galvadiaCitySouthwest, galvadiaTownSquareSouth, galvadiaCitySoutheast]
+
+
 gameStart()
+
+function serializeGameState(gameState) {
+    return JSON.stringify(gameState, (key, value) => {
+        if (typeof value === 'function') {
+            return value.toString(); // Convert functions to strings
+        }
+        return value;
+    });
+}
+
+function deserializeGameState(jsonString) {
+    const parsedObject = JSON.parse(jsonString, (key, value) => {
+        if (typeof value === 'string' && value.startsWith('function')) {
+            // Reconstruct function from string
+            return new Function('return ' + value)();
+        }
+        return value;
+    });
+    // If you need to restore prototypes or more complex structures, do it here
+    return parsedObject;
+}
+
+function npcSaveQuestStage() {
+	for (const npc of allNpcsArray) {
+		if (npc.questStage) {
+			player.npcQuestStageStorage[npc.refName] = npc.questStage
+		}
+	}
+}
+
+function saveGame(secondCommand) {
+	npcSaveQuestStage()
+	playerSetCurrentArea()
+	playerSetPushItem()
+	const jsonString = serializeGameState(player)
+	const blob = new Blob([jsonString], { type: "application/json" });
+	const link = document.createElement("a");
+	link.download = secondCommand + ".json";
+	link.href = URL.createObjectURL(blob);
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+}
+
+// Load game function
+function retrieveSaveFile() {
+	//TO MAKE PLAYER SPECIFY FILENAME, ADD filename AS THE PARAMETER
+	//AND THEN FOLLOW DIRECTIONS IN NEXT ALL CAPS COMMENTS
+    // if (!filename) {
+    //     console.error('No filename provided');
+    //     return;
+    // }
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    fileInput.style.display = 'none';
+
+    fileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+		//UNCOMMENT THE BELOW CODE TO HAVE THE FUNCTION CHECK IF A FILE NAME
+		//WAS SPECIFIED - THEN DELETE THE NEAR IDENTICAL CODE BELOW THAT STARTS
+		//WITH if (file) {
+
+        // if (file && file.name === `${filename}.json`) {
+        //     const reader = new FileReader();
+
+        //     reader.onload = function(e) {
+        //         const gameState = deserializeGameState(e.target.result)
+        //         loadGame(gameState);
+        //     };
+
+        //     reader.readAsText(file);
+        // } 
+        if (file) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const gameState = deserializeGameState(e.target.result)
+                loadGame(gameState);
+            };
+
+            reader.readAsText(file);
+        } 
+		else {
+            console.error('File not found or incorrect filename');
+        }
+    });
+    fileInput.click();  // Simulate clicking the file input to open the file dialog
+}
+
+function loadGame(savedPlayer) {
+	player = savedPlayer
+	addAllSkillsToPlayer()
+	applyGettersAndSettersToPlayer()
+	loadNpcsIntoAreas()
+	playerLoadCurrentArea()
+	playerLoadPushItem()
+	areaCompiler(currentArea)
+	updatePlayerStats()
+	look()
+}
+
+function playerSetCurrentArea() {
+	if (!currentArea?.descriptions?.areaName) {
+		quickMessage(`Cannot save in this area (for some reason? As Taylor)`)
+		return
+	}
+	player.currentArea = currentArea.descriptions.areaName
+}
+
+function playerLoadCurrentArea() {
+	let areaToLoadPlayerInto = allAreas.find(area => area?.descriptions?.areaName == player.currentArea)
+	currentArea = areaToLoadPlayerInto
+	player.x = currentArea.x
+	player.y = currentArea.y
+	player.z = currentArea.z
+}
+
+class ReconstructPushItem {
+	constructor(roomId, name, picture, color, keywords, botDamage, topDamage, mods,
+		requirements, type, enchantment, skillUsed, price, sellValue, description
+	) {
+		this.roomId = roomId
+		this.name = name
+		this.picture = picture
+		this.color = color
+		this.keywords = keywords
+		this.botDamage = botDamage
+		this.topDamage = topDamage
+		this.mods = mods
+		this.requirements = requirements
+		this.type = type
+		this.enchantment = enchantment
+		this.skillUsed = skillUsed
+		this.price = price
+		this.sellValue = sellValue
+		this.description = description
+		this.swing = (enemy, weapon) => oneHandedSwing1(enemy, weapon)
+		this.miss = (enemy, weapon) => oneHandedSwing1(enemy, weapon)
+	}
+
+	desc() {
+		itemDescription(this)
+	}
+
+}
+
+function playerSetPushItem() {
+	let serializedPushItem = serializeGameState(pushItem)
+	console.log(serializedPushItem)
+	player.pushItem = serializedPushItem
+}
+function playerLoadPushItem() {
+	let deserializedPushItem = deserializeGameState(player.pushItem)
+	let reconstructedItems = deserializedPushItem.map(itemData => {
+			return new ReconstructPushItem(itemData.roomId, itemData.name, itemData.picture, itemData.color,
+			itemData.keywords, itemData.botDamage, itemData.topDamage, itemData.mods, itemData.requirements,
+			itemData.type, itemData.enchantment, itemData.skillUsed, itemData.price, itemData.sellValue,
+			itemData.description, itemData.desc, itemData.swing, itemData.miss
+		)
+	})
+	pushItem = reconstructedItems
+	console.log(reconstructedItems)
+	// pushItem = deserializedPushItem
+}
+
+function applyGettersAndSettersToPlayer() {
+	console.log(player.baseStats.healthPerLevel)
+	console.log(player.level)
+	console.log(player.baseStats.healthPerCON)
+	console.log(player.vigor.level)
+	console.log(player.con)
+	Object.defineProperty(player, 'str', {get() {return calculateStat(this, 'str')}})
+	Object.defineProperty(player, 'dex', {get() {return calculateStat(this, 'dex')}})
+	Object.defineProperty(player, 'agi', {get() {return calculateStat(this, 'agi')}})
+	Object.defineProperty(player, 'wis', {get() {return calculateStat(this, 'wis')}})
+	Object.defineProperty(player, 'mys', {get() {return calculateStat(this, 'mys')}})
+	Object.defineProperty(player, 'con', {get() {return calculateStat(this, 'con')}})
+	Object.defineProperty(player, 'maxMight', {get() {return calculateStat(this, 'maxMight')}})
+	Object.defineProperty(player, 'maxFocus', {get() {return calculateStat(this, 'maxFocus')}})
+	Object.defineProperty(player, 'sinisterMarksMax', {get() {return calculateStat(this, 'sinisterMarksMax')}})
+	Object.defineProperty(player, 'weight', {get() {return calculateStat(this, 'weight')}})
+	Object.defineProperty(player, 'advanceTimer', {get() {return calculateStat(this, 'advanceTimer')}})
+	Object.defineProperty(player, 'retreatTimer', {get() {return calculateStat(this, 'retreatTimer')}})
+
+	Object.defineProperty(player, 'dodge', {get() {return calculateStat(this, 'dodge') + player.dodging.rating() + (player.agi * 3) - player.burden}})
+	Object.defineProperty(player, 'accuracy', {get() {return calculateStat(this, 'accuracy') - player.burden}})
+	Object.defineProperty(player, 'slashingPen', {get() {return calculateStat(this, 'slashingPen') + player.slashingExpertise.amount()}})
+	Object.defineProperty(player, 'piercingPen', {get() {return calculateStat(this, 'piercingPen') + player.piercingExpertise.amount()}})
+	Object.defineProperty(player, 'bluntPen', {get() {return calculateStat(this, 'bluntPen') + player.bluntExpertise.amount()}})
+	Object.defineProperty(player, 'slashingArmor', {get() {return calculateStat(this, 'slashingArmor') + player.toughness.rating()}})
+	Object.defineProperty(player, 'piercingArmor', {get() {return calculateStat(this, 'piercingArmor') + player.toughness.rating()}})
+	Object.defineProperty(player, 'bluntArmor', {get() {return calculateStat(this, 'bluntArmor') + player.toughness.rating()}})
+
+	Object.defineProperty(player, 'fireResist', {get() {return calculateStat(this, 'fireResist')}})
+	Object.defineProperty(player, 'iceResist', {get() {return calculateStat(this, 'iceResist')}})
+	Object.defineProperty(player, 'lightningResist', {get() {return calculateStat(this, 'lightningResist')}})
+	Object.defineProperty(player, 'waterResist', {get() {return calculateStat(this, 'waterResist')}})
+	Object.defineProperty(player, 'windResist', {get() {return calculateStat(this, 'windResist')}})
+
+	Object.defineProperty(player, 'burden', {get() {return Math.max(calculateStat(this, 'burden') - (player.str * 5), 0)}})
+
+	Object.defineProperty(player, 'spellPower', {get() {
+		let isSpellWeaponValid = (player.currentWeaponRight()?.mods?.spellPower ?? 0) * (player.spellWeapons?.bonus() ?? 0);
+		let spellWeaponBonus = Math.max(0, isSpellWeaponValid || 0)
+		let baseSpellpowerCalculation = Math.ceil((player.int * 2) + player.wis + spellWeaponBonus)
+		console.log(spellWeaponBonus)
+		console.log(baseSpellpowerCalculation)
+		return calculateStat(this, 'spellPower') + baseSpellpowerCalculation
+	}})
+	Object.defineProperty(player, 'mysticPower', {get() {
+		let isMysticWeaponValid =(player.currentWeaponRight()?.mods?.mysticPower ?? 0) * (player.spellWeapons?.bonus() ?? 0);
+		let mysticWeaponBonus = Math.max(0, isMysticWeaponValid || 0)
+		let baseMysticPowerCalculation = Math.ceil((player.mys * 2) + player.wis + mysticWeaponBonus)
+		return calculateStat(this, 'mysticPower') + baseMysticPowerCalculation
+	}})
+	Object.defineProperty(player, 'maxHealth', {get() {
+
+		let perLevelBonus = player.baseStats.healthPerLevel * player.level
+		let perCONBonus = (player.baseStats.healthPerCON + player.vigor.level) * player.con
+
+		return calculateStat(this, 'maxHealth') + perLevelBonus + perCONBonus
+	}})
+	Object.defineProperty(player, 'maxMana', {get() {
+		let perLevelBonus = player.baseStats.manaPerLevel * player.level
+		let perWISBonus = (player.baseStats.manaPerWIS + player.devotion.level) * player.wis
+		return calculateStat(this, 'maxMana') + perLevelBonus + perWISBonus
+	}})
+}
+
+function addAllSkillsToPlayer() {
+	perception.addToPlayer()
+	rest.addToPlayer()
+	slashingExpertise.addToPlayer()
+	piercingExpertise.addToPlayer()
+	bluntExpertise.addToPlayer()
+	firePenetration.addToPlayer()
+	icePenetration.addToPlayer()
+	lightningPenetration.addToPlayer()
+	weakSpot.addToPlayer()
+	vigor.addToPlayer()
+	devotion.addToPlayer()
+	cleave.addToPlayer()
+	multipleStrikes.addToPlayer()
+	doubleDraw.addToPlayer()
+	extraStrike.addToPlayer()
+	stunningBlows.addToPlayer()
+	precision.addToPlayer()
+	warcraft.addToPlayer()
+	stealth.addToPlayer()
+	block.addToPlayer()
+	dodging.addToPlayer()
+	supremeDodging.addToPlayer()
+	toughness.addToPlayer()
+	sideStep.addToPlayer()
+	quickshot.addToPlayer()
+	dodgeStrike.addToPlayer()
+	preemptiveStrike.addToPlayer()
+	lockpicking.addToPlayer()
+	smokeBomb.addToPlayer()
+	mindsEye.addToPlayer()
+	arcaneKnowledge.addToPlayer()
+	mysticismMastery.addToPlayer()
+	sorceryMastery.addToPlayer()
+	clearMind.addToPlayer()
+	spellWeapons.addToPlayer()
+	magicDexterity.addToPlayer()
+	barrier.addToPlayer()
+	battleRage.addToPlayer()
+	resilience.addToPlayer()
+	hardenedSkin.addToPlayer()
+	knightsResolve.addToPlayer()
+	blacksmithing.addToPlayer()
+	herbalism.addToPlayer()
+	leatherworking.addToPlayer()
+	fishing.addToPlayer()
+	evasiveRoll.addToPlayer()
+	athletics.addToPlayer()
+	ridingSkill.addToPlayer()
+	tauntingShout.addToPlayer()
+	berserking.addToPlayer()
+	headshot.addToPlayer()
+	backstabbing.addToPlayer()
+	brutalBlows.addToPlayer()
+	thrillOfTheKill.addToPlayer()
+	counterAttack.addToPlayer()
+	fleetFooted.addToPlayer()
+	initiation.addToPlayer()
+	vigilance.addToPlayer()
+	tactics.addToPlayer()
+	fistsOfFury.addToPlayer()
+	fistsOfPrecision.addToPlayer()
+	wayOfTheFist.addToPlayer()
+	bleed.addToPlayer()
+	burn.addToPlayer()
+	frostbite.addToPlayer()
+	charge.addToPlayer()
+	ripslash.addToPlayer()
+	cyclone.addToPlayer()
+	cataclysm.addToPlayer()
+	dualStrike.addToPlayer()
+	shred.addToPlayer()
+	bladeBlitz.addToPlayer()
+	valorStrike.addToPlayer()
+	shieldSlam.addToPlayer()
+	boomingMight.addToPlayer()
+	ambush.addToPlayer()
+	backstab.addToPlayer()
+	guillotine.addToPlayer()
+	venomBlade.addToPlayer()
+	contagion.addToPlayer()
+	bane.addToPlayer()
+	poison.addToPlayer()
+	shadowsurge.addToPlayer()
+	shadowDaggers.addToPlayer()
+	shadowNova.addToPlayer()
+	shadowVenom.addToPlayer()
+	catalyst.addToPlayer()
+	tempest.addToPlayer()
+	blazingFist.addToPlayer()
+	tidalFist.addToPlayer()
+	quakeFist.addToPlayer()
+	lightningFist.addToPlayer()
+	elementalTempest.addToPlayer()
+	transcendence.addToPlayer()
+	callOfWind.addToPlayer()
+	knuckleBlitz.addToPlayer()
+	fireSeal.addToPlayer()
+	waterSeal.addToPlayer()
+	earthSeal.addToPlayer()
+	mysticFist.addToPlayer()
+	unleashedPower.addToPlayer()
+	waveFist.addToPlayer()
+	riptideFist.addToPlayer()
+	markOfTheBeast.addToPlayer()
+	shadowMark.addToPlayer()
+	sinisterMark.addToPlayer()
+	piercingArrow.addToPlayer()
+	hydraArrow.addToPlayer()
+	rapidFireShot.addToPlayer()
+	aimedShot.addToPlayer()
+	unarmed.addToPlayer()
+	daggers.addToPlayer()
+	oneHanded.addToPlayer()
+	twoHanded.addToPlayer()
+	bows.addToPlayer()
+	shields.addToPlayer()
+	fireflames.addToPlayer()
+	inferno.addToPlayer()
+	meteor.addToPlayer()
+	frostfreeze.addToPlayer()
+	blizzard.addToPlayer()
+	cryoclast.addToPlayer()
+	flashbolt.addToPlayer()
+	chainLightning.addToPlayer()
+	gigavolt.addToPlayer()
+	heal.addToPlayer()
+	lightningFistEnchant.addToPlayer()
+	colossusPunch.addToPlayer()
+	hydraStrike.addToPlayer()
+	gigasUppercut.addToPlayer()
+	atmaShock.addToPlayer()
+
+}
+
+async function testFetch() {
+	const response = await fetch('https://www.dnd5eapi.co/api/spells/aid')
+	const data = await response.json()
+	console.log(data)
+	return data
+}
