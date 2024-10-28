@@ -2297,37 +2297,30 @@ function allItemDescription(item) {
 			})
 		}
 	}
-		wordsAndColors.forEach(numWordColor => {
-			// if (Object.keys(item.magicWeaving))
-
-		
-
-			console.log(numWordColor)
-			let span = document.createElement('span')
-			let numberSpan = document.createElement('span')
-			let mainSpan = document.createElement('span')
-			mainSpan.appendChild(span)
-			mainSpan.appendChild(numberSpan)
-			numberSpan.classList.add(numWordColor.color)
-			span.textContent = capitalizeFirstLetter(numWordColor.word)
-			numberSpan.textContent = ' ' +  '+' + numWordColor.number
+		// wordsAndColors.forEach(numWordColor => {
+		// 	let span = document.createElement('span')
+		// 	let numberSpan = document.createElement('span')
+		// 	let mainSpan = document.createElement('span')
+		// 	mainSpan.appendChild(span)
+		// 	mainSpan.appendChild(numberSpan)
+		// 	numberSpan.classList.add(numWordColor.color)
+		// 	span.textContent = capitalizeFirstLetter(numWordColor.word)
+		// 	numberSpan.textContent = ' ' +  '+' + numWordColor.number
 			
-			let bonusWord = numWordColor.word.toLowerCase()
-			console.log(bonusWord, ' BONUS WORD')
-			let magicWeavingKeys = Object.keys(item.magicWeaving)
-			console.log(magicWeavingKeys)
-			magicWeavingKeys.forEach(key => {
-				if (bonusWord.includes(key)) {
-					let enhancedStat = item.magicWeaving[key]
-					let originalStat = item.mods[key] - enhancedStat
-					let bonusNumbersSpan = document.createElement('span')
-					bonusNumbersSpan.textContent = ` (${originalStat} + ${enhancedStat})`
-					numberSpan.appendChild(bonusNumbersSpan)
-				}
-			})
+		// 	let bonusWord = numWordColor.word.toLowerCase()
+		// 	let magicWeavingKeys = Object.keys(item.magicWeaving)
+		// 	magicWeavingKeys.forEach(key => {
+		// 		if (bonusWord.includes(key)) {
+		// 			let enhancedStat = item.magicWeaving[key]
+		// 			let originalStat = item.mods[key] - enhancedStat
+		// 			let bonusNumbersSpan = document.createElement('span')
+		// 			bonusNumbersSpan.textContent = ` (${originalStat} + ${enhancedStat})`
+		// 			numberSpan.appendChild(bonusNumbersSpan)
+		// 		}
+		// 	})
 
-			modsContainer.appendChild(mainSpan)
-		})
+		// 	modsContainer.appendChild(mainSpan)
+		// })
 	}
 	if (item.mods?.weight) {
 		const weightDiv = document.createElement('div')
@@ -3554,6 +3547,9 @@ function godMode(secondCommand) {
 	player.godMods.agi = 100
 	player.godMods.charge = 1
 	player.godMods.stealth = 1
+	player.godMods.clearMind = 100
+	player.godMods.magicDexterity = 100
+	player.godMods.sorceryMastery = 1
 	quickMessage(`God mode activated`)
 
 	if (secondCommand == 'mana') {
@@ -8043,7 +8039,7 @@ function calculateBonusStat(playerObject, stat) {
 //player.questLog.egbert = {}
 //player.questLog.egbert.questStage = stage
 
-function advanceQuestStage(questGiver, stage) {
+function questChangeStage(questGiver, stage) {
 	questGiver.questStage = stage
 	// if (!player.questLog[questGiver.refName]) {
 	// 	player.questLog[questGiver.refName] = {}
@@ -8051,6 +8047,9 @@ function advanceQuestStage(questGiver, stage) {
 	// } else {
 	// 	player.questLog[questGiver.refName].stage = stage
 	// }
+}
+function dialogueChangeStage(questGiver, stage) {
+	questGiver.dialogueStage = stage
 }
 
 
@@ -9905,6 +9904,7 @@ const clearMind = {
 	color: 'green',
 	maxLevel: 10,
 	reduction: function() {
+		if (player.clearMind.level >= 100) {return 4000}
 		if (player.clearMind.level == 1) {return 200}
 		if (player.clearMind.level == 2) {return 400}
 		if (player.clearMind.level == 3) {return 600}
@@ -9978,6 +9978,7 @@ const magicDexterity = {
 	color: 'green',
 	maxLevel: 10,
 	reduction: function() {
+		if (player.magicDexterity.level >= 100) {return 4000}
 		if (player.magicDexterity.level == 1) {return 200}
 		if (player.magicDexterity.level == 2) {return 400}
 		if (player.magicDexterity.level == 3) {return 600}
@@ -17611,7 +17612,7 @@ shields.addToPlayer()
 ///////////////////////////////////////SPELLS SPELLS SPELLS SPELLS///////////////////////////////////////
 
 const fireflames = {
-		get level() {
+	get level() {
 		return calculateStat(player, this.refName)
 	},
 	name: 'Fireflames',
@@ -20303,6 +20304,7 @@ let egbert = {
 		displayNPCName(peopleDiv, this)
 	},
 	questItem: 'pair of glasses',
+	questStage: 1,
 	questSequence: {
 		preFirst: false,
 		first: false,
@@ -20345,7 +20347,8 @@ let egbert = {
 		npcDescription(this)
 		blankSpace()
 	},
-	questStage: 0,
+	questStage: 1,
+	dialogueStage: 0,
 	speak: async function () {
 		let line1 = lineFunc()
 		let line2 = lineFunc()
@@ -20353,7 +20356,7 @@ let egbert = {
 		let line4 = lineFunc()
 		let line5 = lineFunc()
 		// let stage = player.questLog?.egbert?.stage
-		let stage = this.questStage
+		let stage = this.dialogueStage
 		if (stage == 0) {
 			await dialogueWait(200)
 			blankSpace()
@@ -20375,7 +20378,7 @@ let egbert = {
 			blankSpace()
 			await dialogueWait(200)
 			npcMovesAndChangesRoom(this, galvadiaWelcomeArea2, 'north')
-			advanceQuestStage(this, 1)
+			dialogueChangeStage(this, 1)
 			return
 		}
 		else if (stage == 1) {
@@ -20398,7 +20401,7 @@ let egbert = {
 			blankSpace()
 			await dialogueWait(200)
 			npcMovesAndChangesRoom(this, galvadiaWelcomeArea3, 'north')
-			advanceQuestStage(this, 3)
+			dialogueChangeStage(this, 3)
 			return
 		}
 		else if (stage == 3) {
@@ -20416,7 +20419,7 @@ let egbert = {
 			customizeEachWord(`"Looks like you're already familiar with how to get around!"`, 'white', line1)
 			blankSpace()
 			npcMovesAndChangesRoom(this, galvadiaWelcomeArea3, 'north')
-			advanceQuestStage(this, 6)
+			dialogueChangeStage(this, 6)
 			return
 		}
 		else if (stage == 5) {
@@ -20427,7 +20430,7 @@ let egbert = {
 			blankSpace()
 			await dialogueWait(200)
 			npcMovesAndChangesRoom(this, galvadiaWelcomeArea5, 'north')
-			advanceQuestStage(this, 6)
+			dialogueChangeStage(this, 6)
 			return
 		}
 		else if (stage == 6) {
@@ -20445,7 +20448,7 @@ let egbert = {
 			blankSpace()
 			await dialogueWait(200)
 			npcMovesAndChangesRoom(this, galvadiaWelcomeArea4, 'north')
-			advanceQuestStage(this, 7)
+			dialogueChangeStage(this, 7)
 			return
 		}
 		else if (stage == 7 && currentArea.descriptions.zoneExitsBool.north == 'locked') {
@@ -20464,7 +20467,7 @@ let egbert = {
 			blankSpace()
 			await dialogueWait(200)
 			npcMovesAndChangesRoom(this, galvadiaWelcomeArea6, 'north')
-			advanceQuestStage(this, 8)
+			dialogueChangeStage(this, 8)
 			return
 		}
 		else if (stage == 8) {
@@ -20488,7 +20491,7 @@ let egbert = {
 			blankSpace()
 			npcMovesAndChangesRoom(this, galvadiaWelcomeArea14, 'north')
 			galvadiaWelcomeArea8.descriptions.zoneExitsBool.north = true
-			advanceQuestStage(this, 10)
+			dialogueChangeStage(this, 10)
 			return 
 		} 
 		else if (stage == 10) {
@@ -20514,7 +20517,7 @@ let egbert = {
 			blankSpace()
 			npcMovesAndChangesRoom(this, th_b_center_1, 'north')
 			galvadiaWelcomeArea8.descriptions.zoneExitsBool.north = true
-			advanceQuestStage(this, 11)
+			dialogueChangeStage(this, 11)
 			return 
 		}
 		else if (stage == 11) {
@@ -20535,7 +20538,7 @@ let egbert = {
 			blankSpace()
 			npcMovesAndChangesRoom(this, trainingHallsCommonRoom, 'north')
 			galvadiaWelcomeArea8.descriptions.zoneExitsBool.north = true
-			advanceQuestStage(this, 13)
+			dialogueChangeStage(this, 13)
 			updateNpcPicture()
 			return
 		}
@@ -20554,7 +20557,7 @@ let egbert = {
 			customizeEachWord(`Egbert: `, this.nameColor, line3)
 			customizeEachWord(`"Alright, goodluck out there ${player.name}!"`, white, line3)
 			blankSpace()
-			advanceQuestStage(this, 14)
+			dialogueChangeStage(this, 14)
 			return
 		}
 		else if (stage == 14) {
@@ -20588,7 +20591,7 @@ let egbert = {
 			blankSpace()
 			await dialogueWait(200)
 			blankSpace()
-			advanceQuestStage(this, 16)
+			dialogueChangeStage(this, 16)
 			npcMovesAndChangesRoom(this, trainingHallsCommonRoom, 'north')
 			updateNpcPicture()
 			return
@@ -20605,6 +20608,21 @@ let egbert = {
 	},
 	isQuestAvailable: true,
 	offer: async function() {
+		if (this.questStage == 1) {
+			let npcQuestItem = pairOfGlasses()
+			let playerQuestItem = questFindPlayerItem(npcQuestItem)
+			if (playerQuestItem && npcQuestItem.refName === playerQuestItem.refName) {
+				questChangeStage(egbert, 0)
+				questReward({exp: 10})
+				removeItemFromPerson(playerQuestItem)
+				enableDirection('east')
+				spawnTutorialWeapons()
+				
+				npcMovesInADirection('east', this)
+				npcRemoveFromTheirCurrentRoom(this)
+				npcAddToRoom(galvadiaWelcomeArea8, this)
+			}
+		}
 		let qItem = pushItem.find(x => x.name.toLowerCase() == this.questItem)
 		let qItemIndex = pushItem.indexOf(qItem)
 		if (this.questSequence.first == false && qItem != undefined && player.backpack.find(item => item == qItem.name)) {
@@ -20639,7 +20657,7 @@ let egbert = {
 			npcRemoveFromTheirCurrentRoom(this)
 			npcAddToRoom(galvadiaWelcomeArea8, this)			
 			this.isQuestAvailable = false
-			advanceQuestStage(this, 9)
+			dialogueChangeStage(this, 9)
 			updateNpcPicture()
 		} else if (this.questSequence.first == false) {
 			let line1 = lineFunc()
@@ -21365,6 +21383,7 @@ const benjamin = {
 			blankSpace()
 		}
 	},
+	questStage: 1,
 	questSequence: {
 		first: false,
 	},
@@ -21466,6 +21485,7 @@ const threx = {
 		ripslash: 2,
 		charge: 1,
 	},
+	questStage: 1,
 	questSequence: {},
 	speakSequence: {},
 	speak: async function () {
@@ -21661,92 +21681,6 @@ let velthash = {
 	itemsOffered: [shortsword],
 	questItem: [cultTexts],
 	isQuestAvailable: false,
-	// quest: async function() {
-	// 	let line1 = lineFunc()
-	// 	let line2 = lineFunc()
-	// 	let line3 = lineFunc()
-	// 	let line4 = lineFunc()
-	// 	await dialogueWait(200)
-	// 	blankSpace()
-	// 	customizeEachWord(`${this.name}: `, this.nameColor, line1)
-	// 	customizeEachWord(`"We've received information that there have been Cultists gathering in the Graveyard. What they might be doing, we don't know, but we want to find out any details."`, 'white', line1)
-	// 	await dialogueWait(200)
-	// 	blankSpace()
-	// 	customizeEachWord(`${this.name}: `, this.nameColor, line2)
-	// 	customizeEachWord(`"There was a group many years ago that studied the least understood aspects of magic. Their knowledge was kept secret in the libraries of the cathedral. Some people wanted this knowledge out in the open, but the Monks and Priests wanted to completely understand the magic before allowing the public to study it. (continue)"`, 'white', line2)
-	// 	await dialogueWait(200)
-	// 	blankSpace()
-	// 	customizeEachWord(`${this.name}: `, this.nameColor, line3)
-	// 	customizeEachWord(`"The Graveyard is on the otherside of the wall behind the Guild Plaza to the south, so you'll have to take the road east of the Galvadian Plaza. If you get lost, just read any signs you come across, and they'll point you in the right direction."`, 'white', line3)
-	// 	blankSpace()
-	// 	await dialogueWait(200)
-	// 	customizeEachWord(`${this.name}: `, this.nameColor, line4)
-	// 	customizeEachWord(`"Come back when you think you've found something."`, 'white', line4)
-	// 	blankSpace()
-	// 	return
-	// },
-	// offer: async function() {
-	// 	let line1 = lineFunc()
-	// 	let line2 = lineFunc()
-	// 	let line3 = lineFunc()
-	// 	let line4 = lineFunc()
-	// 	let qItem = getAllItemsOnPerson().find(item => item.refName == this.questItem[0]().refName)
-	// 	let qItemIndex = pushItem.indexOf(qItem)
-	// 	await dialogueWait(200)
-	// 	if (!qItem) {
-	// 		quickMessage(`You have not offered the proper item for this quest`)
-	// 		return
-	// 	}
-	// 	playerGainQuestExperience(100)
-	// 	await dialogueWait(200)
-	// 	blankSpace()
-	// 	customizeEachWord(`${this.name} takes a close look at the book.`, 'white', line1)
-	// 	await dialogueWait(200)
-	// 	blankSpace()
-	// 	customizeEachWord(`${this.name}: `, this.nameColor, line2)
-	// 	customizeEachWord(`"This is a good find, ${player.name}. Even better than I was hoping for. This will certainly provide us some insight into what's going on. I'm going to meet with the other Guild Leaders right away. This could take some time. Go ahead and familiarize yourself with the town and Guild Halls. Most of the items you'll need can be found in the town shops, and the guild has teachers who will help you train your skills. Once you've outgrown it, you should explore east and west of the Castle Crossroads. To the east is the Glade of Galvadia. It's where a lot of the townspeople spend their time, but there's an area called The Shallows in the northeast corner of the glade that has some enemies that might suite your level. To the west of the Castle Crossroads is the Kobold Caves. You'll have to trek the path a ways to get there. It's a little more dangerous than The Shallows, so make sure you're well equipped. Those Kobolds can be nasty little buggers."`, 'white', line2)
-	// 	await dialogueWait(200)
-	// 	blankSpace()
-	// 	customizeEachWord(`${this.name}: `, this.nameColor, line3)
-	// 	customizeEachWord(`"I'll be in my office after I meet with the other leaders. Come see me when you've reached level 10. That should give me enough time to figure out our next steps."`, 'white', line3)
-	// 	await dialogueWait(200)
-	// 	blankSpace()
-	// 	customizeEachWord(`${this.name} `, this.color, line4)
-	// 	customizeEachWord(`swiftly rushes off`, 'white', line4)
-	// 	blankSpace()
-	// 	currentArea.npc.pop()
-	// 	pushItem.splice(qItemIndex, 1)
-	// 	this.questSequence.ninth = true
-	// 	this.isQuestAvailable = false
-	// },
-	// speak: async function() {
-	// 	let line1 = lineFunc()
-	// 	let line2 = lineFunc()
-	// 	let line3 = lineFunc()
-	// 	let line4 = lineFunc()
-	// 	let line5 = lineFunc()
-	// 	if (!this.questSequence.first) {
-	// 		await dialogueWait(200)
-	// 		blankSpace()
-	// 		customizeEachWord(`${this.name}: `, this.nameColor, line1)
-	// 		customizeEachWord(`"Welcome back, ${player.name}. We were able to dissect the Cult Texts, and what we found is very disturbing. The cult itself is rooted in an ancient following that sought to disrupt the balance of magic in the world. Their belief was that the world we live in is a flat plane of existence that extends as far as magic can reach. They also believed that because this plane is flat, there must be another side to it. They believed that their ancestors once lived on that side of the plane, and that their affinity for magic would be ten fold of what it is here. The shape and origins of the world has been a topic of study for ages, but no conclusive evidence has ever been substantiated."`, 'white', line1)
-	// 		await dialogueWait(200)
-	// 		blankSpace()
-	// 		customizeEachWord(`${this.name}: `, this.nameColor, line2)
-	// 		customizeEachWord(`"Regardless of whether or not this is all true, the cult is actively trying to undermine what we protect. The other disturbing part of all of this is we believe there is someone from Galvadia working with them on the inside -- someone who would have deep knowledge of ancient studies. While I work with the guilds to take appropriate protective measures, I'd like you to investigate the castle grounds to see if you find anything suspicious. I imagine this person must have access to ancient knowledge and history. Let me know your findings."`, 'white', line2)
-	// 		blankSpace()
-	// 		this.questSequence.first = true
-	// 		return
-	// 	}
-	// 	if (!this.questSequence.second) {
-	// 		await dialogueWait(200)
-	// 		blankSpace()
-	// 		customizeEachWord(`${this.name}: `, this.nameColor, line1)
-	// 		customizeEachWord(`"Have you found anything yet?"`, 'white', line1)
-	// 		blankSpace()
-	// 		return
-	// 	}
-	// },
 	learn: (secondCommand, npc) => {
 		learnInteraction(secondCommand, npc)
 	},
@@ -21876,10 +21810,6 @@ const ragnar = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const magvello = {
@@ -21944,10 +21874,7 @@ const magvello = {
 		get resilience() {return skillMaxLevel3(player.resilience)},
 		get bleed() {return skillMaxLevel3(player.bleed)},
 	},
-	questSequence: {
-		first: false,
-		second: false,
-	},
+	questStage: 0,
 	itemsOffered: [shortsword, longsword, mailChestGuard, mailGloves, mailBoots, squiresShield],
 	buy: function (secondCommand) {
 		buyInteraction(secondCommand, this)
@@ -21960,10 +21887,6 @@ const magvello = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const allSkillsMan = {
@@ -22070,10 +21993,6 @@ const allSkillsMan = {
 		charge: 10,
 		stealth: 10,
 	},
-	questSequence: {
-		first: false,
-		second: false,
-	},
 	itemsOffered: [shortsword, longsword, mailChestGuard, mailGloves, mailBoots, squiresShield],
 	buy: function (secondCommand) {
 		buyInteraction(secondCommand, this)
@@ -22086,10 +22005,6 @@ const allSkillsMan = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const allAbilitiesMan = {
@@ -22160,10 +22075,6 @@ const allAbilitiesMan = {
 		gigasUppercut: 1,
 		atmaShock: 1,
 	},
-	questSequence: {
-		first: false,
-		second: false,
-	},
 	itemsOffered: [shortsword, longsword, mailChestGuard, mailGloves, mailBoots, squiresShield],
 	buy: function (secondCommand) {
 		buyInteraction(secondCommand, this)
@@ -22176,10 +22087,6 @@ const allAbilitiesMan = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const noviceBerserkerTrainer = {
@@ -22877,7 +22784,7 @@ let fieldsTrainerDialogue = {
 				default:
 				quickMessage(`none of these`)
 			}
-			advanceQuestStage(egbert, 15)
+			dialogueChangeStage(egbert, 15)
 			return
 		} else if (!this.questSequence.sixth && !player.killList.littleMudElemental && !player.killList.littleGrassElemental && !player.killList.littleWaterElemental) {
 			await dialogueWait(200)
@@ -23260,10 +23167,6 @@ let greaves = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 
@@ -23344,10 +23247,6 @@ const daggslain = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const zell = {
@@ -23385,9 +23284,10 @@ const zell = {
 		daggers: 5,
 		stealth: 2,
 	},
-		questSequence: {
-		first: false,
-		second: false,
+	questStage: 1,
+	questSequence: {
+	first: false,
+	second: false,
 	},
 	questItem: [cultTexts],
 	itemsOffered: [],
@@ -23582,10 +23482,6 @@ const shallox = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const kaijin = {
@@ -23687,10 +23583,6 @@ const kaijin = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const delverick = {
@@ -23772,10 +23664,6 @@ const delverick = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const maelius = {
@@ -23858,10 +23746,6 @@ const maelius = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const fearecia = {
@@ -23944,10 +23828,6 @@ const fearecia = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 const sitoria = {
@@ -23982,6 +23862,7 @@ const sitoria = {
 	skillsMaxLevel: {
 		unarmed: 5,
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	itemsOffered: [leatherTunic, leatherBoots, leatherGloves],
@@ -24061,10 +23942,6 @@ const sitoria = {
 	},
 	displayShop: async function (ssiq) {
 		displayShopSkillsOrSpells(this, ssiq)
-		if (this.questSequence.second) {
-			this.questSequence.first = true
-			this.speak()
-		}
 	},
 }
 
@@ -24216,6 +24093,7 @@ const tilwin = {
 	skillsMaxLevel: {
 		bows: 5,
 	},
+	questStage: 1,
 	questSequence: {
 		first: false,
 		second: false,
@@ -24340,6 +24218,7 @@ const joch = {
 			return
 		}
 	},
+	questStage: 1,
 	questSequence: {},
 	questItem: {
 		first: copperOre,
@@ -24459,6 +24338,7 @@ let clyde = {
 		}
 	},
 	isQuestAvailable: true,
+	questStage: 1,
 	questSequence: {},
 	questItem: {
 		first: copperOre,
@@ -24953,6 +24833,7 @@ let arnoldo = {
 	displayName: function (peopleDiv) {
 		displayNPCName(peopleDiv, this)
 	},
+	questStage: 1,
 	questSequence: {
 		first: false,
 	},
@@ -25073,6 +24954,7 @@ let timtim = {
 			this.conversationNumber = 1
 		}
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	questItem: [wormGuts],
@@ -25129,8 +25011,6 @@ let sally = {
 	refName: 'sally',
 	picture: 'images/npcs/female/civilians/sally/sally.png',
 	nameColor: 'sally',
-	// prefix: 'Villager ',
-	// prefixColor: '',
 	keywords: ['sally'],
 	occupation: '',
 	race: 'Human',
@@ -25170,6 +25050,7 @@ let sally = {
 			}
 		}
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	questItem: [mudBall],
@@ -25271,6 +25152,7 @@ let travellingWagon = {
 			this.conversationNumber = 1
 		}
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	questItem: [sackOfGrain],
@@ -25359,6 +25241,7 @@ const strayKitty = {
 			return
 		}
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	questItem: [halfEatenFish],
@@ -25464,6 +25347,7 @@ let frederickGregory = {
 		}
 	},
 	questItem: [emptyBucket],
+	questStage: 1,
 	questSequence: {
 	},
 	quest: async function() {
@@ -25754,6 +25638,7 @@ const seltathSilverwood = {
 	refName: 'seltathSilverwood',
 	picture: "",
 	nameColor: 'seltathSilverwood-name',
+	dialogueColor: 'white',
 	keywords: ['seltath', 'silverwood', 'seltath silverwood'],
 	occupation: `Adventurer`,
 	race: `Elf`,
@@ -25771,7 +25656,7 @@ const seltathSilverwood = {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`${this.name}`, this.nameColor, line1)
-			customizeEachWord(`: "Most of my family moved here from Aleurn a long time ago. When the guilds were established after the war, a lot of them came here to study magic."`, 'white', line1)
+			customizeEachWord(`: "Most of my family moved here from Aleurn a long time ago. When the guilds were established after the war, a lot of them came here to train and study. I guess it runs in our blood. Me and my brother have spent most of our lives in the Ranger's Guild and recently attained the rank of Sentinel. We are part of the elite group of Rangers who watch over the Glade from the treetops."`, this.dialogueColor, line1)
 			blankSpace()
 			this.dialogueStage = 1
 			return
@@ -25780,15 +25665,58 @@ const seltathSilverwood = {
 			await dialogueWait(200)
 			blankSpace()
 			customizeEachWord(`${this.name}`, this.nameColor, line1)
-			customizeEachWord(`: "When I was young, I thought magic was only used to cast spells. After I came here to study, I learned that magic is used in nearly everything. As a Ranger, I can manipulate magic in the form of Focus to use powerful abilities."`, 'white', line1)
+			customizeEachWord(`: "When I was young, I thought magic was only used to cast spells. After I came here to study, I learned that magic is used in nearly everything. As a Ranger, I can manipulate magic in the form of Focus to use powerful abilities."`, this.dialogueColor, line1)
 			blankSpace()
 			this.dialogueStage = 2
 			return
 		}
 	},
-	// displayShop: function (ssiq) {
-	// 	displayShopSkillsOrSpells(this, ssiq)
-	// },
+	questStage: 1,
+	quest: async function() {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		if (this.questStage == 1) {
+			await dialogueWait(200)
+			blankSpace()
+			customizeEachWord(`${this.name}: `, this.nameColor, line1)
+			customizeEachWord(`"You look like you have a fighting spirit. I think I have just the task for you. If you can slay 10 kobolds in the kobold caves, I'll give you a little somethin'."`, this.dialogueColor, line1)
+			blankSpace()
+			await dialogueWait(200)
+			customizeEachWord(`${this.name}: `, this.nameColor, line2)
+			customizeEachWord(`"I don't care what kind. Just as long as long as it's a kobold from the caves."`, this.dialogueColor, line2)
+			blankSpace()
+		}
+	},
+	offer: async function() {
+		let line1 = lineFunc()
+		let line2 = lineFunc()
+		if (this.questStage == 1) {
+			let koboldKillTotal = killListAggregateSpecificEnemies([koboldArcher, koboldChild, koboldSpearthrower, koboldScoundrel, 
+				koboldDigger, koboldChief])
+			if (koboldKillTotal >= 10) {
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`${this.name}: `, this.nameColor, line1)
+				customizeEachWord(`"Great work! That was the first task given to me when I first joined the Ranger's Guild."`, this.dialogueColor, line1)
+				blankSpace()
+				await dialogueWait(200)
+				customizeEachWord(`${this.name}: `, this.nameColor, line2)
+				customizeEachWord(`"Here's your reward as promised."`, this.dialogueColor, line2)
+				blankSpace()
+				//quest complete functions
+				questChangeStage(seltathSilverwood, 0)
+				questReward({exp: 300, gold: 200, sp: 10, ap: 3})
+				
+			} else {
+				await dialogueWait(200)
+				blankSpace()
+				customizeEachWord(`${this.name}: `, this.nameColor, line1)
+				customizeEachWord(`"You still need to slay more kobolds."`, this.dialogueColor, line1)
+				blankSpace()
+			}
+		}
+	}
+
 }
 const arlasSilverwood = {
 	x: -1,
@@ -25903,6 +25831,28 @@ function removeItemFromPerson(item) {
 	pushItem.splice(pushItemIndex, 1)
 }
 
+function enableDirection(directionToEnable) {
+	currentArea.descriptions.zoneExitsBool[directionToEnable] = true
+}
+
+function killListAggregateSpecificEnemies(enemiesToAggregate = []) {
+	let killTotal = 0
+	enemiesToAggregate.forEach(enemy => {
+		killTotal += player.killList?.[enemy.name] || 0
+	})
+	console.log(`Kill total: ${killTotal}`)
+	return killTotal
+}
+
+function killListAggregateAll() {
+	let killTotal = 0
+	for (const enemy in player.killList) {
+		killTotal += player.killList[enemy]
+	}
+	console.log(`Player Kill List Total: ${killTotal}`)
+	return killTotal
+}
+
 function questAvailableSwitch(npc) {
 	npc.isQuestAvailable = false
 }
@@ -25930,7 +25880,6 @@ function questSequenceComplete(npc) {
 }
 
 async function questReward({gold = 0, exp = 0, item = null, sp = 0, ap = 0}) {
-	console.log(item)
 	await dialogueWait(200)
 	blankSpace()
 	if (item) {
@@ -25975,7 +25924,7 @@ async function questReward({gold = 0, exp = 0, item = null, sp = 0, ap = 0}) {
 	player.gold += gold
 	player.experience += exp
 	player.skillPoints += sp
-	player.abilityPoints += ap
+	player.attributePoints += ap
 	blankSpace()
 }
 
@@ -26381,11 +26330,11 @@ let kasia = {
 	id: 0,
 	x: 3,
 	y: 0,
-	name: 'Kasia',
+	name: 'Kasia Arnella',
 	refName: 'kasia',
 	picture: 'images/npcs/female/civilians/kasia/kasia.png',
 	nameColor: 'kasia-name',
-	prefix: 'Young Lass ',
+	prefix: '',
 	prefixColor: 'kasia-title',
 	keywords: ['kasia', 'lass', 'young lass', 'lass kasia', 'young lass kasia'],
 	displayName: function (peopleDiv) {
@@ -26439,6 +26388,7 @@ let kasia = {
 			return
 		}
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	questItem: [brightYellowFlower],
@@ -26525,6 +26475,7 @@ let sevrox = {
 		customizeEachWord(`"If you could bring me proof that you've slain at least 10, I would be satisfied."`, 'white', line3)
 		blankSpace()
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	quest: async function() {
@@ -27202,6 +27153,7 @@ const rissah = {
 	displayName: function (peopleDiv) {
 		displayNPCName(peopleDiv, this)
 	},
+	questStage: 1,
 	isQuestAvailable: true,
 	questSequence: {
 	},
@@ -27658,208 +27610,161 @@ function sell(secondCommand, itemNumberPre) {
 		}
 	}
 }
-function showSkills(thirdCommand) {
-	console.log('new function')
-	const allNpcsInRoom = currentArea.npc
-	const validSkillsNpc = currentArea.npc.filter(npc => npc.skillsOffered != undefined)
-	let npcByName = allNpcsInRoom.find(({ keywords }) => keywords.some(keyword => keyword == thirdCommand))
-	//NO NPCS IN THE ROOM TEACH SKILLS
-	if (validSkillsNpc[0] == undefined) {
-		quickMessage(`There is nobody here teaching skills`)
-		return
-	}
-		if (validSkillsNpc[0] != undefined && validSkillsNpc [1] != undefined) {
-		if (thirdCommand == undefined) {
-			quickMessage(`You must specify whose skills you wish to see. (Example: show skills egbert)`)
-			return
-		} else {
-			if (npcByName == undefined) {
-				quickMessage(`There is nobody here named ${thirdCommand} teaching skills`)
-				return
-			} else {
-				npcByName.displayShop('skills')
-				return
-			}
-		}
-	}
-	//THERE IS AN NPC IN THE ROOM SPECIFIED BY THE PLAYER
-		if (npcByName != undefined) {
-	//THE SPECIFIED NPC DOES TEACH SKILLS
-		if (npcByName.skillsOffered != undefined) {
-			npcByName.displayShop('skills')		
-			return
-		} else {
-	//NPC DOES NOT TEACH SKILLS
-			quickMessage(`${npcByName.name} is not teaching any skills`)
-			return
-		}
-	}
-	//COULD BE MULTIPLE NPCS IN THE ROOM, BUT ONLY 1 OF THEM TEACHES SKILLS
-	if (validSkillsNpc[0] != undefined && validSkillsNpc[1] == undefined) {
-	//IF THERE IS NO THIRDCOMMAND FROM THE PLAYER I.E. COMMAND IS "SHOW SKILLS" WITHOUT A SPECIFIED NAME
-		if (thirdCommand == undefined) {
-			validSkillsNpc[0].displayShop('skills')
-			return
-		} else {
-			quickMessage(`There is nobody named ${thirdCommand} teaching skills`)
-			return
-		}
-	}
-}
-function showSpells(thirdCommand) {
-	console.log('new function')
-	const allNpcsInRoom = currentArea.npc
-	const validSpellsNpc = currentArea.npc.filter(npc => npc.spellsOffered != undefined)
-	let npcByName = allNpcsInRoom.find(npc => npc.refName == thirdCommand)
-	//NO NPCS IN THE ROOM TEACH SPELLS
-	if (validSpellsNpc[0] == undefined) {
-		quickMessage(`There is nobody here teaching spells`)
-		return
-	}
-		if (validSpellsNpc[0] != undefined && validSpellsNpc [1] != undefined) {
-		if (thirdCommand == undefined) {
-			quickMessage(`You must specify whose spells you wish to see`)
-			return
-		} else {
-			if (npcByName == undefined) {
-				quickMessage(`There is nobody here named ${thirdCommand} teaching spells`)
-				return
-			} else {
-				npcByName.displayShop('spells')
-				return
-			}
-		}
-	}
-	//THERE IS AN NPC IN THE ROOM SPECIFIED BY THE PLAYER
-		if (npcByName != undefined) {
-	//THE SPECIFIED NPC DOES TEACH SPELLS
-		if (npcByName.spellsOffered != undefined) {
-			npcByName.displayShop('spells')		
-			return
-		} else {
-	//NPC DOES NOT TEACH SPELLS
-			quickMessage(`${npcByName.name} is not teaching any spells`)
-			return
-		}
-	}
-	//COULD BE MULTIPLE NPCS IN THE ROOM, BUT ONLY 1 OF THEM TEACHES SPELLS
-	if (validSpellsNpc[0] != undefined && validSpellsNpc[1] == undefined) {
-	//IF THERE IS NO THIRDCOMMAND FROM THE PLAYER I.E. COMMAND IS "SHOW SPELLS" WITHOUT A SPECIFIED NAME
-		if (thirdCommand == undefined) {
-			validSpellsNpc[0].displayShop('spells')
-			return
-		} else {
-			quickMessage(`There is nobody named ${thirdCommand} teaching spells`)
-			return
-		}
-	}
-}
 
-function showItems(thirdCommand) {
-	console.log('new function')
-	const allNpcsInRoom = currentArea.npc
-	const validItemsNpc = currentArea.npc.filter(npc => npc.itemsOffered != undefined)
-	let npcByName = allNpcsInRoom.find(npc => npc.refName.toLowerCase() == thirdCommand)
-	//NO NPCS IN THE ROOM TEACH SPELLS
-	if (!validItemsNpc[0]) {
-		quickMessage(`There is nobody here selling items`)
-		return
-	}
-	if (validItemsNpc[0]&& validItemsNpc[1]) {
-		if (!thirdCommand) {
-			quickMessage(`You must specify whose items you wish to see`)
-			return
-		} else {
-			if (npcByName == undefined) {
-				quickMessage(`There is nobody here named ${thirdCommand} selling items`)
-				return
-			} else {
-				npcByName.displayShop('items')
-				return
-			}
-		}
-	}
-	//THERE IS AN NPC IN THE ROOM SPECIFIED BY THE PLAYER
-		if (npcByName != undefined) {
-	//THE SPECIFIED NPC DOES TEACH SPELLS
-		if (npcByName.itemsOffered != undefined) {
-			npcByName.displayShop('items')		
-			return
-		} else {
-	//NPC DOES NOT TEACH SPELLS
-			quickMessage(`${npcByName.name} is not selling items`)
-			return
-		}
-	}
-	//COULD BE MULTIPLE NPCS IN THE ROOM, BUT ONLY 1 OF THEM TEACHES SPELLS
-	if (validItemsNpc[0] != undefined && validItemsNpc[1] == undefined) {
-	//IF THERE IS NO THIRDCOMMAND FROM THE PLAYER I.E. COMMAND IS "SHOW SPELLS" WITHOUT A SPECIFIED NAME
-		if (thirdCommand == undefined) {
-			validItemsNpc[0].displayShop('items')
-			return
-		} else {
-			quickMessage(`There is nobody named ${thirdCommand} selling items here`)
-			return
-		}
-	}
-	quickMessage(`no conditions met???`)
-}
 function showQuest(thirdCommand) {
-	//item
-	console.log('new function')
-	const validQuestNpc = currentArea.npc.filter(npc => npc.quest != undefined)
-	// let npcByName = validQuestNpc.find(npc => npc.name.toLowerCase() == thirdCommand)
-	let npcByName = validQuestNpc.find(({ keywords }) => keywords.some(keyword => keyword == thirdCommand))
-	console.log(npcByName)
-	//NO NPCS IN THE ROOM TEACH SPELLS
-	if (validQuestNpc[0] == undefined) {
-		quickMessage(`There is nobody here offering quests`)
+	let line1 = lineFunc()
+	let questNpcs = currentArea.npc.filter(npc => npc?.questStage > 0)
+	if (questNpcs.length == 0) {
+		blankSpace()
+		customizeEachWord(`There is nobody here offering quests.`, 'white', line1)
+		blankSpace()
 		return
 	}
-	if (validQuestNpc[0] != undefined && validQuestNpc [1] != undefined) {
-		if (thirdCommand == undefined) {
-			quickMessage(`You must specify whose quest you wish to see`)
-			return
+	if (!thirdCommand) {
+		if (questNpcs.length == 1) {
+			//only 1 quest npc
+			questNpcs[0].quest()
 		} else {
-			if (npcByName == undefined) {
-				quickMessage(`There is nobody here named ${thirdCommand} offering any quests`)
-				return
-			} else {
-				if (!npcByName.isQuestAvailable) {
-					noAvailableQuest(npcByName)
-				} else {
-					quickMessage(`1`)
-					npcByName.quest()
-					return
-				}
-			}
+			//multiple quest npcs
+			blankSpace()
+			customizeEachWord(`You must specify who's quest you want to see.`, 'white', line1)
+			blankSpace()
 		}
+		return
 	}
-	//THERE IS AN NPC IN THE ROOM SPECIFIED BY THE PLAYER
-		if (npcByName != undefined) {
-		if (npcByName.isQuestAvailable) {
-			quickMessage(`2`)
-			npcByName.quest()	
-			return
-		} else {
-			quickMessage(`${npcByName.name} does not have any quests to offer you`)
-			return
-		}
+	let specifiedNpc = currentArea.npc.find(({ keywords }) => keywords.some(keyword => keyword == thirdCommand))
+	if (!specifiedNpc) {
+		blankSpace()
+		customizeEachWord(`There is nobody by the name ${thirdCommand} offering quests.`, 'white', line1)
+		blankSpace()
+	} else {
+		specifiedNpc.quest()
 	}
-	//COULD BE MULTIPLE NPCS IN THE ROOM, BUT ONLY 1 OF THEM TEACHES SPELLS
-	if (validQuestNpc[0] != undefined && validQuestNpc[1] == undefined) {
-	//IF THERE IS NO THIRDCOMMAND FROM THE PLAYER I.E. COMMAND IS "SHOW SPELLS" WITHOUT A SPECIFIED NAME
-		if (!thirdCommand && validQuestNpc[0].isQuestAvailable) {
-			validQuestNpc[0].quest()
-			return
-		} else {
-
-			quickMessage(`There is nobody here offering any quests.`)
-			return
-		}
-	}
-	quickMessage(`no conditions met???`)
 }
+
+function offerQuest(secondCommand) {
+	let line1 = lineFunc()
+	let questNpcs = currentArea.npc.filter(npc => npc?.questStage > 0)
+	if (questNpcs.length == 0) {
+		blankSpace()
+		customizeEachWord(`There is nobody here accepting a quest offering.`, 'white', line1)
+		blankSpace()
+		return
+	}
+	if (!secondCommand) {
+		if (questNpcs.length == 1) {
+			//only 1 quest npc
+			questNpcs[0].offer()
+		} else {
+			//multiple quest npcs
+			blankSpace()
+			customizeEachWord(`You must specify who's quest you want to complete.`, 'white', line1)
+			blankSpace()
+		}
+		return
+	}
+	let specifiedNpc = currentArea.npc.find(({ keywords }) => keywords.some(keyword => keyword == secondCommand))
+	if (!specifiedNpc) {
+		blankSpace()
+		customizeEachWord(`There is nobody by the name ${secondCommand} accepting a quest offering.`, 'white', line1)
+		blankSpace()
+	} else {
+		specifiedNpc.offer()
+	}
+}
+
+function showSkills(thirdCommand) {
+	let line1 = lineFunc()
+	let skillNpcs = currentArea.npc.filter(npc => npc?.skillsOffered)
+	if (skillNpcs.length == 0) {
+		blankSpace()
+		customizeEachWord(`There is nobody here teaching skills.`, 'white', line1)
+		blankSpace()
+		return
+	}
+	if (!thirdCommand) {
+		if (skillNpcs.length == 1) {
+			//only 1 quest npc
+			skillNpcs[0].displayShop('skills')
+		} else {
+			//multiple quest npcs
+			blankSpace()
+			customizeEachWord(`You must specify who's skills you want to see.`, 'white', line1)
+			blankSpace()
+		}
+		return
+	}
+	let specifiedNpc = currentArea.npc.find(({ keywords }) => keywords.some(keyword => keyword == thirdCommand))
+	if (!specifiedNpc) {
+		blankSpace()
+		customizeEachWord(`There is nobody by the name ${thirdCommand} teaching skills.`, 'white', line1)
+		blankSpace()
+	} else {
+		specifiedNpc.displayShop('skills')
+	}
+}
+
+function showSpells(thirdCommand) {
+	let line1 = lineFunc()
+	let spellNpcs = currentArea.npc.filter(npc => npc?.spellsOffered)
+	if (spellNpcs.length == 0) {
+		blankSpace()
+		customizeEachWord(`There is nobody here teaching spells.`, 'white', line1)
+		blankSpace()
+		return
+	}
+	if (!thirdCommand) {
+		if (spellNpcs.length == 1) {
+			//only 1 quest npc
+			spellNpcs[0].displayShop('spells')
+		} else {
+			//multiple quest npcs
+			blankSpace()
+			customizeEachWord(`You must specify who's spells you want to see.`, 'white', line1)
+			blankSpace()
+		}
+		return
+	}
+	let specifiedNpc = currentArea.npc.find(({ keywords }) => keywords.some(keyword => keyword == thirdCommand))
+	if (!specifiedNpc) {
+		blankSpace()
+		customizeEachWord(`There is nobody by the name ${thirdCommand} teaching spells.`, 'white', line1)
+		blankSpace()
+	} else {
+		specifiedNpc.displayShop('spells')
+	}
+}
+function showItems(thirdCommand) {
+	let line1 = lineFunc()
+	let itemNpcs = currentArea.npc.filter(npc => npc?.itemsOffered)
+	if (itemNpcs.length == 0) {
+		blankSpace()
+		customizeEachWord(`There is nobody here selling anything.`, 'white', line1)
+		blankSpace()
+		return
+	}
+	if (!thirdCommand) {
+		if (itemNpcs.length == 1) {
+			//only 1 quest npc
+			itemNpcs[0].displayShop('items')
+		} else {
+			//multiple quest npcs
+			blankSpace()
+			customizeEachWord(`You must specify who's items you want to see.`, 'white', line1)
+			blankSpace()
+		}
+		return
+	}
+	let specifiedNpc = currentArea.npc.find(({ keywords }) => keywords.some(keyword => keyword == thirdCommand))
+	if (!specifiedNpc) {
+		blankSpace()
+		customizeEachWord(`There is nobody by the name ${thirdCommand} selling anything.`, 'white', line1)
+		blankSpace()
+	} else {
+		specifiedNpc.displayShop('items')
+	}
+}
+
 
 function show(secondCommand, thirdCommand) {
 	let showWhat = secondCommand == 'skills' ? showSkills : secondCommand == 'items' ? showItems : secondCommand == 'spells' ? showSpells : secondCommand == 'quest' ? showQuest : undefined
@@ -28361,6 +28266,11 @@ function questItemOffer() {
 		player.backpack.splice(qItemIndex, 1)
 	}
 }
+
+function questFindPlayerItem(npcQuestItem) {
+	const playerQuestItem = pushItem.find(item => item.refName === npcQuestItem.refName)
+	return playerQuestItem
+}
 //SKILLS++SKILLS++SKILLS++SKILLS++SKILLS++SKILLS++SKILLS++SKILLS
 function oneHandedWeaponSkill(skillLevel, npcMaxTrainLevel) {
 	trainedSkillName = 'one handed weapon skill'
@@ -28573,6 +28483,7 @@ let olivandra = {
 		}
 		learnInteraction(secondCommand, this)
 	},
+	questStage: 1,
 	questSequence: {
 	},
 	questItem: [cultTexts],
@@ -29020,7 +28931,7 @@ let galvadiaWelcomeArea2 = new AreaMaker(
 					customizeEachWord(`The wall reads: `, 'blue', line2)
 					customizeEachWord(`"Refresh your view of the room with the LOOK or L command to see if anything changed."`, 'white', line2)
 					blankSpace()
-					advanceQuestStage(egbert, 2)
+					dialogueChangeStage(egbert, 2)
 					if (!currentArea.npc[0]) {
 						await dialogueWait(200)
 						npcEntersFromADirection('south', egbert)
@@ -29143,10 +29054,10 @@ let galvadiaWelcomeArea3 = new AreaMaker(
 					if (!currentArea.npc[0]) {
 						await dialogueWait(200)
 						npcEntersFromADirection('south', egbert)
-						advanceQuestStage(egbert, 4)
+						dialogueChangeStage(egbert, 4)
 						egbert.speak()
 					} else {
-						advanceQuestStage(egbert, 5)
+						dialogueChangeStage(egbert, 5)
 						egbert.speak()
 					}
 
@@ -29261,11 +29172,11 @@ let galvadiaWelcomeArea6 = new AreaMaker(
 		onEntry: async function() {
 			if (this.didEventRun == false) {
 				this.didEventRun = true
-				egbert.questStage = 8
+				dialogueChangeStage(egbert, 8)
 				if (!currentArea.npc[0]) {
 					await dialogueWait(200)
 					blankSpace()
-					npcEntersFromADirection('south', egbert)
+					npcEntersFromADirection('north', egbert)
 				}
 				npcRemoveFromTheirCurrentRoom(egbert)
 				npcAddToRoom(galvadiaWelcomeArea6, egbert)
@@ -29877,7 +29788,7 @@ let th_b_w_wing_2 = new AreaMaker( //change name
 				blankSpace()
 				if (th_b_w_wing_2.interactables.lever.pulled == true && th_b_e_wing_2.interactables.lever.pulled == true) {
 					th_b_center_1.descriptions.zoneExitsBool.north = true
-					advanceQuestStage(egbert, 12)
+					dialogueChangeStage(egbert, 12)
 				}
 			} else if (th_b_w_wing_2.interactables.lever.pulled == true) {
 				let line1 = document.createElement('div')
@@ -29948,7 +29859,7 @@ let th_b_e_wing_2 = new AreaMaker( //change name
 					blankSpace()
 					if (th_b_e_wing_2.interactables.lever.pulled == true && th_b_w_wing_2.interactables.lever.pulled == true) {
 						th_b_center_1.descriptions.zoneExitsBool.north = true
-						advanceQuestStage(egbert, 12)
+						dialogueChangeStage(egbert, 12)
 					}
 				} else if (th_b_e_wing_2.interactables.lever.pulled == true) {
 					let line1 = document.createElement('div')
@@ -53186,6 +53097,7 @@ function tutorialKey() {
 		},
 		roomId: 5,
 		name: 'Simple Key',
+		refName: 'simpleKey',
 		color: 'green',
 		keywords: ['simple', 'key', 'simple key'],
 		type: { quest: true },
@@ -53208,6 +53120,7 @@ function pairOfGlasses() {
 		},
 		roomId: 7,
 		name: 'Pair of Glasses',
+		refName: 'pairOfGlasses',
 		color: 'green',
 		keywords: ['pair', 'glasses', 'pair of glasses'],
 		type: { quest: true },
@@ -67634,7 +67547,7 @@ function displayNPCName(peopleDiv, npc) {
 		suffixSpan.appendChild(suffixNode)
 		npcDiv.appendChild(suffixSpan)
 	}
-	if (npc.isQuestAvailable) {
+	if (npc.isQuestAvailable || npc.questStage > 0) {
 		const QSpan = document.createElement('span')
 		const QNode = document.createTextNode(` (Q)`)
 		QSpan.appendChild(QNode)
@@ -67653,31 +67566,7 @@ function npcByName(secondCommand) {
 function npcByNumber() {}
 
 
-function offerQuest(secondCommand) {
-	let doesValidQuestNpcExist = npcsAll().some(npc => npc.quest) //true if found, false if not
-	let specifiedNpc = npcByName(secondCommand) //specified npc by second command
-	let allQuestGivers = npcsAll().filter(npc => npc.quest) //all quest givers in the room
-	let line1 = lineFunc()
-	if (!doesValidQuestNpcExist) { //no quest giver is in the room
-		customizeEachWord(`There is nobody here offering quests`, 'white', line1) 
-		return
-	}
-	if (!specifiedNpc && secondCommand) { //player specifies a name, but an npc by that input is not in the room
-		customizeEachWord(`There is nobody here by the name of ${secondCommand} offering any quests`, 'white', line1)
-		return
-	}
-	if (specifiedNpc && specifiedNpc.quest) { //
-		specifiedNpc.offer()
-		return
-	}
-	if (allQuestGivers.length == 1) {
-		allQuestGivers[0].offer()
-		return
-	}
-	if (allQuestGivers.length > 1) {
-		customizeEachWord(`You must specify who you wish to offer`, 'white', line1)
-	}
-}
+
 
 
 
