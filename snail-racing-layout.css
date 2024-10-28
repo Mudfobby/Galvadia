@@ -1,0 +1,45 @@
+.glooper,
+.wormburner,
+.adam,
+.sloppy, 
+.scoopy, 
+.scampy  {
+    /* border: 2px solid red; */
+    margin-right: 1em;
+  }
+
+.winner {
+    color: rgb(255, 215, 70);
+  }
+.second {
+    color: rgb(170, 170, 170);
+  }
+.third {
+    color: rgb(182, 103, 57);
+  }
+.snail-racing-container {
+  border: 8px solid #7d4823;
+    /* border: 8px solid green; */
+    height: 600px;
+  }
+  .glooperContainer,
+  .wormburnerContainer,
+  .adamContainer,
+  .sloppyContainer,
+  .scoopyContainer,
+  .scampyContainer {
+    display: flex;
+    border: 4px solid green;
+    /* border: 4px solid #7d4823; */
+  }
+
+  .glooperName,
+  .wormburnerName,
+  .adamName,
+  .sloppyName,
+  .scoopyName,
+  .scampyName {
+    display: flex;
+    border: 4px solid rgb(27, 176, 168);
+    width: 100px;
+  }
