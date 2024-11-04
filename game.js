@@ -4156,25 +4156,25 @@ const youMoveToThe = (input, area, classChange) => {
 //////////////////////////////////////////////////++HTML DISPLAY++//////////////////////////////////////////////////
 //////////////////////////////////////////////////++HTML DISPLAY++//////////////////////////////////////////////////
 const roomImages = {
-	galvadia_town: "images/exteriors/main/galvadia_square/galvadia_square.jpg",
-	galvadia_guild_square: "images/exteriors/main/galvadia_guild_square/galvadia_guild_square.jpg",
-	galvadia_graveyard: "images/exteriors/graveyard/galvadia graveyard.png",
-	galvadia_residential_east: "images/exteriors/town travel/galvadia/galvadia_residential_east.jpg",
-	galvadia_exterior_north: "images/exteriors/castle walls/galvadia_exterior_north.jpg",
-	galvadia_fields_north: "images/exteriors/landscapes/fields/galvadia fields/galvadia fields north.jpg",
-	galvadia_training_fields: "images/exteriors/landscapes/fields/galvadia fields/galvadia training fields.jpg",
-	galvadia_fields_west: "images/exteriors/landscapes/fields/galvadia fields/galvadia fields west.jpg",
-	galvadia_fields_main: "images/exteriors/landscapes/fields/galvadia fields/galvadia fields main.jpg",
-	galvadia_basement: "images/interiors/castle interiors/basement halls/basement halls.jpg",
-	galvadia_egberts_room: "images/interiors/castle interiors/egbert's room/egbert's room.jpg",
-	galvadia_training_halls_common_room: "images/interiors/castle interiors/common room/common room.jpg",
-	galvadia_advanced_training_rooms: "images/interiors/castle interiors/advanced training rooms/advanced training rooms.jpg",
-	galvadian_glade_center: "images/exteriors/landscapes/forests/galvadian glade center/galvadian glade center.jpg",
-	galvadian_glade_entrance: "images/exteriors/landscapes/forests/galvadian glade entrance/galvadian glade entrance.jpg",
-	kobold_cave_main: "images/interiors/cave interiors/kobold cave/kobold main/kobold main.jpg",
-	kobold_cave_tunnels: "images/interiors/cave interiors/kobold cave/kobold tunnels/kobold tunnels.jpg",
-	kobold_cave_chief_room: "images/interiors/cave interiors/kobold cave/kobold chief room/kobold chief room.jpg",
-	the_shallows: "images/exteriors/landscapes/forests/the shallows/the shallows.jpg",
+	galvadia_town: "/images/exteriors/main/galvadia_square/galvadia_square.jpg",
+	galvadia_guild_square: "/images/exteriors/main/galvadia_guild_square/galvadia_guild_square.jpg",
+	galvadia_graveyard: "/images/exteriors/graveyard/galvadia graveyard.png",
+	galvadia_residential_east: "/images/exteriors/town travel/galvadia/galvadia_residential_east.jpg",
+	galvadia_exterior_north: "/images/exteriors/castle walls/galvadia_exterior_north.jpg",
+	galvadia_fields_north: "/images/exteriors/landscapes/fields/galvadia fields/galvadia fields north.jpg",
+	galvadia_training_fields: "/images/exteriors/landscapes/fields/galvadia fields/galvadia training fields.jpg",
+	galvadia_fields_west: "/images/exteriors/landscapes/fields/galvadia fields/galvadia fields west.jpg",
+	galvadia_fields_main: "/images/exteriors/landscapes/fields/galvadia fields/galvadia fields main.jpg",
+	galvadia_basement: "/images/interiors/castle interiors/basement halls/basement halls.jpg",
+	galvadia_egberts_room: "/images/interiors/castle interiors/egbert's room/egbert's room.jpg",
+	galvadia_training_halls_common_room: "/images/interiors/castle interiors/common room/common room.jpg",
+	galvadia_advanced_training_rooms: "/images/interiors/castle interiors/advanced training rooms/advanced training rooms.jpg",
+	galvadian_glade_center: "/images/exteriors/landscapes/forests/galvadian glade center/galvadian glade center.jpg",
+	galvadian_glade_entrance: "/images/exteriors/landscapes/forests/galvadian glade entrance/galvadian glade entrance.jpg",
+	kobold_cave_main: "/images/interiors/cave interiors/kobold cave/kobold main/kobold main.jpg",
+	kobold_cave_tunnels: "/images/interiors/cave interiors/kobold cave/kobold tunnels/kobold tunnels.jpg",
+	kobold_cave_chief_room: "/images/interiors/cave interiors/kobold cave/kobold chief room/kobold chief room.jpg",
+	the_shallows: "/images/exteriors/landscapes/forests/the shallows/the shallows.jpg",
 }
 function changeRoomPicture(roomId) {
     let roomPictureDisplay = document.getElementById('room-picture');
@@ -4183,7 +4183,7 @@ function changeRoomPicture(roomId) {
         roomPictureDisplay.src = roomImages[roomId];
     } else {
         // Default image if the room ID is not found
-        roomPictureDisplay.src = "images/banner and misc/no_room.jpg"
+        roomPictureDisplay.src = "/images/banner and misc/no_room.jpg"
     }
 }
 function updateNpcPicture() {
@@ -4284,7 +4284,7 @@ function displayArea(area, addClass) {
 	changeRoomPicture(area.descriptions.zoneType)
 	updateNpcPicture()
 	// let roomPictureDisplay = document.getElementById('room-picture')
-	// roomPictureDisplay.src = "images/forest.jpg"
+	// roomPictureDisplay.src = "/images/forest.jpg"
 	if (areaActionWord) {
 			areaActionWord.forEach(keyword => {
 				console.log(areaActionWord)
@@ -4747,7 +4747,7 @@ function read(objectThatIsRead) {
 	//for reading books, pages, signs, scrolls, etc
 	if (objectThatIsRead == 'map') {
 		let img = document.createElement('img')
-		img.src = 'images/galvadia_minimap.png'
+		img.src = '/images/galvadia_minimap.png'
 		img.style.height = '500px'
 		img.style.width = '500px'
 		masterArea.appendChild(img)
@@ -5146,19 +5146,19 @@ function updateWeaponIcons() {
 	//empty hands, but class is either monk to display a fist or class is not a monk to display empty hands
 	if (playerWeaponRight.name == 'Right Fist') {
 		if (player.guild == 'Monk') {
-			rightHandImage.style.backgroundImage = `url('images/weapons/fist weapons/unarmed/right fist.png')`;
+			rightHandImage.style.backgroundImage = `url('/images/weapons/fist weapons/unarmed/right fist.png')`;
 			rightHandImage.textContent = ''
 		} else {
-			rightHandImage.style.backgroundImage = `url('images/weapons/fist weapons/unarmed/empty hand right.png')`;
+			rightHandImage.style.backgroundImage = `url('/images/weapons/fist weapons/unarmed/empty hand right.png')`;
 			rightHandImage.textContent = ''
 		}
 	}
 	if (playerWeaponLeft.name == 'Left Fist') {
 		if (player.guild == 'Monk') {
-			leftHandImage.style.backgroundImage = `url('images/weapons/fist weapons/unarmed/left fist.png')`;
+			leftHandImage.style.backgroundImage = `url('/images/weapons/fist weapons/unarmed/left fist.png')`;
 			leftHandImage.textContent = ''
 		} else {
-			leftHandImage.style.backgroundImage = `url('images/weapons/fist weapons/unarmed/empty hand left.png')`;
+			leftHandImage.style.backgroundImage = `url('/images/weapons/fist weapons/unarmed/empty hand left.png')`;
 			leftHandImage.textContent = ''
 		}
 	}
@@ -8253,7 +8253,7 @@ let player = {
 		id: 'fist1',
 		roomId: 'right hand',
 		name: 'Right Fist',
-		picture: "images/weapons/fist weapons/empty hand right.png",
+		picture: "/images/weapons/fist weapons/empty hand right.png",
 		refName: 'rightFist',
 		keywords: ['right fist'],
 		color: 'green',
@@ -8291,7 +8291,7 @@ let player = {
 		id: 'fist2',
 		roomId: 'left hand',
 		name: 'Left Fist',
-		picture: "images/weapons/fist weapons/empty hand left.png",
+		picture: "/images/weapons/fist weapons/empty hand left.png",
 		refName: 'leftFist',
 		keywords: ['left fist'],
 		color: 'green',
@@ -20291,7 +20291,7 @@ let egbert = {
 	z: -2,
 	name: 'Egbert',
 	refName: 'egbert',
-	picture: "images/npcs/male/civilians/egbert/egbert.png",
+	picture: "/images/npcs/male/civilians/egbert/egbert.png",
 	nameColor: 'egbert-name',
 	prefix: 'Old Tutor, ',
 	prefixColor: 'egbert-title',
@@ -21669,7 +21669,7 @@ const ragnar = {
 	z: 0,
 	name: 'Ragnar',
 	refName: 'ragnar',
-	picture: 'images/npcs/male/warriors/fighters/ragnar/ragnar.png',
+	picture: '/images/npcs/male/warriors/fighters/ragnar/ragnar.png',
 	nameColor: 'ragnar-name',
 	prefix: 'Lord of War, ',
 	prefixColor: 'warrior-color',
@@ -21792,7 +21792,7 @@ const magvello = {
 	z: 0,
 	name: 'Magvello',
 	refName: 'magvello',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'red',
 	prefix: 'Howling Blade, ',
 	prefixColor: 'warrior-color-dark',
@@ -21865,7 +21865,7 @@ const allSkillsMan = {
 	z: 0,
 	name: 'All Skills Man',
 	refName: 'allSkillsMan',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'red',
 	prefix: 'Super Skilled Man, ',
 	prefixColor: 'warrior-color-dark',
@@ -21983,7 +21983,7 @@ const allAbilitiesMan = {
 	z: 0,
 	name: 'All Abilities Man',
 	refName: 'allSkillsMan',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'red',
 	prefix: 'Super Ability Man, ',
 	prefixColor: 'warrior-color-dark',
@@ -22065,7 +22065,7 @@ const noviceBerserkerTrainer = {
 	z: 0,
 	name: 'Novice Berserker Trainer',
 	refName: 'noviceBerserkerTrainer',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'dark-red',
 	// prefix: 'Howling Blade, ',
 	// prefixColor: 'warrior-color-dark',
@@ -22111,7 +22111,7 @@ const apprenticeBerserkerTrainer = {
 	z: 0,
 	name: 'Apprenctice Berserker Trainer',
 	refName: 'apprenticeBerserkerTrainer',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'dark-red',
 	// prefix: 'Howling Blade, ',
 	// prefixColor: 'warrior-color-dark',
@@ -22166,7 +22166,7 @@ const adeptBerserkerTrainer = {
 	z: 0,
 	name: 'Adept Berserker Trainer',
 	refName: 'adeptBerserkerTrainer',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'dark-red',
 	// prefix: 'Howling Blade, ',
 	// prefixColor: 'warrior-color-dark',
@@ -22219,7 +22219,7 @@ const skilledBerserkerTrainer = {
 	z: 0,
 	name: 'Skilled Berserker Trainer',
 	refName: 'skilledBerserkerTrainer',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'dark-red',
 	// prefix: 'Howling Blade, ',
 	// prefixColor: 'warrior-color-dark',
@@ -22281,7 +22281,7 @@ const blacksmithingProfessionTrainer = {
 	z: 0,
 	name: 'Blacksmithing Profession Trainer',
 	refName: 'blacksmithingProfessionTrainer',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'blacksmithingProfessionTrainer',
 	// prefix: 'Howling Blade, ',
 	// prefixColor: 'warrior-color-dark',
@@ -22333,7 +22333,7 @@ const leatherworkingProfessionTrainer = {
 	z: 0,
 	name: 'Leatherworking Profession Trainer',
 	refName: 'leatherworkingProfessionTrainer',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'leatherworkingProfessionTrainer',
 	// prefix: 'Howling Blade, ',
 	// prefixColor: 'warrior-color-dark',
@@ -22385,7 +22385,7 @@ const magicWeavingProfessionTrainer = {
 	z: 0,
 	name: 'Magic Weaving Profession Trainer',
 	refName: 'magicWeavingProfessionTrainer',
-	picture: 'images/npcs/male/warriors/berserkers/magvello/magvello.png',
+	picture: '/images/npcs/male/warriors/berserkers/magvello/magvello.png',
 	nameColor: 'magicWeavingProfessionTrainer',
 	// prefix: 'Howling Blade, ',
 	// prefixColor: 'warrior-color-dark',
@@ -23064,7 +23064,7 @@ let greaves = {
 	z: -1,
 	name: 'Greaves',
 	refName: 'greaves',
-	picture: 'images/npcs/male/warriors/knights/greaves/greaves.png',
+	picture: '/images/npcs/male/warriors/knights/greaves/greaves.png',
 	nameColor: 'blue',
 	prefix: 'Hand of Justice, ',
 	prefixColor: 'warrior-color-light',
@@ -24147,7 +24147,7 @@ const joch = {
 	z: 0,
 	name: 'Joch',
 	refName: 'joch',
-	picture: "images/npcs/male/civilians/joch/joch.png",
+	picture: "/images/npcs/male/civilians/joch/joch.png",
 	nameColor: 'joch-name',
 	prefix: 'Weaponsmith ',
 	prefixColor: 'joch-prefix',
@@ -24268,7 +24268,7 @@ let clyde = {
 			return 'Clyde'
 		}
 	},	refName: 'clyde',
-	picture: "images/npcs/male/civilians/clyde/clyde.png",
+	picture: "/images/npcs/male/civilians/clyde/clyde.png",
 	nameColor: 'clyde-name',
 	prefix: 'Armorsmith ',
 	prefixColor: 'clyde-prefix',
@@ -24381,7 +24381,7 @@ let dolf = {
 	z: 0,
 	name: 'Dolf',
 	refName: 'dolf',
-	picture: 'images/npcs/male/civilians/dolf/dolf.png',
+	picture: '/images/npcs/male/civilians/dolf/dolf.png',
 	nameColor: 'dolf-name',
 	prefix: 'Leatherworker ',
 	prefixColor: 'dolf-prefix',
@@ -24481,7 +24481,7 @@ let todlin = {
 	z: 0,
 	name: 'Todlin',
 	refName: 'todlin',
-	picture: 'images/npcs/male/civilians/todlin/todlin.png',
+	picture: '/images/npcs/male/civilians/todlin/todlin.png',
 	nameColor: 'todlin-name',
 	prefix: 'Woodcrafter ',
 	prefixColor: 'todlin-prefix',
@@ -24542,7 +24542,7 @@ let lyra = {
 	z: 0,
 	name: 'Lyra',
 	refName: 'lyra',
-	picture: 'images/npcs/female/civilians/lyra/lyra.png',
+	picture: '/images/npcs/female/civilians/lyra/lyra.png',
 	nameColor: 'lyra-name',
 	prefix: 'Tailor ',
 	prefixColor: 'lyra-prefix',
@@ -24640,7 +24640,7 @@ let faffa = {
 	z: 0,
 	name: 'Faffa',
 	refName: 'faffa',
-	picture: 'images/npcs/male/civilians/faffa/faffa.png',
+	picture: '/images/npcs/male/civilians/faffa/faffa.png',
 	nameColor: 'faffa-name',
 	prefix: 'Staff Crafter ',
 	prefixColor: 'faffa-prefix',
@@ -24732,7 +24732,7 @@ let deylani = {
 	z: 0,
 	name: 'Deylani',
 	refName: 'deylani',
-	picture: 'images/npcs/female/civilians/deylani/deylani.png',
+	picture: '/images/npcs/female/civilians/deylani/deylani.png',
 	nameColor: 'deylani-name',
 	// prefix: 'Villager ',
 	// prefixColor: '',
@@ -24791,7 +24791,7 @@ let arnoldo = {
 	z: 0,
 	name: 'Arnoldo',
 	refName: 'arnoldo',
-	// picture: 'images/npcs/female/civilians/deylani/deylani.png',
+	// picture: '/images/npcs/female/civilians/deylani/deylani.png',
 	nameColor: 'deylani-name',
 	// prefix: 'Villager ',
 	// prefixColor: '',
@@ -24893,7 +24893,7 @@ let timtim = {
 	z: 0,
 	name: 'Tim-Tim',
 	refName: 'timTim',
-	picture: 'images/npcs/male/civilians/timtim/timtim.png',
+	picture: '/images/npcs/male/civilians/timtim/timtim.png',
 	nameColor: 'timtim',
 	// prefix: 'Tim-',
 	// prefixColor: 'timtim',
@@ -24981,7 +24981,7 @@ let sally = {
 	z: 0,
 	name: 'Sally',
 	refName: 'sally',
-	picture: 'images/npcs/female/civilians/sally/sally.png',
+	picture: '/images/npcs/female/civilians/sally/sally.png',
 	nameColor: 'sally',
 	keywords: ['sally'],
 	occupation: '',
@@ -25093,7 +25093,7 @@ let travellingWagon = {
 	z: 0,
 	name: 'Wagon',
 	refName: 'wagon',
-	picture: 'images/npcs/male/civilians/wagon/wagon.png',
+	picture: '/images/npcs/male/civilians/wagon/wagon.png',
 	nameColor: 'dark-brown',
 	prefix: 'Travelling ',
 	prefixColor: 'dark-brown',
@@ -25188,7 +25188,7 @@ const strayKitty = {
 	z: 0,
 	name: 'Kitty',
 	refName: 'kitty',
-	picture: 'images/npcs/female/civilians/stray cat/stray cat.png',
+	picture: '/images/npcs/female/civilians/stray cat/stray cat.png',
 	nameColor: 'grey',
 	prefix: 'Stray ',
 	prefixColor: 'dark-grey',
@@ -25263,7 +25263,7 @@ let frederickGregory = {
 	z: 0,
 	name: 'Frederick Gregory',
 	refName: 'frederickGregory',
-	picture: 'images/npcs/female/civilians/stray cat/stray cat.png',
+	picture: '/images/npcs/female/civilians/stray cat/stray cat.png',
 	nameColor: 'grey',
 	prefix: 'Stray ',
 	prefixColor: 'dark-grey',
@@ -26304,7 +26304,7 @@ let kasia = {
 	y: 0,
 	name: 'Kasia Arnella',
 	refName: 'kasia',
-	picture: 'images/npcs/female/civilians/kasia/kasia.png',
+	picture: '/images/npcs/female/civilians/kasia/kasia.png',
 	nameColor: 'kasia-name',
 	prefix: '',
 	prefixColor: 'kasia-title',
@@ -26413,7 +26413,7 @@ let sevrox = {
 	z: 0,
 	name: 'Sevrox',
 	refName: 'sevrox',
-	picture: 'images/npcs/male/civilians/timtim/timtim.png',
+	picture: '/images/npcs/male/civilians/timtim/timtim.png',
 	nameColor: 'sevrox',
 	prefix: 'Stable Master, ',
 	prefixColor: 'sevrox-prefix',
@@ -27124,7 +27124,7 @@ const rissah = {
 	name: 'Rissah',
 	refName: 'rissah',
 	nameColor: randomClassColor(),
-	picture: 'images/npcs/female/civilians/rissah/rissah.png',
+	picture: '/images/npcs/female/civilians/rissah/rissah.png',
 	prefix: 'Villager ',
 	prefixColor: 'light-brown',
 	keywords: ['villager', 'rissah'],
@@ -53953,7 +53953,7 @@ function pickaxe(monsterLevel) { //tier 0.5
 		roomId: currentArea.id,
 		name: 'Pickaxe',
 		refName: 'pickaxe',
-		picture: 'images/weapons/two handed axes/pickaxe/pickaxe.png',
+		picture: '/images/weapons/two handed axes/pickaxe/pickaxe.png',
 		color: 'green',
 		keywords: ['pickaxe'],
 		botDamage: randomNumberRange(1, 1),
@@ -53996,7 +53996,7 @@ function fishingRod(monsterLevel) { //tier 0.5
 		roomId: currentArea.id,
 		name: 'Fishing Rod',
 		refName: 'fishingRod',
-		picture: 'images/weapons/two handed axes/pickaxe/pickaxe.png',
+		picture: '/images/weapons/two handed axes/pickaxe/pickaxe.png',
 		color: 'green',
 		keywords: ['pickaxe'],
 		botDamage: randomNumberRange(1, 1),
@@ -54036,7 +54036,7 @@ function skinningKnife(monsterLevel) { //tier 0.5
 		roomId: currentArea.id,
 		name: 'Skinning Knife',
 		refName: 'skinningKnife',
-		picture: 'images/weapons/daggers/skinning knife/skinning knife.png',
+		picture: '/images/weapons/daggers/skinning knife/skinning knife.png',
 		color: 'green',
 		keywords: ['pickaxe'],
 		botDamage: randomNumberRange(1, 1),
@@ -54092,7 +54092,7 @@ function trainingBow(monsterLevel) { //tier 1
 		},
 		roomId: currentArea.id,
 		name: 'Training Bow',
-		picture: 'images/weapons/bows/training bow/training bow.png',
+		picture: '/images/weapons/bows/training bow/training bow.png',
 		color: 'green',
 		keywords: ['training', 'bow', 'training bow'],
 		botDamage: randomNumberRange(3, 3),
@@ -54257,7 +54257,7 @@ function honedLongbow(monsterLevel) { //tier 4
 		},
 		roomId: currentArea.id,
 		name: 'Honed Longbow',
-		picture: 'images/weapons/bows/honed longbow/honed longbow.png',
+		picture: '/images/weapons/bows/honed longbow/honed longbow.png',
 		color: 'green',
 		keywords: ['honed', 'longbow', 'honed lonbow'],
 		botDamage: randomNumberRange(9, 9),
@@ -54395,8 +54395,8 @@ function hardenedLeatherFists(monsterLevel) { //tier 2
 		roomId: currentArea.id,
 		name: `Hardened Leather Fists`,
 		picture: {
-			right:'images/weapons/fist weapons/hardened leather fists/hardened leather fists right.png',
-			left:'images/weapons/fist weapons/hardened leather fists/hardened leather fists left.png' ,
+			right:'/images/weapons/fist weapons/hardened leather fists/hardened leather fists right.png',
+			left:'/images/weapons/fist weapons/hardened leather fists/hardened leather fists left.png' ,
 		},
 		color: 'green',
 		keywords: ['hardened', 'leather', 'fists', 'hardened leather', 'leather fists', 'hardened leather fists'],
@@ -54436,8 +54436,8 @@ function studdedLeatherFists(monsterLevel) { //tier 3
 		roomId: currentArea.id,
 		name: `Studded Leather Fists`,
 		picture: {
-			right:'images/weapons/fist weapons/studded leather fists/studded leather fists right.png',
-			left:'images/weapons/fist weapons/studded leather fists/studded leather fists left.png' ,
+			right:'/images/weapons/fist weapons/studded leather fists/studded leather fists right.png',
+			left:'/images/weapons/fist weapons/studded leather fists/studded leather fists left.png' ,
 		},
 		color: 'green',
 		keywords: ['studded', 'leather', 'fists', 'studded leather', 'leather fists', 'studded leather fists'],
@@ -54477,8 +54477,8 @@ function fighterFists(monsterLevel) { //tier 4
 		roomId: currentArea.id,
 		name: `Fighter Fists`,
 		picture: {
-			right:'images/weapons/fist weapons/fighter fists/fighter fists right.png',
-			left:'images/weapons/fist weapons/fighter fists/fighter fists left.png' ,
+			right:'/images/weapons/fist weapons/fighter fists/fighter fists right.png',
+			left:'/images/weapons/fist weapons/fighter fists/fighter fists left.png' ,
 		},
 		color: 'green',
 		keywords: ['fighter', 'fists', 'fighter fists'],
@@ -54518,8 +54518,8 @@ function brawlersGloves(monsterLevel) { //tier 5
 		roomId: currentArea.id,
 		name: `Brawler's Gloves`,
 		picture: {
-			right:'images/weapons/fist weapons/brawlers gloves/brawlers gloves right.png',
-			left:'images/weapons/fist weapons/brawlers gloves/brawlers gloves left.png' ,
+			right:'/images/weapons/fist weapons/brawlers gloves/brawlers gloves right.png',
+			left:'/images/weapons/fist weapons/brawlers gloves/brawlers gloves left.png' ,
 		},
 		color: 'green',
 		keywords: ['brawler', "brawler's", 'gloves', 'brawler gloves', "brawler's gloves"],
@@ -54577,8 +54577,8 @@ function trainingDagger(monsterLevel) { //tier 1
 		roomId: currentArea.id,
 		name: 'Training Dagger',
 		picture: {
-			right: 'images/weapons/daggers/training dagger/training dagger right.png',
-			left: 'images/weapons/daggers/training dagger/training dagger left.png',
+			right: '/images/weapons/daggers/training dagger/training dagger right.png',
+			left: '/images/weapons/daggers/training dagger/training dagger left.png',
 		},
 		color: 'green',
 		keywords: ['training', 'dagger', 'training dagger'],
@@ -54692,8 +54692,8 @@ function dirk(monsterLevel) { //tier 2
 			}
 		},
 		picture: {
-			right: "images/weapons/daggers/dirk/dirk right.png",
-			left: "images/weapons/daggers/dirk/dirk left.png",
+			right: "/images/weapons/daggers/dirk/dirk right.png",
+			left: "/images/weapons/daggers/dirk/dirk left.png",
 		},
 		roomId: currentArea.id,
 		name: 'Dirk',
@@ -54773,8 +54773,8 @@ function crescentDagger(monsterLevel) { //tier 4
 		name: 'Crescent Dagger',
 		color: 'green',
 		picture: {
-			left: 'images/weapons/daggers/crescent dagger/crescent dagger left.png',
-			right: 'images/weapons/daggers/crescent dagger/crescent dagger right.png',
+			left: '/images/weapons/daggers/crescent dagger/crescent dagger left.png',
+			right: '/images/weapons/daggers/crescent dagger/crescent dagger right.png',
 		},
 		keywords: ['crescent', 'dagger', 'crescent dagger'],
 		botDamage: randomNumberRange(5, 5),
@@ -54865,7 +54865,7 @@ function muddyShortsword(monsterLevel) { //tier 0.5
 		  })(),
 		roomId: currentArea.id,
 		name: 'Muddy Shortsword',
-		picture: 'images/weapons/one handed swords/training shortsword/training shortsword.png',
+		picture: '/images/weapons/one handed swords/training shortsword/training shortsword.png',
 		color: 'green',
 		keywords: ['muddy', 'shortsword', 'muddy shortsword'],
 		botDamage: randomNumberRange(2, 2),
@@ -54907,8 +54907,8 @@ function trainingShortsword(monsterLevel) { //tier 1
 		roomId: currentArea.id,
 		name: 'Training Shortsword',
 		picture: {
-			right: "images/weapons/one handed swords/training shortsword/training shortsword right.png",
-			left: "images/weapons/one handed swords/training shortsword/training shortsword left.png",
+			right: "/images/weapons/one handed swords/training shortsword/training shortsword right.png",
+			left: "/images/weapons/one handed swords/training shortsword/training shortsword left.png",
 		},
 		color: 'green',
 		keywords: ['training', 'sword', 'short', 'shortsword', 'training shortsword'],
@@ -54955,8 +54955,8 @@ function rustySword(monsterLevel) { //tier 1.5
 		roomId: currentArea.id,
 		name: 'Rusty Sword',
 		picture: {
-			right: "images/weapons/one handed swords/training shortsword/training shortsword right.png",
-			left: "images/weapons/one handed swords/training shortsword/training shortsword left.png",
+			right: "/images/weapons/one handed swords/training shortsword/training shortsword right.png",
+			left: "/images/weapons/one handed swords/training shortsword/training shortsword left.png",
 		},
 		color: 'green',
 		keywords: ['rusty', 'sword', 'rusty sword'],
@@ -55001,8 +55001,8 @@ function shortsword(monsterLevel) { //tier 2
 		roomId: currentArea.id,
 		name: 'Shortsword',
 		picture: {
-			right: "images/weapons/one handed swords/training shortsword/training shortsword right.png",
-			left: "images/weapons/one handed swords/training shortsword/training shortsword left.png",
+			right: "/images/weapons/one handed swords/training shortsword/training shortsword right.png",
+			left: "/images/weapons/one handed swords/training shortsword/training shortsword left.png",
 		},		color: 'green',
 		keywords: ['short', 'sword', 'shortsword', 'short sword'],
 		botDamage: randomNumberRange(4, 4),
@@ -55044,8 +55044,8 @@ function broadSword(monsterLevel) { //tier 3
 		roomId: currentArea.id,
 		name: 'Broadsword',
 		picture: {
-			right: "images/weapons/one handed swords/broadsword/broadsword right.png",
-			left: "images/weapons/one handed swords/broadsword/broadsword left.png",
+			right: "/images/weapons/one handed swords/broadsword/broadsword right.png",
+			left: "/images/weapons/one handed swords/broadsword/broadsword left.png",
 		},		
 		color: 'green',
 		keywords: ['broad', 'sword', 'broadsword', 'broad sword'],
@@ -55089,8 +55089,8 @@ function gladius(monsterLevel) { //tier 4
 		roomId: currentArea.id,
 		name: 'Gladius',
 		picture: {
-			right: "images/weapons/one handed swords/gladius/gladius right.png",
-			left: "images/weapons/one handed swords/gladius/gladius left.png",
+			right: "/images/weapons/one handed swords/gladius/gladius right.png",
+			left: "/images/weapons/one handed swords/gladius/gladius left.png",
 		},			color: 'green',
 		keywords: ['gladius'],
 		botDamage: randomNumberRange(7, 7),
@@ -55178,7 +55178,7 @@ function handAxe(monsterLevel) { //tier 2
 		},
 		roomId: currentArea.id,
 		name: 'Hand Axe',
-		picture: 'images/weapons/one handed axes/hand axe/hand axe.png',
+		picture: '/images/weapons/one handed axes/hand axe/hand axe.png',
 		color: 'green',
 		keywords: ['hand', 'axe', 'hand axe'],
 		botDamage: randomNumberRange(4, 4),
@@ -55219,7 +55219,7 @@ function beardedAxe(monsterLevel) { //tier 3
 		},
 		roomId: currentArea.id,
 		name: 'Bearded Axe',
-		picture: 'images/weapons/one handed axes/bearded axe/bearded axe.png',
+		picture: '/images/weapons/one handed axes/bearded axe/bearded axe.png',
 		color: 'green',
 		keywords: ['bearded', 'axe', 'bearded axe'],
 		botDamage: randomNumberRange(5, 5),
@@ -55344,8 +55344,8 @@ function mace(monsterLevel) { //tier 2
 		roomId: currentArea.id,
 		name: 'Mace',
 		picture: {
-			left: 'images/weapons/one handed maces/mace/mace left.png',
-			right: 'images/weapons/one handed maces/mace/mace right.png'
+			left: '/images/weapons/one handed maces/mace/mace left.png',
+			right: '/images/weapons/one handed maces/mace/mace right.png'
 		},		
 		color: 'green',
 		keywords: ['mace'],
@@ -55388,8 +55388,8 @@ function stoutedMace(monsterLevel) { //tier 3
 		roomId: currentArea.id,
 		name: 'Stouted Mace',
 		picture: {
-			left: 'images/weapons/one handed maces/stouted mace/stouted mace left.png',
-			right: 'images/weapons/one handed maces/stouted mace/stouted mace right.png'
+			left: '/images/weapons/one handed maces/stouted mace/stouted mace left.png',
+			right: '/images/weapons/one handed maces/stouted mace/stouted mace right.png'
 		},
 		color: 'green',
 		keywords: ['stouted', 'mace', 'stouted mace'],
@@ -55430,7 +55430,7 @@ function flangedMace(monsterLevel) { //tier 4
 		},
 		roomId: currentArea.id,
 		name: 'Flanged Mace',
-		picture: 'images/weapons/one handed maces/flanged mace/flanged mace.png',
+		picture: '/images/weapons/one handed maces/flanged mace/flanged mace.png',
 		color: 'green',
 		keywords: ['flanged', 'mace', 'flanged mace'],
 		botDamage: randomNumberRange(7, 7),
@@ -55480,7 +55480,7 @@ function trainingTwoHandedSword(monsterLevel) {//tier 1
 		roomId: currentArea.id,
 		name: 'Training Two-Handed Sword',
 		refName: `trainingTwohandedSword`,
-		picture: "images/weapons/two handed swords/training two handed sword/training two handed sword.png",
+		picture: "/images/weapons/two handed swords/training two handed sword/training two handed sword.png",
 		color: 'green',
 		keywords: ['training', 'two-handed', 'sword', 'training sword', 'training two-handed sword', 'two handed', 'twohanded', 'two handed sword', 'training two handed sword'],
 		botDamage: randomNumberRange(5, 5),
@@ -55609,7 +55609,7 @@ function longsword(monsterLevel) { //tier 2
 		},
 		roomId: currentArea.id,
 		name: 'Longsword',
-		picture: "images/weapons/two handed swords/longsword/longsword.png",
+		picture: "/images/weapons/two handed swords/longsword/longsword.png",
 		color: 'green',
 		keywords: ['longsword'],
 		botDamage: randomNumberRange(7, 7),
@@ -55653,7 +55653,7 @@ function poleAxe(monsterLevel) { //tier 2
 		},
 		roomId: currentArea.id,
 		name: 'Poleaxe',
-		picture: 'images/weapons/two handed axes/poleaxe/poleaxe.png',
+		picture: '/images/weapons/two handed axes/poleaxe/poleaxe.png',
 		color: 'green',
 		keywords: ['pole', 'axe', 'poleaxe'],
 		botDamage: randomNumberRange(4, 4),
@@ -55697,7 +55697,7 @@ function sledgehammer(monsterLevel) { //tier 2
 		},
 		roomId: currentArea.id,
 		name: 'Sledgehammer',
-		picture: 'images/weapons/two handed maces/sledgehammer/sledgehammer.png',
+		picture: '/images/weapons/two handed maces/sledgehammer/sledgehammer.png',
 		color: 'green',
 		keywords: ['sledgehammer'],
 		botDamage: randomNumberRange(4, 4),
@@ -55739,7 +55739,7 @@ function claymore(monsterLevel) { //tier 3
 		},
 		roomId: currentArea.id,
 		name: 'Claymore',
-		picture: "images/weapons/two handed swords/claymore/claymore.png",
+		picture: "/images/weapons/two handed swords/claymore/claymore.png",
 		color: 'green',
 		keywords: ['claymore'],
 		botDamage: randomNumberRange(9, 9),
@@ -55780,7 +55780,7 @@ function beardedPoleAxe(monsterLevel) { //tier 3
 		},
 		roomId: currentArea.id,
 		name: 'Bearded Poleaxe',
-		picture: "images/weapons/two handed maces/maul/maul.png",
+		picture: "/images/weapons/two handed maces/maul/maul.png",
 		color: 'green',
 		keywords: ['bearded', 'poleaxe', 'bearded poleaxe'],
 		botDamage: randomNumberRange(8, 8),
@@ -55820,7 +55820,7 @@ function maul(monsterLevel) { //tier 3
 		},
 		roomId: currentArea.id,
 		name: 'Maul',
-		picture: 'images/weapons/two handed maces/maul/maul.png',
+		picture: '/images/weapons/two handed maces/maul/maul.png',
 		color: 'green',
 		keywords: ['maul'],
 		botDamage: randomNumberRange(8, 8),
@@ -55860,7 +55860,7 @@ function bastardSword(monsterLevel) { //tier 4
 		},
 		roomId: currentArea.id,
 		name: 'Bastard Sword',
-		picture: "images/weapons/two handed swords/bastard sword/bastard sword.png",
+		picture: "/images/weapons/two handed swords/bastard sword/bastard sword.png",
 		color: 'green',
 		keywords: ['bastard', 'sword', 'bastard sword'],
 		botDamage: randomNumberRange(12, 12),
@@ -55901,7 +55901,7 @@ function berserkBlade(monsterLevel) { //tier 4
 		},
 		roomId: currentArea.id,
 		name: 'Berserk Blade',
-		picture: "images/weapons/two handed swords/berserk blade/berserk blade.png",
+		picture: "/images/weapons/two handed swords/berserk blade/berserk blade.png",
 		color: 'green',
 		keywords: ['berserk', 'blade', 'berserk blade'],
 		botDamage: randomNumberRange(12, 12),
@@ -58059,7 +58059,7 @@ function trainingShield(monsterLevel) {
 		},
 		roomId: currentArea.id,
 		name: "Training Shield",
-		picture: 'images/armor/shields/training shield/training shield.png',
+		picture: '/images/armor/shields/training shield/training shield.png',
 		color: 'green',
 		keywords: ['training shield', 'training', 'shield'],
 		mods: {
@@ -58095,7 +58095,7 @@ function squiresShield(monsterLevel) {
 		},
 		roomId: currentArea.id,
 		name: "Squire's Shield",
-		picture: `images/armor/shields/squire's shield/squire's shield.png`,
+		picture: `/images/armor/shields/squire's shield/squire's shield.png`,
 		color: 'green',
 		keywords: ["squire's", 'shield', "squire's shield", 'squire shield'],
 		mods: {
@@ -60042,7 +60042,7 @@ function mudling(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/mudling/mudling.png",
+		picture: "/images/monsters/elementals/mudling/mudling.png",
 		entersTheRoomPhrase: `plops in!`,
 		advancePhrase: `flops toward you..`,
 		deathPhrase: `sinks into a lifeless puddle`,
@@ -60180,7 +60180,7 @@ function waterling(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/waterling/waterling.png",
+		picture: "/images/monsters/elementals/waterling/waterling.png",
 		entersTheRoomPhrase: `drips in!`,
 		advancePhrase: `splashes toward you`,
 		deathPhrase: `splashes to bits`,
@@ -60319,7 +60319,7 @@ function grassling(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/grassling/grassling.png",
+		picture: "/images/monsters/elementals/grassling/grassling.png",
 		entersTheRoomPhrase: `wafts in!`,
 		advancePhrase: `waddles up to you..`,
 		deathPhrase: `wilts over and fades away`,
@@ -60459,7 +60459,7 @@ function mudlet(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/mudlet/mudlet.png",
+		picture: "/images/monsters/elementals/mudlet/mudlet.png",
 		entersTheRoomPhrase: `plops in!`,
 		advancePhrase: `flops toward you..`,
 		deathPhrase: `sinks into a lifeless puddle`,
@@ -60635,7 +60635,7 @@ function waterlet(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/waterlet/waterlet.png",
+		picture: "/images/monsters/elementals/waterlet/waterlet.png",
 		entersTheRoomPhrase: `drips in!`,
 		advancePhrase: `splashes toward you`,
 		deathPhrase: `splashes to bits`,
@@ -60824,7 +60824,7 @@ function grasslet(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/grasslet/grasslet.png",
+		picture: "/images/monsters/elementals/grasslet/grasslet.png",
 		entersTheRoomPhrase: `wafts in!`,
 		advancePhrase: `waddles up to you..`,
 		deathPhrase: `wilts over and fades away`,
@@ -60995,7 +60995,7 @@ function littleMudElemental(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/lesser mud elemental/lesser mud elemental.png",
+		picture: "/images/monsters/elementals/lesser mud elemental/lesser mud elemental.png",
 		entersTheRoomPhrase: `gurgles in!`,
 		advancePhrase: `bubbles toward you..`,
 		deathPhrase: `splashes to bits`,
@@ -61167,7 +61167,7 @@ function littleWaterElemental(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/lesser water elemental/lesser water elemental.png",
+		picture: "/images/monsters/elementals/lesser water elemental/lesser water elemental.png",
 		entersTheRoomPhrase: `gurgles in!`,
 		advancePhrase: `bubbles toward you..`,
 		deathPhrase: `splashes to bits`,
@@ -61307,7 +61307,7 @@ function littleGrassElemental(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/elementals/lesser grass elemental/lesser grass elemental.png",
+		picture: "/images/monsters/elementals/lesser grass elemental/lesser grass elemental.png",
 		entersTheRoomPhrase: `gurgles in!`,
 		advancePhrase: `bubbles toward you..`,
 		deathPhrase: `splashes to bits`,
@@ -61474,7 +61474,7 @@ function skeleton(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/undead/skeletons/skeleton/skeleton.png",
+		picture: "/images/monsters/undead/skeletons/skeleton/skeleton.png",
 		entersTheRoomPhrase: `clacks in!`,
 		advancePhrase: `creeps toward you..`,
 		deathPhrase: `lets out a hoarse scream as the magic leaves its bones`,
@@ -61617,7 +61617,7 @@ function cultist(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/humanoids/cultist/cultist.png",
+		picture: "/images/monsters/humanoids/cultist/cultist.png",
 		entersTheRoomPhrase: `looms in!`,
 		advancePhrase: `strides toward you..`,
 		deathPhrase: `collapses into a pile of robes`,
@@ -61765,7 +61765,7 @@ function giantRat(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/animals/giant rat/giant rat.png",
+		picture: "/images/monsters/animals/giant rat/giant rat.png",
 		entersTheRoomPhrase: `squeeks in!`,
 		advancePhrase: `scurries toward you..`,
 		deathPhrase: `wimpers as it flops over dead`,
@@ -61907,7 +61907,7 @@ function graveWorm(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/insects/graveworm/graveworm.png",
+		picture: "/images/monsters/insects/graveworm/graveworm.png",
 		entersTheRoomPhrase: `squishes in!`,
 		advancePhrase: `writhes toward you..`,
 		deathPhrase: `turns into a pile of pink mess`,
@@ -62052,7 +62052,7 @@ function wildBoar(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/animals/wild boar/wild boar.png",
+		picture: "/images/monsters/animals/wild boar/wild boar.png",
 		entersTheRoomPhrase: `charges in!`,
 		advancePhrase: `charges toward you..`,
 		deathPhrase: `lets out a shrill squeal as it thuds to the ground`,
@@ -62197,7 +62197,7 @@ function stag(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/animals/stag/stag.png",
+		picture: "/images/monsters/animals/stag/stag.png",
 		entersTheRoomPhrase: `trots in!`,
 		advancePhrase: `charges toward you..`,
 		deathPhrase: `collapses to the ground`,
@@ -62342,7 +62342,7 @@ function impling(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/imps/impling/impling.png",
+		picture: "/images/monsters/imps/impling/impling.png",
 		entersTheRoomPhrase: `troddles in!`,
 		advancePhrase: `hops toward you..`,
 		deathPhrase: `curses you as its scream turns to silence`,
@@ -62657,7 +62657,7 @@ function koboldChild(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/kobolds/kobold child/kobold child.png",
+		picture: "/images/monsters/kobolds/kobold child/kobold child.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a high pitched cry as it dies!`,
@@ -62804,7 +62804,7 @@ function koboldScoundrel(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/kobolds/kobold scoundrel/kobold scoundrel.png",
+		picture: "/images/monsters/kobolds/kobold scoundrel/kobold scoundrel.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a soft howl as it dies`,
@@ -62948,7 +62948,7 @@ function koboldSpearthrower(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/kobolds/kobold spearthrower/kobold spearthrower.png",
+		picture: "/images/monsters/kobolds/kobold spearthrower/kobold spearthrower.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a whimpy howl as it dies`,
@@ -63124,7 +63124,7 @@ function koboldArcher(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/kobolds/kobold archer/kobold archer.png",
+		picture: "/images/monsters/kobolds/kobold archer/kobold archer.png",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a whimpy howl as it dies`,
@@ -63263,7 +63263,7 @@ function koboldDigger(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/skeleton1.jpg",
+		picture: "/images/monsters/skeleton1.jpg",
 		entersTheRoomPhrase: `scampers in!`,
 		advancePhrase: `runs up to you..`,
 		deathPhrase: `lets out a whimpy howl as it dies`,
@@ -63431,7 +63431,7 @@ function koboldChief(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/kobolds/kobold chief/kobold chief.png",
+		picture: "/images/monsters/kobolds/kobold chief/kobold chief.png",
 		entersTheRoomPhrase: `jumps in!`,
 		advancePhrase: `charges toward you..`,
 		deathPhrase: `lets out a gurgling murmur as its eyes stare blankly upward.`,
@@ -63621,7 +63621,7 @@ function gnollSkirmisher(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/gnolls/gnoll skirmisher/gnoll skirmisher.png",
+		picture: "/images/monsters/gnolls/gnoll skirmisher/gnoll skirmisher.png",
 		entersTheRoomPhrase: `howls in!`,
 		advancePhrase: `runs toward you..`,
 		deathPhrase: `lets out a piercing squeel.`,
@@ -63769,7 +63769,7 @@ function gnollBrawler(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/gnolls/gnoll brawler/gnoll brawler.png",
+		picture: "/images/monsters/gnolls/gnoll brawler/gnoll brawler.png",
 		entersTheRoomPhrase: `howls in!`,
 		advancePhrase: `runs toward you..`,
 		deathPhrase: `lets out a piercing squeel.`,
@@ -63947,7 +63947,7 @@ function gnollBrute(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/gnolls/gnoll brute/gnoll brute.png",
+		picture: "/images/monsters/gnolls/gnoll brute/gnoll brute.png",
 		entersTheRoomPhrase: `stomps in!`,
 		advancePhrase: `lumbers toward you..`,
 		deathPhrase: `lets out a rumbling growl.`,
@@ -64094,7 +64094,7 @@ function gnollPackLeader(area) {
 		get color() {
 			return enemyLevelColor(this)
 		},
-		picture: "images/monsters/gnolls/gnoll pack leader/gnoll pack leader.png",
+		picture: "/images/monsters/gnolls/gnoll pack leader/gnoll pack leader.png",
 		entersTheRoomPhrase: `stomps in!`,
 		advancePhrase: `lumbers toward you..`,
 		deathPhrase: `lets out a rumbling growl.`,
@@ -71226,8 +71226,8 @@ manaBarTest.addEventListener('click', loseLevel)
 function welcome() {
 	let welcomeWindow = document.createElement('img')
 	// let welcomeNode = document.createElement('img')
-	// welcomeNode.src = "images/banner and misc/galvadia_title2.jpg"
-	welcomeWindow.src = "images/Galvadia Cropped Banner.png"
+	// welcomeNode.src = "/images/banner and misc/galvadia_title2.jpg"
+	welcomeWindow.src = "/images/Galvadia Cropped Banner.png"
 	welcomeWindow.classList.add('welcome')
 	// welcomeWindow.appendChild(welcomeNode)
 	masterArea.appendChild(welcomeWindow)
