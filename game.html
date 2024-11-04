@@ -2,9 +2,13 @@
 <html>
 	<head>
 		<link rel="stylesheet" href="gamecss.css" />
+		<link rel="stylesheet" href="npcs.css" />
+		<link rel="stylesheet" href="area-heading-colors.css" />
+		<link rel="stylesheet" href="snail-racing-layout.css" />
+		<link rel="stylesheet" href="character-creation.css" />
 	</head>
 
-	<body>
+	<body class='fade-in'>
 		<div id="all-windows">
 			<div id='scrollable-and-commandLine'>
 			<div id="scrollable-window">
@@ -38,53 +42,61 @@
 								<div class='buff-text-5 buff'></div>
 								<div class='buff-duration-5 duration'></div>
 							  </div>
-							  <div class='buff-duration-container'>
-							  </div>
+							  <!-- <div class='buff-duration-container'>
+							  </div> -->
 							</div>
 						  </div>
-						<div class='stats-container'>
+						<div class='offense-container'>
 							<div class='defense-heading'>Defense</div>
 							<div class='stats-text-container'>
 
 							<div class='armor-text-number-container'> 
-								<div class='armor-text'></div>
+								<div class='slashing-armor-text'>Slashing:</div>
 								<div class='slashing-armor-number'></div>
 							</div>
 							<div class='armor-text-number-container'> 
-								<div class='armor-text'></div>
+								<div class='piercing-armor-text'>Piercing:</div>
 								<div class='piercing-armor-number'></div>
 							</div>
 							<div class='armor-text-number-container'> 
-								<div class='armor-text'></div>
+								<div class='blunt-armor-text'>Blunt:</div>
 								<div class='blunt-armor-number'></div>
 							</div>
 							<div class='dodge-text-number-container'> 
-								<div class='dodge-text'></div>
+								<div class='dodge-text'>Dodge:</div>
 								<div class='dodge-number'></div>
+							</div>
+							<div class='weight-effective-text-number-container'> 
+								<div class='weight-effective-text'>Burden:</div>
+								<div class='weight-effective-number'></div>
+							</div>
+							<div class='weight-total-text-number-container'> 
+								<div class='weight-total-text'>Weight:</div>
+								<div class='weight-total-number'></div>
 							</div>
 						  </div>
 						</div>
-					<div class="stats-container">			<!--STATS-->
+					<div class="defense-container">			<!--STATS-->
 						<div class='offense-heading'>Offense</div>
 						<div class='stats-text-container'>
 							<div class='attack-text-number-container'> 
-								<div class='attack-text'></div>
+								<div class='attack-text'>Attack: </div>
 								<div class='attack-number'></div>
 							</div>
 							<div class='speed-text-number-container'> 
-								<div class='speed-text'></div>
+								<div class='speed-text'>Speed: </div>
 								<div class='speed-number'></div>
 							</div>
 							<div class='accuracy-text-number-container'> 
-								<div class='accuracy-text'></div>
+								<div class='accuracy-text'>Accuracy: </div>
 								<div class='accuracy-number'></div>
 							</div>
 							<div class='spellpower-text-number-container'> 
-								<div class='spellpower-text'></div>
+								<div class='spellpower-text'>Sp power: </div>
 								<div class='spellpower-number'></div>
 							</div>
 							<div class='mysticpower-text-number-container'> 
-								<div class='mysticpower-text'></div>
+								<div class='mysticpower-text'>Mys power: </div>
 								<div class='mysticpower-number'></div>
 							</div>
 						</div>
@@ -100,21 +112,21 @@
 					</div>
 						<div class='name-heading-and-vitals-container'>
 						<div class='name-heading'>
-						<div class='name'>Zalbane:</div>
-						<div class='level'>Level</div>
-						<div id='race'>Half Minotaur</div>
-						<div id='playerClass' class='small-left-margin'>Berserker</div>
+						<div class='name'>(name)</div>
+						<div class='level'>Level 1</div>
+						<div id='race'>(race)</div>
+						<div id='playerClass' class='small-left-margin'>(class)</div>
 						</div>
 						<div class='vitals-container'>
 						<div class='health-bar-container'>
 							<div class='health-bar'></div>
-							<div class='health-text'></div>
-							<div class='magic-shield-bar'>test</div>
+							<div class='health-text'>Health</div>
+							<div class='magic-shield-bar'></div>
 							<div class='magic-shield-text'></div>
 						</div>
 						<div class='mana-bar-container'>
 							<div class='mana-bar'></div>
-							<div class='mana-text'></div>
+							<div class='mana-text'>Mana</div>
 						</div>
 						<div class='class-resource-container'>
 							<div class='class-resource-bar' id='class-resource-bar'></div>
@@ -123,37 +135,37 @@
 						<div class='attributes-container'>
 							<div class='str-text-number-mods-container'>
 								<div class='str-text'></div>
-								<div class='str-number'></div>
+								<div class='str-number'>1</div>
 								<div class='str-mod'></div>
 							</div>
 							<div class='dex-text-number-mods-container'>
 								<div class='dex-text'></div>
-								<div class='dex-number'></div>
+								<div class='dex-number'>1</div>
 								<div class='dex-mod'></div>
 							</div>
 							<div class='agi-text-number-mods-container'>
 								<div class='agi-text'></div>
-								<div class='agi-number'></div>
+								<div class='agi-number'>1</div>
 								<div class='agi-mod'></div>
 							</div>
 							<div class='con-text-number-mods-container'>
 								<div class='con-text'></div>
-								<div class='con-number'></div>
+								<div class='con-number'>1</div>
 								<div class='con-mod'></div>
 							</div>
 							<div class='int-text-number-mods-container'>
 								<div class='int-text'></div>
-								<div class='int-number'></div>
+								<div class='int-number'>1</div>
 								<div class='int-mod'></div>
 							</div>
 							<div class='wis-text-number-mods-container'>
 								<div class='wis-text'></div>
-								<div class='wis-number'></div>
+								<div class='wis-number'>1</div>
 								<div class='wis-mod'></div>
 							</div>
 							<div class='mys-text-number-mods-container'>
 								<div class='mys-text'></div>
-								<div class='mys-number'></div>
+								<div class='mys-number'>1</div>
 								<div class='mys-mod'></div>
 							</div>
 						</div>
@@ -182,6 +194,10 @@
 
 							<div class='ability-bar-3'>
 								<div class='bar-3'></div>
+							</div>
+
+							<div class='ability-bar-4'>
+								<div class='bar-4'></div>
 							</div>
 							
 						  </div>
