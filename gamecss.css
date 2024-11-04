@@ -1,3 +1,36 @@
+.fade-in {
+    opacity: 0;
+    animation: fadeInFromBlack 2s ease-in forwards;
+    background-color: black;
+}
+.fade-out {
+    opacity: 1;
+    animation: fadeOutFromBlack 2s ease-in forwards;
+    background-color: black;
+}
+
+@keyframes fadeInFromBlack {
+    0% {
+        opacity: 0;
+        background-color: black;
+    }
+    100% {
+        opacity: 1;
+        background-color: black;
+    }
+}
+
+@keyframes fadeOutFromBlack {
+    0% {
+        opacity: 1;
+        background-color: black;
+    }
+    100% {
+        opacity: 0;
+        background-color: black;
+    }
+}
+
 p {
 	margin: 0.1em;
 }
@@ -69,6 +102,11 @@ p {
 }
 .sally {
 	color: rgb(185, 233, 255)
+}
+
+
+.river-blue {
+	color: rgb(60, 183, 255)
 }
 
 /* 
@@ -251,13 +289,19 @@ GENERAL COLORS
 	color: rgb(255, 0, 0) !important;
 }
 .light-red {
-	color: rgb(255, 120, 120) !important;
+	color: #ff6969 !important;
 }
 .dark-red {
-	color: #83111e;
+	color: #910000
 }
 .pink {
 	color: pink;
+}
+.light-pink {
+	color: rgb(255, 224, 229);
+}
+.dark-pink {
+	color: rgb(255, 161, 177);
 }
 .dark-red2 {
 	color: #ab1325;
@@ -378,6 +422,10 @@ GENERAL COLORS
 	width: 70em;
 }
 
+.dialogue {
+	color: rgb(194, 194, 194)
+}
+
 ul {
 	display: flex;
 	width: 2em;
@@ -443,11 +491,13 @@ ul {
 ITEM DESCRIPTIONS
 */
 .item-description {
-	background-color: #232323;
+	background-color: #0e0e0e;
 	border: 1px solid #ccc;
 	border-radius: 5px;
 	padding: 10px;
 	margin: 1em 0 1em 0;
+	width: 500px;
+	box-shadow: 0px 0px 10px;
 }
 
 .item-description-name {
@@ -541,7 +591,6 @@ span.orange {
 	color: rgb(228, 204, 124);
 }
 .item {
-	color: rgb(0, 255, 0);
 	margin: 0 4px;
 }
 
@@ -559,7 +608,7 @@ span.orange {
 	color: rgb(217, 227, 255);
 }
 .blunt {
-	color: rgb(255, 219, 183);
+	color: rgb(143, 111, 91);
 }
 
 .ripslash {
@@ -658,7 +707,7 @@ body {
 
 #scrollable-window{
 	display: flex;
-	border: 2px solid rgb(100, 100, 200);
+	/* border: 2px solid rgb(100, 100, 200); */
 }
 
 #scrollable-and-commandLine {
@@ -744,8 +793,9 @@ body {
 }
 #commandLine {
 	display: flex;
-	width: 1276px;
+	width: 1268px;
 	margin-top: 1px;
+	border: 4px ridge white;
 }
 
 .passive-skill {
@@ -976,7 +1026,12 @@ body {
 }
 
 
-
+.fish-bar-blue {
+	background: blue;
+}
+.fish-bar-red {
+	background: red;
+}
 
 
 .monster-name {
@@ -1047,8 +1102,12 @@ body {
 .freeze {
 	color: lightblue;
 }
+
 .quickJab {
-	background-image: url("images/debuffs/accuracy debuff.png");
+	background-image: url("images/debuff icons/accuracy debuff.png");
+}
+.colossusPunchDebuff {
+	background-image: url("images/debuff icons/dodge debuff.png");
 }
 
 .monster-status-effects-container {
@@ -1201,18 +1260,21 @@ body {
 .main-class-container {
 	display: flex;
 	flex-direction: column;
-	border: 2px solid purple;
+	/* border: 2px solid purple; */
 }
 .main-start-container {
 	display: flex;
 	flex-direction: column;
-	border: 2px solid purple;
+	/* border: 2px solid purple; */
 }
 
 .start-heading-container {
-	border: 2px solid yellow;
+	border: 4px ridge white;
 	font-size: 1.2em;
 	text-align: center;
+	width: 200px;
+	align-self: center;
+	margin-bottom: 0.2rem;
 }
 
 .start-class-and-descriptions-container-container {
@@ -1246,6 +1308,7 @@ body {
 	display: flex;
 	border: 6px ridge white;
 	justify-content: center;
+	height: 450px;
 }
 
 
@@ -1269,7 +1332,7 @@ body {
 .welcome {
 	font-size: 10em;
 	text-align: center;
-	border: 10px solid transparent;
+	border: 8px ridge white;
 }
 .character-creation {
 	border: 4px dotted rgb(94, 94, 94);
@@ -1285,6 +1348,7 @@ body {
 	/* border: 2px solid red; */
 	text-align: center;
 	font-size: 1.1em;
+	/* margin-left: 15rem; */
 }
 .character-confirmation-button {
 	width: 12em;
@@ -1388,6 +1452,8 @@ body {
 	font-size: 14px;
 	font-weight: bold;
 	cursor: pointer;
+	margin-top: 0.88em;
+	margin-left: 0.88em;
 }
 
 
@@ -1756,7 +1822,7 @@ body {
   }
   .bottom-container-border {
 	display: flex;
-	background-image: url("images/window frames/window_frames_thin_extended.png");
+	background-image: url("images/UI/window_frames_thin_extended.png");
 	position: absolute;
 	background-repeat: no-repeat;
 	width: 1280px;
@@ -1845,12 +1911,14 @@ body {
 }
 
 
-  .stats-container {
+  .offense-container,
+  .defense-container {
 	  display: flex;
 	  width: 102px;
 	  flex-direction: column;
 	  border: 2px ridge white;
   }
+
   .offense-heading,
   .defense-heading {
 	display: flex;
@@ -1915,15 +1983,16 @@ body {
   .ability-bar-3 {
 	display: flex;
 	height: 25px;
-
-	  border: 2px ridge white;
+	border: 2px ridge white;
+  }
+  .ability-bar-4 {
+	display: flex;
+	height: 25px;
+	border: 2px ridge white;
   }
 
 
 
-.bar-1 {
-
-}
 .bar-1-full {
 	animation: glowing 1000ms infinite;
 }
@@ -1950,7 +2019,7 @@ body {
   .buff-text-container-3 {
 	  display: flex;
 	  justify-content: space-between;
-	  border: 2px ridge white;
+	  /* border: 2px ridge white; */
   }
   .buff-text-1,
   .buff-text-2,
@@ -2057,7 +2126,7 @@ body {
 	top: 0;
 	left: 0;
 	height: 100%; /* Set height to fill the container */
-	width: 20%; /* Initially hide the magic shield */
+	width: 0%; /* Initially hide the magic shield */
 	background-color: rgba(255, 255, 255, 0.5);
 }
 .mana-bar {
@@ -2170,11 +2239,27 @@ body {
 	display: flex;
 	justify-content: center;
   }
+  .weight-effective-text-number-container {
+	display: flex;
+	justify-content: center;
+  }
+  .weight-total-text-number-container {
+	display: flex;
+	justify-content: center;
+  }
   .accuracy-text-number-container {
 	display: flex;
 	justify-content: center;
   }
   .speed-text-number-container {
+	display: flex;
+	justify-content: center;
+  }
+  .spellpower-text-number-container {
+	display: flex;
+	justify-content: center;
+  }
+  .mysticpower-text-number-container {
 	display: flex;
 	justify-content: center;
   }
@@ -2228,7 +2313,6 @@ body {
 	display: flex;
 	flex-direction: column;
 	width: 900px;
-	height: 400px;
 	border: 6px ridge white;
 	font-family: sylfaen;
 }
@@ -2332,8 +2416,21 @@ body {
 .attack-number,
 .speed-number,
 .accuracy-number {
+	color: rgb(163, 247, 255);
+	margin-left: 0.3em;
 	font-size: 13px;
 }
+.slashing-armor-number,
+.piercing-armor-number,
+.blunt-armor-number,
+.dodge-number,
+.weight-effective-number,
+.weight-total-number {
+	color: rgb(163, 247, 255);
+	margin-left: 0.3em;
+	font-size: 13px;
+}
+
 .you {
 	color: white;
 }
@@ -2406,7 +2503,7 @@ body {
 }
 
 .fury {
-	background: orange;
+	color: orange;
 }
 
 .shred,
@@ -2428,7 +2525,7 @@ body {
 .exp-bar {
 	background-color: white;
 	height: 19px;
-	width: 50%;
+	width: 0;
 }
 
 .defensive-spell {
@@ -2438,3 +2535,4 @@ body {
 .restorative-spell {
 	background: rgb(88, 255, 149);
 }
+
