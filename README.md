@@ -23,9 +23,10 @@ KEY FEATURES
 GETTING STARTED
 1. Launch the game by opening the .html file in a browser
 2. Select your class and race by clicking on the class/race icons
-3. Name your character
-4. Click the confirm character button
-5. Follow the in-game tutorial
+3. The screen will scroll down on class select. Ignore that and the weapon wielding text you see at the bottom. 
+4. Name your character
+5. Click the confirm character button
+6. Follow the in-game tutorial
 
 
 Saving isn't completely ironed out yet, and likely still has bugs. 
