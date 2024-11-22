@@ -19,6 +19,7 @@ KEY FEATURES
 - Skill and ability progression by gaining and spending Skill Points
 - Immersive combat
 
+** Mystic Monk and Elemental Monk need to be reworked/adjusted. I don't think they have any game breaking bugs, just maybe some scaling issues and wonky ability mechanics (mainly the Elemental Monk). Feel free to choose them though if you want to test them out **
 GETTING STARTED
 1. Launch the game by opening the .html file in a browser
 2. Select your class and race by clicking on the class/race icons
