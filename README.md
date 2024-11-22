@@ -23,6 +23,14 @@ GETTING STARTED
 1. Launch the game by opening the .html file in a browser
 2. Select your class and race by clicking on the class/race icons
 3. Name your character
-4. 
+4. Click the confirm character button
+5. Follow the in-game tutorial
 
+
+Saving isn't completely ironed out yet, and likely still has bugs. 
+SAVING YOUR GAME
+To save the game, type "save" followed by the name you want to give the save file. There is no way to overwrite a save file, so you will have to save to a new file each time you want to save the game. Your file will be saved as a .json file.
+
+LOADING YOUR GAME
+To load a game, type "load" and an open file window will appear. Just select the save file you want to load.
 
