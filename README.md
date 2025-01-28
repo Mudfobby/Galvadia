@@ -7,7 +7,7 @@ All that being said, it does have playable and in-depth content, particularly th
 
 
 ABOUT
-Galvadia is an immersive, text-based RPG where players journey through the story, while engaging in dialogue and fighting their way through enemies. Drawing inspiration from classic MUD (Multi-User Dungeon) games, it offers deep character customization and strategic and skill based combat.
+Galvadia is an immersive, text-based RPG that draws inspiration from classic MUD (Multi-User Dungeon) games, primarily Legends of Terris, where players journey through an open world exploring a variety of locations while engaging in dialogue with NPCs and fighting their way through enemies. It offers dynamic gameplay through its class and skills system in addition to the real-time combat system.
 
 KEY FEATURES
 - Players can choose from 13 classes (each unique in their playstyle)
