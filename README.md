@@ -1,5 +1,5 @@
 # Galvadia
-  <span>
+  <span style="display: flex, flex-direction: column">
     Character creation
     <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> 
   </span>
