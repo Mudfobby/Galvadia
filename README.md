@@ -1,5 +1,5 @@
 # Galvadia
-  <span style="background-color: blue">
+  <span style="color: blue">
     Character creation
     <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> 
   </span>
