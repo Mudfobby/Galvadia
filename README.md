@@ -1,5 +1,8 @@
 # Galvadia
-  Character creation <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> test <img src="images/screenshots/inventory.png" alt="inventory" width=200 /> <img src="images/screenshots/kobold_caves.png" alt="kobold caves" width=200 /> <img src="images/screenshots/town_square.png" alt="town square" width=200 /> <img src="images/screenshots/weapon_shop.png" alt="weapon shop" width=200 />
+  Character creation                                                                         Inventory                                                                Kobold Caves
+  <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> <img src="images/screenshots/inventory.png" alt="inventory" width=200 /> <img src="images/screenshots/kobold_caves.png" alt="kobold caves" width=200 /> 
+  Town Square                                                                  Weapon Shop
+  <img src="images/screenshots/town_square.png" alt="town square" width=200 /> <img src="images/screenshots/weapon_shop.png" alt="weapon shop" width=200 />
 ## About
 
 Galvadia started off as a tool for teaching myself how to code, therefore, it contains extremely messy and unmaintainable code, and does not represent how I would structure my code today. The codebase contains a mix of code that I've written from day 1 til ~a few months ago (with little to no code refactoring), so there's a wide range of inefficient to somewhat more efficient code scattered throughout.
