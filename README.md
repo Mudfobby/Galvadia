@@ -1,11 +1,6 @@
 # Galvadia
-  <span style="color: blue">
-    Character creation
-    <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> 
-  </span>
+  <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> <img src="images/screenshots/inventory.png" alt="inventory" width=200 /> <img src="images/screenshots/kobold_caves.png" alt="kobold caves" width=200 /> 
   
-  <img src="images/screenshots/inventory.png" alt="inventory" width=200 /> <img src="images/screenshots/kobold_caves.png" alt="kobold caves" width=200 /> 
-  Town Square                                                                  Weapon Shop
   <img src="images/screenshots/town_square.png" alt="town square" width=200 /> <img src="images/screenshots/weapon_shop.png" alt="weapon shop" width=200 />
 ## About
 
