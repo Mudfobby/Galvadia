@@ -15,6 +15,7 @@ All that being said, it does have playable and in-depth content, particularly th
 ## Table of Contents
 - [Installation](#installation)
 - [Features](#features)
+- [Getting Started](#getting-started)
 - [Technologies Used](#technologies-used)
 
 ## Installation
@@ -56,7 +57,7 @@ To save the game, type "save" followed by the name you want to give the save fil
 
 To load a game, type "load" and an open file window will appear. Just select the save file you want to load.
   
-## Technologies
+## Technologies Used
 
 ### Languages
 1. JavaScript (vanilla)
