@@ -1,8 +1,8 @@
 # Galvadia
-  <div>
+  <span>
     Character creation
     <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> 
-  </div>
+  </span>
   
   <img src="images/screenshots/inventory.png" alt="inventory" width=200 /> <img src="images/screenshots/kobold_caves.png" alt="kobold caves" width=200 /> 
   Town Square                                                                  Weapon Shop
