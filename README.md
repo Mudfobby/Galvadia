@@ -16,6 +16,8 @@ All that being said, it does have playable and in-depth content, particularly th
 - [Installation](#installation)
 - [Features](#features)
 - [Getting Started](#getting-started)
+- [Saving](#saving)
+- [Loading](#loading)
 - [Technologies Used](#technologies-used)
 
 ## Installation
