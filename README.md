@@ -1,3 +1,39 @@
+# Galvadia
+
+
+## Table of Contents
+- [Installation](#installation)
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+
+## Installation
+
+## Features
+
+### Main Views:
+
+  
+## Technologies Used
+
+### Languages
+1. JavaScript
+2. C#
+3. CSS
+
+### Frameworks
+1. .NET
+2. Entity Framework Core
+3. Bootstrap
+
+### Libraries
+1. React
+
+
+
+
+
+
+
 DISCLAIMER
 Galvadia started off as a tool for teaching myself how to code, therefore, it contains extremely messy and unmaintainable code, and does not represent how I would structure my code today. The codebase contains a mix of code that I've written from day 1 til ~a few months ago (with little to no code refactoring), so there's a wide range of inefficient to somewhat more efficient code scattered throughout.
 
