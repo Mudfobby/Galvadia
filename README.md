@@ -3,10 +3,12 @@
   
   <img src="images/screenshots/town_square.png" alt="town square" width=200 />    <img src="images/screenshots/weapon_shop.png" alt="weapon shop" width=200 />
 ## About
+Galvadia is an immersive, text-based RPG that draws inspiration from classic MUD (Multi-User Dungeon) games, like Legends of Terris, where players explore an open world while completing quests and fighting their way through enemies. It offers dynamic gameplay through its class and skills system and real-time combat mechanics.
 
-Galvadia started off as a tool for teaching myself how to code, therefore, it contains extremely messy and unmaintainable code, and does not represent how I would structure my code today. The codebase contains a mix of code that I've written from day 1 til ~a few months ago (with little to no code refactoring), so there's a wide range of inefficient to somewhat more efficient code scattered throughout.
+### Disclaimer
+Galvadia started off as a tool for teaching myself how to code, therefore, it contains extremely messy and unmaintainable code, and does not represent how I would structure my code today. The codebase contains a mix of code that I've written from day 1 til ~a few months ago (with little to no code refactoring).
 
-The game is very much in development, and there are potentially game breaking bugs that I might not have discovered yet. Once I iron out a stable early-game playthrough, I will be working to balance mechanics like weapon damage, armor effectiveness, skill and ability scaling, etc. Those mechanics exist and are already somewhat stable, but there might be some inconsistencies or over/under powered aspects that I haven't tuned up/down yet. The game start is not set up how I would like it to be for a clean experience as doing so would make it more difficult to quickly reload the game to test things out.
+The game is very much in development. The tutorial is playable. Once I iron out a stable early-game playthrough, I will be working to balance mechanics like weapon damage, armor effectiveness, skill and ability scaling, etc. Those mechanics exist and are already somewhat stable, but there might be some inconsistencies or over/under powered aspects that I haven't tuned up/down yet. The game start is not set up how I would like it to be for a clean experience as doing so would make it more difficult to quickly reload the game to test things out.
 
 All that being said, it does have playable and in-depth content, particularly the leveling and combat. Only recently did I get most of the groundwork laid for scaling the game larger, so once I get the tutorial complete with an instruction manual to include in the files, I'll be building the game out and making it more stable.
 
@@ -39,11 +41,6 @@ All that being said, it does have playable and in-depth content, particularly th
 
 
 
-
-
-
-ABOUT
-Galvadia is an immersive, text-based RPG that draws inspiration from classic MUD (Multi-User Dungeon) games, primarily Legends of Terris, where players journey through an open world exploring a variety of locations while engaging in dialogue with NPCs and fighting their way through enemies. It offers dynamic gameplay through its class and skills system in addition to the real-time combat system.
 
 KEY FEATURES
 - Players can choose from 13 classes (each unique in their playstyle)
