@@ -1,5 +1,5 @@
 # Galvadia
-  <img src="images/screenshots/character_creation.png" alt="character creation" width=200 />
+  <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> <img src="images/screenshots/inventory.png" alt="inventory" width=200 /> <img src="images/screenshots/character_creation.png" alt="character creation" width=200 /> <img src="images/screenshots/character_creation.png" alt="character creation" width=200 />
 
   
 ## About
