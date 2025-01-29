@@ -36,7 +36,7 @@ KEY FEATURES
 
 ** Mystic Monk and Elemental Monk need to be reworked/adjusted. I don't think they have any game breaking bugs, just maybe some scaling issues and wonky ability mechanics (mainly the Elemental Monk). Feel free to choose them though if you want to test them out **
 
-GETTING STARTED
+## Getting started
 
 **On class or race select, the screen might scroll down. That's normal. Just scroll back up if you want to select another class/race**
 
@@ -47,15 +47,16 @@ GETTING STARTED
 
 
 
-SAVING YOUR GAME (**Saving isn't completely ironed out yet, and possibly still has bugs**)
+## Saving
+(**Saving isn't completely ironed out yet, and possibly still has bugs**)
 
 To save the game, type "save" followed by the name you want to give the save file. There is no way to overwrite a save file, so you will have to save to a new file each time you want to save the game. Your file will be saved as a .json file.
 
-LOADING YOUR GAME
+## Loading
 
 To load a game, type "load" and an open file window will appear. Just select the save file you want to load.
   
-## Technologies Used
+## Technologies
 
 ### Languages
 1. JavaScript (vanilla)
