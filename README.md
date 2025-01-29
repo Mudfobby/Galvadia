@@ -1,7 +1,7 @@
 # Galvadia
-  <img src="images/screenshots/character_creation.png" alt="character creation" width=200 />    <img src="images/screenshots/inventory.png" alt="inventory" width=200 />    <img src="images/screenshots/kobold_caves.png" alt="kobold caves" width=200 /> 
+  <img src="images/screenshots/character_creation.png" alt="character creation" width=200 />
+
   
-  <img src="images/screenshots/town_square.png" alt="town square" width=200 />    <img src="images/screenshots/weapon_shop.png" alt="weapon shop" width=200 />
 ## About
 Galvadia is an immersive, text-based RPG that draws inspiration from classic MUD (Multi-User Dungeon) games, like Legends of Terris, where players explore an open world while completing quests and fighting their way through enemies. It offers dynamic gameplay through its class and skills system and real-time combat mechanics.
 
@@ -19,27 +19,9 @@ All that being said, it does have playable and in-depth content, particularly th
 
 ## Installation
 
+1. Download 
+
 ## Features
-
-### Main Views:
-
-  
-## Technologies Used
-
-### Languages
-1. JavaScript
-2. C#
-3. CSS
-
-### Frameworks
-1. .NET
-2. Entity Framework Core
-3. Bootstrap
-
-### Libraries
-1. React
-
-
 
 
 KEY FEATURES
@@ -68,4 +50,12 @@ To save the game, type "save" followed by the name you want to give the save fil
 
 LOADING YOUR GAME
 To load a game, type "load" and an open file window will appear. Just select the save file you want to load.
+  
+## Technologies Used
+
+### Languages
+1. JavaScript (vanilla)
+2. HTML
+3. CSS (exclusively custom)
+
 
