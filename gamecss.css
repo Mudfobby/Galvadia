@@ -366,10 +366,10 @@ GENERAL COLORS
 	color: rgb(89, 89, 89) !important;
 }
 .brown {
-	color: rgb(119, 88, 21) !important;
+	color: rgb(95, 57, 19) !important;
 }
 .light-brown {
-	color: rgb(186, 137, 68) !important;
+	color: rgb(178, 122, 66) !important;
 }
 .dark-brown {
 	color: rgb(113, 71, 12) !important;
@@ -632,9 +632,7 @@ span.orange {
 }
 .inHands {
 }
-.sign {
-	border: 2px solid brown;
-}
+
 .lowerArmor {
 }
 .inventory {
@@ -1029,6 +1027,9 @@ body {
 .fish-bar-blue {
 	background: blue;
 }
+.fish-bar-green {
+	background: rgb(0, 255, 0);
+}
 .fish-bar-red {
 	background: red;
 }
@@ -1107,7 +1108,7 @@ body {
 	background-image: url("images/debuff icons/accuracy debuff.png");
 }
 .colossusPunchDebuff {
-	background-image: url("images/debuff icons/dodge debuff.png");
+	background-image: url("images/debuff icons/blunt armor debuff.png");
 }
 
 .monster-status-effects-container {
@@ -2536,3 +2537,22 @@ body {
 	background: rgb(88, 255, 149);
 }
 
+.custom-npc-dialogue {
+	display: flex;
+}
+
+.npc-dialogue-margin {
+	margin-right: 6px;
+}
+
+
+.sign {
+	color: rgb(95, 57, 19) !important;
+}
+.sign-text {
+	color: rgb(178, 122, 66) !important;
+}
+
+.goblinHills {
+	color: rgb(211, 14, 14);
+}
