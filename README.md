@@ -37,7 +37,10 @@ KEY FEATURES
 - Skill and ability progression by gaining and spending Skill Points
 - Immersive combat
 
-**Mystic Monk and Elemental Monk need to be reworked/adjusted. I don't think they have any game breaking bugs, just maybe some scaling issues and wonky ability mechanics (mainly the Elemental Monk). Feel free to choose them though if you want to test them out**
+**Most stable classes: Berserker, Fighter, Knight, Assassin, Thief, Shadowblade, Martial Monk**
+- Ranger hasn't been thoroughly tested. Piercing Arrow could cause game to break due to its time and release mechanic.
+- Mystic Monk and Elemental Monk need to be reworked. Their scaling might be off, but should still be playable.
+- Mages haven't been thoroughly tested. Scaling might be off -- either underpowered or possibly way overpowered. 
 
 ## Getting started
 
